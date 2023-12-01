@@ -1,0 +1,61 @@
+# This file exists so you can easily regenerate your project.
+#
+# `cookiepatcher` is a convenient shim around `cookiecutter`
+# for regenerating projects (it will generate a .cookiecutterrc
+# automatically for any template). To use it:
+#
+#    pip install cookiepatcher
+#    cookiepatcher gh:ionelmc/cookiecutter-pylibrary m2m-postaviz
+#
+# See:
+#    https://pypi.org/project/cookiepatcher
+#
+# Alternatively, you can run:
+#
+#    cookiecutter --overwrite-if-exists --config-file=m2m-postaviz/.cookiecutterrc gh:ionelmc/cookiecutter-pylibrary
+
+default_context:
+    allow_tests_inside_package: "no"
+    c_extension_function: "longest"
+    c_extension_module: "_m2m_postaviz"
+    c_extension_optional: "no"
+    c_extension_support: "no"
+    codacy: "no"
+    codacy_projectid: "[Get ID from https://app.codacy.com/gh/postaviz/m2m-postaviz/settings]"
+    codeclimate: "no"
+    codecov: "no"
+    command_line_interface: "argparse"
+    command_line_interface_bin_name: "m2m_postaviz"
+    coveralls: "no"
+    distribution_name: "m2m-postaviz"
+    email: "leonard.brindel@inria.fr"
+    formatter_quote_style: "double"
+    full_name: "pleiade"
+    github_actions: "no"
+    github_actions_osx: "no"
+    github_actions_windows: "no"
+    license: "GNU Lesser General Public License v3 (LGPLv3)"
+    package_name: "m2m_postaviz"
+    pre_commit: "no"
+    project_name: "m2m-postaviz"
+    project_short_description: "Post-analysis and visualization of metage2metabo's results"
+    pypi_badge: "yes"
+    pypi_disable_upload: "no"
+    release_date: "today"
+    repo_hosting: "other domain not listed"
+    repo_hosting_domain: "gitlab.inria.fr"
+    repo_main_branch: "main"
+    repo_name: "m2m-postaviz"
+    repo_username: "postaviz"
+    scrutinizer: "yes"
+    setup_py_uses_setuptools_scm: "no"
+    sphinx_docs: "yes"
+    sphinx_docs_hosting: "https://m2m-postaviz.readthedocs.io/"
+    sphinx_doctest: "no"
+    sphinx_theme: "sphinx-rtd-theme"
+    test_matrix_separate_coverage: "no"
+    version: "0.0.0"
+    version_manager: "bump2version"
+    website: "https://blog.ionelmc.ro"
+    year_from: "2023"
+    year_to: "2023"
