@@ -18,7 +18,7 @@ def run_shiny(main_df, data):
         ui.div(
             ui.input_select("x", label="Symbol", choices=list(data.columns.values[1:])),
             ui.input_select("color", label="Color", choices=list(data.columns.values[1:])),
-            ui.input_selectize(id="search", label="searchbar", choices=list(main_df.columns.values), width="600px"),
+            ui.input_selectize(id="search", label="searchbar", choices=list(main_df.columns.values), width="600px",multiple=True),
             class_="d-flex gap-3",
         ),
         output_widget("my_widget", width=600),
@@ -41,8 +41,8 @@ def run_shiny(main_df, data):
         @output
         @render.table
         def table_search():
-            column = main_df.columns.get_loc(input.search())
-            df = main_df.iloc[:, [0, column]]
+            column = du.get_columns_index(main_df,input.search())
+            df = main_df.iloc[:, column]
             return df
 
     app = App(app_ui, server)

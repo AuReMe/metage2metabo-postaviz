@@ -52,6 +52,12 @@ def get_row_size(df: pd.DataFrame):
     return size
 
 
+def get_columns_index(df: pd.DataFrame,key_list):
+    index_list = [0]
+    for k in key_list:
+        index_list.append(df.columns.get_loc(k))
+    return index_list
+
 def convert_to_dataframe(all_file):
     all_dataframe = []
     if not len(all_file) < 1:
