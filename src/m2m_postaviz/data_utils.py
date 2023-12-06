@@ -15,6 +15,14 @@ def get_scopes_dirname(file_name, path):
     return result
 
 
+def json_to_df(list_of_filepath):
+    foi = []
+    for file in list_of_filepath:
+        result = open_json(file)["com_scope"]
+        foi.append(result)
+    return foi
+
+
 def open_json(file_path):
     with open(file_path) as file:
         file_data = json.load(file)
@@ -32,6 +40,16 @@ def convert_to_dict(file_as_list):
         value = [1]
         data[i] = value
     return data
+
+
+def get_column_size(df: pd.DataFrame):
+    size = len(df.columns)
+    return size
+
+
+def get_row_size(df: pd.DataFrame):
+    size = len(df)
+    return size
 
 
 def convert_to_dataframe(all_file):
@@ -60,23 +78,20 @@ def build_df(dir_path, metadata):
         file_list.append(file[0])
         dir_list.append(file[1])
 
-    all_file = []
-
-    for file in file_list:
-        result = open_json(file)["com_scope"]
-        all_file.append(result)
-
+    all_file = json_to_df(file_list)
+    print("Community scopes extracted", len(all_file))
     all_df = convert_to_dataframe(all_file)
 
     main_df = pd.concat(all_df, join="outer", ignore_index=True)
     main_df = main_df.fillna(0)
     main_df = main_df.astype(int)
     main_df.insert(0, "Name", dir_list)
-    main_df.set_index("Name", inplace=True)
+    # main_df.set_index("Name", inplace=True)
 
     metadata = open_tsv(metadata)
-    metadata.set_index("Name", inplace=True)
+    print("Metadata tsv file extracted", len(metadata.columns))
+    # metadata.set_index("Name", inplace=True)
 
-    main_df = metadata.join(main_df)
+    main_df = pd.merge(metadata, main_df, how="left")
 
     return main_df
