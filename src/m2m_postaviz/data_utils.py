@@ -3,6 +3,7 @@ import os
 import os.path
 
 import pandas as pd
+from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
 
 def get_scopes_dirname(file_name, path):
@@ -34,6 +35,17 @@ def open_tsv(file_name):
     return data
 
 
+def get_iscope(iscope_directory):
+    for root, dirs, files in os.walk("."):
+        if iscope_directory in dirs:
+            if "rev_iscope.tsv" in files:
+                data = os.path.join(root, files)
+                iscope_df = open_tsv(data)
+                return iscope_df
+    print("No iscope tsv file has been found")
+    return None
+
+
 def convert_to_dict(file_as_list):
     data = {}
     for i in file_as_list:
@@ -52,11 +64,12 @@ def get_row_size(df: pd.DataFrame):
     return size
 
 
-def get_columns_index(df: pd.DataFrame,key_list):
+def get_columns_index(df: pd.DataFrame, key_list):
     index_list = [0]
     for k in key_list:
         index_list.append(df.columns.get_loc(k))
     return index_list
+
 
 def convert_to_dataframe(all_file):
     all_dataframe = []
@@ -64,6 +77,22 @@ def convert_to_dataframe(all_file):
         for file in all_file:
             all_dataframe.append(pd.DataFrame.from_dict(convert_to_dict(file)))
     return all_dataframe
+
+
+def sbml_to_classic_all(list_of_cscope_path: list):
+    uncoded_files = []
+    for file in list_of_cscope_path:
+        uncoded_files.append(sbml_to_classic(file))
+    return uncoded_files
+
+
+def sbml_to_classic(cscope_file):
+    c_file = open_json(cscope_file)["com_scope"]
+    uncoded = []
+    for coded in c_file:
+        id, id_type, compart = cfci(coded)
+        uncoded.append(id)
+    return uncoded
 
 
 def build_df(dir_path, metadata):
@@ -84,9 +113,8 @@ def build_df(dir_path, metadata):
         file_list.append(file[0])
         dir_list.append(file[1])
 
-    all_file = json_to_df(file_list)
-    print("Community scopes extracted", len(all_file))
-    all_df = convert_to_dataframe(all_file)
+    all_uncoded_cscope = sbml_to_classic_all(file_list)
+    all_df = convert_to_dataframe(all_uncoded_cscope)
 
     main_df = pd.concat(all_df, join="outer", ignore_index=True)
     main_df = main_df.fillna(0)

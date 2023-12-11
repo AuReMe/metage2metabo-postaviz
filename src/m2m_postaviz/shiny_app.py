@@ -18,11 +18,21 @@ def run_shiny(main_df, data):
         ui.div(
             ui.input_select("x", label="Symbol", choices=list(data.columns.values[1:])),
             ui.input_select("color", label="Color", choices=list(data.columns.values[1:])),
-            ui.input_selectize(id="search", label="searchbar", choices=list(main_df.columns.values), width="600px",multiple=True),
+            ui.input_selectize(
+                id="search_metadata", label="meta_searchbar", choices=list(data.columns.values), width="500px", multiple=True
+            ),
+            ui.input_selectize(
+                id="search_data",
+                label="data_searchbar",
+                choices=list(main_df.columns.values[du.get_column_size(data) + 1 :]),
+                width="500px",
+                multiple=True,
+            ),
             class_="d-flex gap-3",
         ),
         output_widget("my_widget", width=600),
-        ui.output_table("table_search"),
+        ui.output_table("metadata_table"),
+        ui.output_table("data_table"),
     )
 
     def server(input, output, session):
@@ -40,8 +50,15 @@ def run_shiny(main_df, data):
 
         @output
         @render.table
-        def table_search():
-            column = du.get_columns_index(main_df,input.search())
+        def metadata_table():
+            column = du.get_columns_index(main_df, input.search_metadata())
+            df = main_df.iloc[:, column]
+            return df
+
+        @output
+        @render.table
+        def data_table():
+            column = du.get_columns_index(main_df, input.search_data())
             df = main_df.iloc[:, column]
             return df
 
