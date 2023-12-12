@@ -35,15 +35,15 @@ def open_tsv(file_name):
     return data
 
 
-def get_iscope(iscope_directory):
-    for root, dirs, files in os.walk("."):
-        if iscope_directory in dirs:
-            if "rev_iscope.tsv" in files:
-                data = os.path.join(root, files)
-                iscope_df = open_tsv(data)
-                return iscope_df
-    print("No iscope tsv file has been found")
-    return None
+def get_all_iscope(file_name, path):
+    all_iscopes = {}
+    for root, dirs, files in os.walk(path):
+        if file_name in files:
+            data = os.path.join(root, file_name)
+            dir_name = os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))
+            iscope_df = open_tsv(data)
+            all_iscopes[dir_name] = iscope_df
+    return all_iscopes
 
 
 def convert_to_dict(file_as_list):
@@ -106,6 +106,7 @@ def build_df(dir_path, metadata):
     Returns:
         pandas_DataFrame:
     """
+    iscopes_files = get_all_iscope("rev_iscope.tsv", dir_path)
     dir_files = get_scopes_dirname("comm_scopes.json", dir_path)
     file_list = []
     dir_list = []
@@ -123,9 +124,8 @@ def build_df(dir_path, metadata):
     # main_df.set_index("Name", inplace=True)
 
     metadata = open_tsv(metadata)
-    print("Metadata tsv file extracted", len(metadata.columns))
     # metadata.set_index("Name", inplace=True)
 
     main_df = pd.merge(metadata, main_df, how="left")
 
-    return main_df
+    return main_df , iscopes_files
