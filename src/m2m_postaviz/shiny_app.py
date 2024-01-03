@@ -13,7 +13,14 @@ import m2m_postaviz.rpy2_utils as ru
 def run_shiny(main_df, data, all_iscopes):
     converter = ru.Rconverter
     pcoa_results = converter.pcoa(converter, main_df, du.get_column_size(data))
-
+    df_ontology = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/compounds_26_5_level1.tsv")
+    df_ontology_lvl2 = du.open_tsv("/home/lbrindel/Downloads/compounds_26_5_level2.tsv")
+    du.add_row(df_ontology,["ALTROSE", "ALTROSE", "Others"])
+    du.add_row(df_ontology,["PSICOSE", "PSICOSE", "Others"])
+    du.add_row(df_ontology_lvl2,["ALTROSE", "ALTROSE", "Others"])
+    du.add_row(df_ontology_lvl2,["PSICOSE", "PSICOSE", "Others"])
+    df_ontology = du.deal_with_duplicated_row(df_ontology, "compound_name")
+    df_ontology_lvl2 = du.deal_with_duplicated_row(df_ontology_lvl2, "compound_name")
 
     meta_card = ui.card(ui.input_selectize(
                 id="search_metadata", label="meta_searchbar", choices=list(data.columns.values), width="400px", multiple=True
@@ -28,16 +35,25 @@ def run_shiny(main_df, data, all_iscopes):
                 )
     
     output_pcoa = ui.card(ui.row(ui.input_select("x", label="Symbol", choices=list(data.columns.values[1:])),
-            ui.input_select("color", label="Color", choices=list(data.columns.values[1:])),
-            ),
-            output_widget("my_widget", width=600),
-    )
+                  ui.input_select("color", label="Color", choices=list(data.columns.values[1:])),
+                  ),
+                  output_widget("my_widget", width=600),
+                  )
 
     sample_choice =ui.card(ui.row(ui.input_select("sample", label="Sample", choices=list(all_iscopes)),ui.input_select("col", label="Column", choices=["antibio", "days"])
                     ),
                     ui.output_table("iscope_table"),
                     )
 
+    ontology_card = ui.card(ui.card_header("Ontology level 1"),ui.row(ui.input_select("scope_ontology", label="Sample", choices=list(main_df["Name"]))
+                    ),
+                    output_widget("ontology_barplot"),
+                    )
+    
+    ontology_card2 = ui.card(ui.card_header("Ontology level 2"),ui.row(ui.input_select("scope_ontology2", label="Sample", choices=list(main_df["Name"]))
+                    ),
+                    output_widget("ontology_barplot2"),
+                    )
 
 
     app_ui = ui.page_fluid(
@@ -46,8 +62,10 @@ def run_shiny(main_df, data, all_iscopes):
                 ui.layout_column_wrap(
                 meta_card,
                 data_card,
+                ontology_card2,
+                ontology_card,
                 output_pcoa,
-                width= 1/1
+                width= 1/2
                 )
                    ),
             ui.nav("iscope",
@@ -68,6 +86,28 @@ def run_shiny(main_df, data, all_iscopes):
                 symbol=input.x(),
             )
             return fig
+        
+        @output
+        @render_widget
+        def ontology_barplot():
+            current_df = du.remove_metadata(main_df)
+            df = df_ontology.loc[df_ontology.index.isin(current_df.columns.values)]
+            count_matrix = current_df@df
+            percent_matrix = du.get_percent_value(count_matrix,True)
+            results = du.get_threshold_value(percent_matrix, 1)
+            fig = px.bar(results[input.scope_ontology()],x=results[input.scope_ontology()].index, y=results[input.scope_ontology()])
+            return fig
+
+        @output
+        @render_widget
+        def ontology_barplot2():
+            current_df = du.remove_metadata(main_df)
+            df = df_ontology_lvl2.loc[df_ontology_lvl2.index.isin(current_df.columns.values)]
+            count_matrix = current_df@df
+            percent_matrix = du.get_percent_value(count_matrix,True)
+            results = du.get_threshold_value(percent_matrix, 1)
+            fig = px.bar(results[input.scope_ontology2()],x=results[input.scope_ontology2()].index, y=results[input.scope_ontology2()])
+            return fig
 
         @output
         @render.table
@@ -86,8 +126,9 @@ def run_shiny(main_df, data, all_iscopes):
         @output
         @render.table
         def iscope_table():
+            data = du.open_tsv("~/Downloads/mapping_mgs_genus.txt")
             df = all_iscopes[input.sample()]
-            df = df.iloc[:,:5]
+            df = du.merge_df(df,data)
             return df
         
     app = App(app_ui, server)

@@ -5,9 +5,13 @@ import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
 
-def open_txt(filename):
-    with open(filename) as file:
-        content = file.readlines()
+def open_txt(filename, with_pandas: bool = False):
+    if not with_pandas:
+        with open(filename) as file:
+            content = file.readlines()
+            return content
+    else:
+        content = pd.read_csv(filename, sep="\t")
         return content
 
 
@@ -72,18 +76,21 @@ def naive_search_db(uncoded_compound: list, db_path):
 
 
 uncoded_list = decoding_sbml("/home/lbrindel/inria_m2m/output_dir/metadata_ouput/E1/community_analysis/comm_scopes.json")
-print(uncoded_list[1])
+# print(uncoded_list[1])
 
 # all_match = naive_search_db(uncoded_list, "/home/lbrindel/Downloads/compounds_26_5_level1.tsv")
 
 # all_matchv2 = naive_search_db(uncoded_list, "/home/lbrindel/Downloads/compounds_26_5_level2.tsv")
 
-# genus_list = []
-# sample_file = open_txt("/home/lbrindel/Downloads/ERAS1d0.txt")
-# taxo_file = open_txt("/home/lbrindel/Downloads/mapping_mgs_genus.txt")
-# for sample in sample_file:
-#     sample = sample.strip()
-#     for taxo in taxo_file:
-#         if sample in taxo:
-#             genus_list.append(tuple((sample,extract_genus(taxo,False))))
-# print(genus_list[1])
+
+sample_file = pd.read_csv("/home/lbrindel/Downloads/ERAS1d0.txt", header=None)
+taxo_file = open_txt("/home/lbrindel/Downloads/mapping_mgs_genus.txt", True)
+
+sample_file.columns = ["mgs"]
+
+sample_file["test"] = [i for i in range(len(sample_file))]
+
+merged_results = sample_file.merge(taxo_file,how='left')
+
+print(sample_file)
+print(merged_results)

@@ -5,6 +5,65 @@ import os.path
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
+def remove_metadata(df: pd.DataFrame) -> pd.DataFrame:
+    new_df = df.drop("Test", axis=1)
+    new_df = new_df.drop("Days", axis=1)
+    # df = df.drop("Name", axis=1)
+    new_df = new_df.drop("Antibiotics", axis=1)
+    new_df = new_df.set_index("Name")
+    return new_df
+
+
+def add_row(df: pd.DataFrame, row: list):
+    df.loc[len(df)] = row
+
+
+def deal_with_duplicated_row(df: pd.DataFrame, dropcol = None):
+    if not dropcol == None:
+        df = df.drop(dropcol,axis=1)
+    df = pd.get_dummies(df, prefix="", prefix_sep="", columns=["category"])
+    df = df.groupby(["compound_id"]).sum()
+    return df
+
+
+def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = False) -> dict:
+    """Take a matrix with percentage as value instead of a count and return only value above threshold.
+    value must be row indexed and sample in columns.
+
+    Args:
+        df (pd.DataFrame): Dataframe to extract values from.
+        threshold (int, optional): The threshold used to extract value (by default all percentage above but not equal 0 are exctrated). Defaults to 0.
+        transpose (bool, optional): True if the dataframe needs to be transpose (when value in columns and sample in rows). Defaults to False.
+
+    Returns:
+        dict: A dictionary, for which key correspond to a sample and value in a nested list of value above threshold and their index. return{sample1 : [[value1,value2],[index_value1,index_value2]]} 
+    """
+    if transpose:
+        df = df.T
+    results = {}
+    for sample in df:
+        res = df.loc[df[sample] > 1]
+        res = res[sample]
+        results[sample] = res
+    return results
+
+
+def get_percent_value(df: pd.DataFrame, transpose: bool = False)  -> pd.DataFrame:
+    """Calculate the total of each columns and replace value by their percentage. 
+
+    Args:
+        df (pd.DataFrame): Count matrix as dataframe value must be row indexed and sample in columns.
+        transpose (bool, optional): Transpose the matrix. Defaults to False.
+
+    Returns:
+        pd.DataFrame: ERROR 404
+    """
+    if transpose:
+        df = df.T
+    total = df.sum()
+    percentage = (df / total) * 100
+    return percentage
+
 
 def get_scopes_dirname(file_name, path):
     result = []
@@ -39,9 +98,13 @@ def get_all_iscope(file_name, path):
     all_iscopes = {}
     for root, dirs, files in os.walk(path):
         if file_name in files:
-            data = os.path.join(root, file_name)
             dir_name = os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))
-            iscope_df = open_tsv(data)
+            iscope_df = open_tsv(os.path.join(root, file_name))
+            column_name_series = {}
+            for col in iscope_df.columns.values:
+                id, id_type, compart = cfci(col)
+                column_name_series[col] = id
+            iscope_df.rename(columns=column_name_series,inplace=True)
             all_iscopes[dir_name] = iscope_df
     return all_iscopes
 
@@ -95,6 +158,21 @@ def sbml_to_classic(cscope_file):
     return uncoded
 
 
+def merge_df(left_df, right_df, how : str = "left"):
+    # print("-----------")
+    # print("left_df:" ,left_df)
+    # print("-----------")
+    # print("rigth_df:" ,rigth_df)
+    data = left_df.iloc[:,0]
+    total = left_df.set_index("Unnamed: 0")
+    print("TESTOU\n", total)
+    total = left_df.sum()
+    filter = right_df.loc[right_df["mgs"].isin(data)]
+    print("TESTOU\n", total)
+    
+    return filter
+
+
 def build_df(dir_path, metadata):
     """
     Extract community scopes present in directory then build the a single dataframe from the metabolites produced by each comm_scopes.
@@ -121,10 +199,8 @@ def build_df(dir_path, metadata):
     main_df = main_df.fillna(0)
     main_df = main_df.astype(int)
     main_df.insert(0, "Name", dir_list)
-    # main_df.set_index("Name", inplace=True)
 
     metadata = open_tsv(metadata)
-    # metadata.set_index("Name", inplace=True)
 
     main_df = pd.merge(metadata, main_df, how="left")
 
