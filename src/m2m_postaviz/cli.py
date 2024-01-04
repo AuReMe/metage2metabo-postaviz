@@ -22,12 +22,18 @@ import m2m_postaviz.shiny_app as sh
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
+parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 
 
 def main(args=None):
-    arg_parser = vars(parser.parse_args())
-    dir_path = arg_parser["dir"]
-    metadata = arg_parser["metadata"]
-    main_df = du.build_df(dir_path, metadata)
+    arg_parser = parser.parse_args()
+    if arg_parser.test:
+        dir_path = "/home/lbrindel/m2m-postaviz/tests/metadata_ouput/"
+        metadata = "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv"
+    else:
+        arg_parser = vars(parser.parse_args())
+        dir_path = arg_parser["dir"]
+        metadata = arg_parser["metadata"]
+    main_df, all_iscopes = du.build_df(dir_path, metadata)
     data = du.open_tsv(metadata)
-    sh.run_shiny(main_df, data)
+    sh.run_shiny(main_df, data, all_iscopes)
