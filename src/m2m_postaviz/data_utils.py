@@ -76,14 +76,6 @@ def get_files(file_name, path, with_directory_name : bool = True):
     return result
 
 
-def json_to_df(list_of_filepath):
-    foi = []
-    for file in list_of_filepath:
-        result = open_json(file)["com_scope"]
-        foi.append(result)
-    return foi
-
-
 def open_json(file_path):
     with open(file_path) as file:
         file_data = json.load(file)
@@ -148,18 +140,15 @@ def sbml_to_classic(list_of_metabolites):
     return uncoded
 
 
-def merge_metadata_wtih_df(main_dataframe, metadata):
+def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
 
 def merge_df(left_df, right_df, how : str = "left"):
     data = left_df.iloc[:,0]
-    total = left_df.set_index("Unnamed: 0")
-    print("TESTOU\n", total)
+    total = left_df.set_index("Name")
     total = left_df.sum()
     filter = right_df.loc[right_df["mgs"].isin(data)]
-    print("TESTOU\n", total)
-    
     return filter
 
 

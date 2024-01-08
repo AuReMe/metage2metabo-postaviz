@@ -36,5 +36,4 @@ def main(args=None):
         metadata = arg_parser["metadata"]
     all_data = du.build_df(dir_path, metadata)
     data = du.open_tsv(metadata)
-    print(all_data["main_dataframe"])
-    # sh.run_shiny(main_df, data, all_iscopes)
+    sh.run_shiny(all_data, data)

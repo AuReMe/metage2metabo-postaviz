@@ -10,7 +10,8 @@ import m2m_postaviz.data_utils as du
 import m2m_postaviz.rpy2_utils as ru
 
 
-def run_shiny(main_df, data, all_iscopes):
+def run_shiny(all_data, data):
+    main_df = du.merge_metadata_with_df(all_data["main_dataframe"],data)
     converter = ru.Rconverter
     pcoa_results = converter.pcoa(converter, main_df, du.get_column_size(data))
     df_ontology = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/compounds_26_5_level1.tsv")
@@ -29,7 +30,7 @@ def run_shiny(main_df, data, all_iscopes):
                 )
     
     data_card = ui.card(ui.input_selectize(
-                id="search_data", label="data_searchbar", choices=list(main_df.columns.values[du.get_column_size(data) + 1 :]), width="500px", multiple=True,
+                id="search_data", label="data_searchbar", choices=list(all_data["main_dataframe"].columns.values[du.get_column_size(data) + 1 :]), width="500px", multiple=True,
                 ),
                 ui.output_table("data_table"),
                 )
@@ -40,17 +41,17 @@ def run_shiny(main_df, data, all_iscopes):
                   output_widget("my_widget", width=600),
                   )
 
-    sample_choice =ui.card(ui.row(ui.input_select("sample", label="Sample", choices=list(all_iscopes)),ui.input_select("col", label="Column", choices=["antibio", "days"])
+    sample_choice =ui.card(ui.row(ui.input_select("sample", label="Sample", choices=list(all_data["iscope"])),ui.input_select("col", label="Column", choices=["antibio", "days"])
                     ),
                     ui.output_table("iscope_table"),
                     )
 
-    ontology_card = ui.card(ui.card_header("Ontology level 1"),ui.row(ui.input_select("scope_ontology", label="Sample", choices=list(main_df["Name"]))
+    ontology_card = ui.card(ui.card_header("Ontology level 1"),ui.row(ui.input_select("scope_ontology", label="Sample", choices=list(all_data["main_dataframe"]["Name"]))
                     ),
                     output_widget("ontology_barplot"),
                     )
     
-    ontology_card2 = ui.card(ui.card_header("Ontology level 2"),ui.row(ui.input_select("scope_ontology2", label="Sample", choices=list(main_df["Name"]))
+    ontology_card2 = ui.card(ui.card_header("Ontology level 2"),ui.row(ui.input_select("scope_ontology2", label="Sample", choices=list(all_data["main_dataframe"]["Name"]))
                     ),
                     output_widget("ontology_barplot2"),
                     )
@@ -90,7 +91,7 @@ def run_shiny(main_df, data, all_iscopes):
         @output
         @render_widget
         def ontology_barplot():
-            current_df = du.remove_metadata(main_df)
+            current_df = all_data["main_dataframe"].set_index('Name')
             df = df_ontology.loc[df_ontology.index.isin(current_df.columns.values)]
             count_matrix = current_df@df
             percent_matrix = du.get_percent_value(count_matrix,True)
@@ -101,7 +102,7 @@ def run_shiny(main_df, data, all_iscopes):
         @output
         @render_widget
         def ontology_barplot2():
-            current_df = du.remove_metadata(main_df)
+            current_df = all_data["main_dataframe"].set_index('Name')
             df = df_ontology_lvl2.loc[df_ontology_lvl2.index.isin(current_df.columns.values)]
             count_matrix = current_df@df
             percent_matrix = du.get_percent_value(count_matrix,True)
@@ -119,16 +120,17 @@ def run_shiny(main_df, data, all_iscopes):
         @output
         @render.table
         def data_table():
-            column = du.get_columns_index(main_df, input.search_data())
-            df = main_df.iloc[:, column]
+            column = du.get_columns_index(all_data["main_dataframe"], input.search_data())
+            df = all_data["main_dataframe"].iloc[:, column]
             return df
 
         @output
         @render.table
         def iscope_table():
             data = du.open_tsv("~/Downloads/mapping_mgs_genus.txt")
-            df = all_iscopes[input.sample()]
+            df = all_data["iscope"][input.sample()]
             df = du.merge_df(df,data)
+            df = df.groupby("genus")
             return df
         
     app = App(app_ui, server)
