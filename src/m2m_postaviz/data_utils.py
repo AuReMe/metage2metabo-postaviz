@@ -65,22 +65,15 @@ def get_percent_value(df: pd.DataFrame, transpose: bool = False)  -> pd.DataFram
     return percentage
 
 
-def get_scopes_dirname(file_name, path):
+def get_files(file_name, path, with_directory_name : bool = True):
     result = []
     for root, dirs, files in os.walk(path):
         if file_name in files:
-            result.append(
-                [os.path.join(root, file_name), os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))]
-            )
+            if with_directory_name:
+                result.append([os.path.join(root, file_name), os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))])
+            else:
+                result.append(os.path.join(root, file_name))
     return result
-
-
-def json_to_df(list_of_filepath):
-    foi = []
-    for file in list_of_filepath:
-        result = open_json(file)["com_scope"]
-        foi.append(result)
-    return foi
 
 
 def open_json(file_path):
@@ -89,29 +82,26 @@ def open_json(file_path):
     return file_data
 
 
-def open_tsv(file_name):
+def open_tsv(file_name, rename_columns : bool = False, first_col : str = "Name"):
     data = pd.read_csv(file_name, sep="\t")
+    if rename_columns:
+        data.columns.values[0] = first_col
+        data.columns.values[1:] = sbml_to_classic(data.columns.values[1:])
     return data
 
 
-def get_all_iscope(file_name, path):
-    all_iscopes = {}
-    for root, dirs, files in os.walk(path):
-        if file_name in files:
-            dir_name = os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))
-            iscope_df = open_tsv(os.path.join(root, file_name))
-            column_name_series = {}
-            for col in iscope_df.columns.values:
-                id, id_type, compart = cfci(col)
-                column_name_series[col] = id
-            iscope_df.rename(columns=column_name_series,inplace=True)
-            all_iscopes[dir_name] = iscope_df
-    return all_iscopes
+def get_scopes(files_name, path):
+    all_scopes = {}
+    data = get_files(files_name, path, with_directory_name=True)
+    for files, dir in data:
+        all_scopes[dir] = open_tsv(files, rename_columns=True)
+    return all_scopes
 
 
 def convert_to_dict(file_as_list):
+    decoded_list = sbml_to_classic(file_as_list)
     data = {}
-    for i in file_as_list:
+    for i in decoded_list:
         value = [1]
         data[i] = value
     return data
@@ -136,40 +126,29 @@ def get_columns_index(df: pd.DataFrame, key_list):
 
 def convert_to_dataframe(all_file):
     all_dataframe = []
-    if not len(all_file) < 1:
-        for file in all_file:
-            all_dataframe.append(pd.DataFrame.from_dict(convert_to_dict(file)))
+    for file in all_file:
+        current_file = open_json(file)["com_scope"]
+        all_dataframe.append(pd.DataFrame.from_dict(convert_to_dict(current_file)))
     return all_dataframe
 
 
-def sbml_to_classic_all(list_of_cscope_path: list):
-    uncoded_files = []
-    for file in list_of_cscope_path:
-        uncoded_files.append(sbml_to_classic(file))
-    return uncoded_files
-
-
-def sbml_to_classic(cscope_file):
-    c_file = open_json(cscope_file)["com_scope"]
+def sbml_to_classic(list_of_metabolites):
     uncoded = []
-    for coded in c_file:
+    for coded in list_of_metabolites:
         id, id_type, compart = cfci(coded)
         uncoded.append(id)
     return uncoded
 
 
+def merge_metadata_with_df(main_dataframe, metadata):
+    return pd.merge(metadata, main_dataframe, how="left")
+
+
 def merge_df(left_df, right_df, how : str = "left"):
-    # print("-----------")
-    # print("left_df:" ,left_df)
-    # print("-----------")
-    # print("rigth_df:" ,rigth_df)
     data = left_df.iloc[:,0]
-    total = left_df.set_index("Unnamed: 0")
-    print("TESTOU\n", total)
+    total = left_df.set_index("Name")
     total = left_df.sum()
     filter = right_df.loc[right_df["mgs"].isin(data)]
-    print("TESTOU\n", total)
-    
     return filter
 
 
@@ -184,16 +163,19 @@ def build_df(dir_path, metadata):
     Returns:
         pandas_DataFrame:
     """
-    iscopes_files = get_all_iscope("rev_iscope.tsv", dir_path)
-    dir_files = get_scopes_dirname("comm_scopes.json", dir_path)
+
+    all_data = {}
+
+    all_data["cscope"] = get_scopes("rev_cscope.tsv", dir_path)
+    all_data["iscope"] = get_scopes("rev_iscope.tsv", dir_path)
+    dir_files = get_files("comm_scopes.json", dir_path)
     file_list = []
     dir_list = []
-    for file in dir_files:
-        file_list.append(file[0])
-        dir_list.append(file[1])
+    for file, dir in dir_files:
+        file_list.append(file)
+        dir_list.append(dir)
 
-    all_uncoded_cscope = sbml_to_classic_all(file_list)
-    all_df = convert_to_dataframe(all_uncoded_cscope)
+    all_df = convert_to_dataframe(file_list)
 
     main_df = pd.concat(all_df, join="outer", ignore_index=True)
     main_df = main_df.fillna(0)
@@ -202,6 +184,6 @@ def build_df(dir_path, metadata):
 
     metadata = open_tsv(metadata)
 
-    main_df = pd.merge(metadata, main_df, how="left")
+    all_data["main_dataframe"] = main_df
 
-    return main_df , iscopes_files
+    return all_data
