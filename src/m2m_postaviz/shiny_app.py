@@ -130,7 +130,6 @@ def run_shiny(all_data, data):
             data = du.open_tsv("~/Downloads/mapping_mgs_genus.txt")
             df = all_data["iscope"][input.sample()]
             df = du.merge_df(df,data)
-            df = df.groupby("genus")
             return df
         
     app = App(app_ui, server)
