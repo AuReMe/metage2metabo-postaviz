@@ -76,6 +76,14 @@ def get_files(file_name, path, with_directory_name : bool = True):
     return result
 
 
+def get_added_value(file_name, directory_path):
+    addedvalue = {}
+    addedvalue_files = get_files(file_name, directory_path)
+    for content, sample in addedvalue_files:
+        addedvalue[sample] = sbml_to_classic(open_json(content)["addedvalue"])
+    return addedvalue
+
+
 def open_json(file_path):
     with open(file_path) as file:
         file_data = json.load(file)
@@ -146,8 +154,6 @@ def merge_metadata_with_df(main_dataframe, metadata):
 
 def merge_df(left_df, right_df, how : str = "left"):
     data = left_df.iloc[:,0]
-    total = left_df.set_index("Name")
-    total = left_df.sum()
     filter = right_df.loc[right_df["mgs"].isin(data)]
     return filter
 
@@ -168,6 +174,7 @@ def build_df(dir_path, metadata):
 
     all_data["cscope"] = get_scopes("rev_cscope.tsv", dir_path)
     all_data["iscope"] = get_scopes("rev_iscope.tsv", dir_path)
+    all_data["added_value"] = get_added_value("addedvalue.json", dir_path)
     dir_files = get_files("comm_scopes.json", dir_path)
     file_list = []
     dir_list = []
