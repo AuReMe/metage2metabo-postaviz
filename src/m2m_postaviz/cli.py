@@ -34,6 +34,6 @@ def main(args=None):
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata = arg_parser["metadata"]
-    all_data = du.build_df(dir_path, metadata)
-    data = du.open_tsv(metadata)
-    sh.run_shiny(all_data, data)
+    global_data, sample_data = du.build_df(dir_path, metadata)
+    # data = du.open_tsv(metadata)
+    sh.run_shiny(global_data, sample_data)

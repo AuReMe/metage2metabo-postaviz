@@ -5,6 +5,36 @@ import os.path
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
+def get_added_value(sample: str, metadataframe: dict):
+    return len(metadataframe[sample]["advalue"])
+
+
+def get_individual_production_size(sample:str, metadataframe: dict):
+    return len(metadataframe[sample]["iscope"].columns)
+
+
+def get_total_production_size(sample:str, metadataframe: dict):
+    return len(metadataframe[sample]["cscope"].columns)
+
+
+def get_metabolic_info(metadataframe: dict):
+    tot_size = []
+    ind_size = []
+    ad_size = []
+    for sample in metadataframe.keys():
+        tot_size.append(get_total_production_size(sample, metadataframe))
+        ind_size.append(get_individual_production_size(sample, metadataframe))
+        ad_size.append(get_added_value(sample, metadataframe))
+    new_df = metadataframe
+    new_df["prod_community"] = tot_size
+    new_df["prod_individual"] = ind_size
+    new_df["added_value_total"] = ad_size
+    return new_df
+
+def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
+    return len(metadataframe[sample]["cscope"].columns)
+
+
 def remove_metadata(df: pd.DataFrame) -> pd.DataFrame:
     new_df = df.drop("Test", axis=1)
     new_df = new_df.drop("Days", axis=1)
@@ -76,12 +106,11 @@ def get_files(file_name, path, with_directory_name : bool = True):
     return result
 
 
-def get_added_value(file_name, directory_path):
-    addedvalue = {}
-    addedvalue_files = get_files(file_name, directory_path)
-    for content, sample in addedvalue_files:
-        addedvalue[sample] = sbml_to_classic(open_json(content)["addedvalue"])
-    return addedvalue
+def open_added_value(file_name, path):
+    for root, dirs, files in os.walk(path):
+        if file_name in files:
+            added_file = sbml_to_classic(open_json(os.path.join(root, file_name))["addedvalue"])
+            return added_file
 
 
 def open_json(file_path):
@@ -98,12 +127,11 @@ def open_tsv(file_name, rename_columns : bool = False, first_col : str = "Name")
     return data
 
 
-def get_scopes(files_name, path):
-    all_scopes = {}
-    data = get_files(files_name, path, with_directory_name=True)
-    for files, dir in data:
-        all_scopes[dir] = open_tsv(files, rename_columns=True)
-    return all_scopes
+def get_scopes(file_name, path):
+    for root, dirs, files in os.walk(path):
+        if file_name in files:
+            iscope_dataframe = open_tsv(os.path.join(root, file_name), rename_columns=True)
+            return iscope_dataframe
 
 
 def convert_to_dict(file_as_list):
@@ -148,6 +176,33 @@ def sbml_to_classic(list_of_metabolites):
     return uncoded
 
 
+def contribution_processing(file_opened: dict):
+    for key in file_opened.keys():
+        for second_key in file_opened[key].keys():
+            file_opened[key][second_key] = sbml_to_classic(file_opened[key][second_key])
+    return file_opened
+
+
+def get_contributions(file_name, path):
+    for root, dirs , files in os.walk(path):
+        if file_name in files:
+            contributions_file = open_json(os.path.join(root, file_name))
+            contributions_file = contribution_processing(contributions_file)
+            return contributions_file
+
+
+def retrieve_all_sample_data(path):
+    data_by_sample = {}
+    for sample in os.listdir(path):
+        if os.path.isdir(os.path.join(path, sample)):
+            data_by_sample[sample] = {}
+            data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            data_by_sample[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
+            data_by_sample[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
+            data_by_sample[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+    return data_by_sample
+
+
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
@@ -169,12 +224,11 @@ def build_df(dir_path, metadata):
     Returns:
         pandas_DataFrame:
     """
+    sample_data = retrieve_all_sample_data(dir_path)
 
-    all_data = {}
+    ### Main dataframe and metadata dataframe. ###
 
-    all_data["cscope"] = get_scopes("rev_cscope.tsv", dir_path)
-    all_data["iscope"] = get_scopes("rev_iscope.tsv", dir_path)
-    all_data["added_value"] = get_added_value("addedvalue.json", dir_path)
+    global_data = {}
     dir_files = get_files("comm_scopes.json", dir_path)
     file_list = []
     dir_list = []
@@ -189,8 +243,8 @@ def build_df(dir_path, metadata):
     main_df = main_df.astype(int)
     main_df.insert(0, "Name", dir_list)
 
-    metadata = open_tsv(metadata)
+    global_data["metadata"] = open_tsv(metadata)
 
-    all_data["main_dataframe"] = main_df
+    global_data["main_dataframe"] = main_df
 
-    return all_data
+    return global_data, sample_data
