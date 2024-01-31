@@ -1,11 +1,12 @@
 import json
 import os
 import os.path
-
+from m2m_postaviz.time_decorator import timeit
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
+import cProfile
 
-def get_added_value(sample: str, metadataframe: dict):
+def get_added_value_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["advalue"])
 
 
@@ -17,18 +18,35 @@ def get_total_production_size(sample:str, metadataframe: dict):
     return len(metadataframe[sample]["cscope"].columns)
 
 
-def get_metabolic_info(metadataframe: dict):
+def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
+    if only_metabolic_model_size:
+       taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
+       return len(taxonomy_size) 
+    taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
+    taxonomy_size = taxonomy_size[["mgs","Genus"]]
+    taxonomy_size = taxonomy_size.groupby(["Genus"]).count()
+    taxonomy_size = taxonomy_size.reset_index()
+    return len(taxonomy_size)
+
+
+def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic_dataframe: pd.DataFrame):
     tot_size = []
     ind_size = []
     ad_size = []
-    for sample in metadataframe.keys():
-        tot_size.append(get_total_production_size(sample, metadataframe))
-        ind_size.append(get_individual_production_size(sample, metadataframe))
-        ad_size.append(get_added_value(sample, metadataframe))
+    taxo_size = []
+    model_size = []
+    for sample in metadataframe["Name"]:
+        tot_size.append(get_total_production_size(sample, sample_data))
+        ind_size.append(get_individual_production_size(sample, sample_data))
+        ad_size.append(get_added_value_size(sample, sample_data))
+        taxo_size.append(get_taxonomy_size(sample_data[sample]["iscope"], taxonomic_dataframe))
+        model_size.append(get_taxonomy_size(sample_data[sample]["iscope"], taxonomic_dataframe, only_metabolic_model_size=True))
     new_df = metadataframe
     new_df["prod_community"] = tot_size
     new_df["prod_individual"] = ind_size
     new_df["added_value_total"] = ad_size
+    new_df["Numbers of models"] = model_size
+    new_df["Numbers of species"] = taxo_size
     return new_df
 
 def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
@@ -212,7 +230,7 @@ def merge_df(left_df, right_df, how : str = "left"):
     filter = right_df.loc[right_df["mgs"].isin(data)]
     return filter
 
-
+# @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata):
     """
     Extract community scopes present in directory then build the a single dataframe from the metabolites produced by each comm_scopes.
@@ -248,3 +266,6 @@ def build_df(dir_path, metadata):
     global_data["main_dataframe"] = main_df
 
     return global_data, sample_data
+
+def performance_test(dir,meta):
+    cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)

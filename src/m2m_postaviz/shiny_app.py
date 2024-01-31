@@ -1,5 +1,7 @@
 import plotly.express as px
 from shiny import App, render, run_app, ui, reactive
+from scipy.stats import ttest_ind
+from m2m_postaviz.time_decorator import timeit
 
 from shinywidgets import output_widget
 from shinywidgets import render_widget
@@ -8,12 +10,8 @@ import m2m_postaviz.data_utils as du
 import m2m_postaviz.rpy2_utils as ru
 import m2m_postaviz.shiny_module as sm
 
-def run_shiny(global_data, sample_data):
 
-    ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
-    main_df = du.merge_metadata_with_df(global_data["main_dataframe"],global_data["metadata"])
-    converter = ru.Rconverter
-    pcoa_results = converter.pcoa(converter, main_df, du.get_column_size(global_data["metadata"]))
+def custom_ontology():
     df_ontology = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/compounds_26_5_level1.tsv")
     df_ontology_lvl2 = du.open_tsv("/home/lbrindel/Downloads/compounds_26_5_level2.tsv")
     du.add_row(df_ontology,["ALTROSE", "ALTROSE", "Others"])
@@ -22,6 +20,17 @@ def run_shiny(global_data, sample_data):
     du.add_row(df_ontology_lvl2,["PSICOSE", "PSICOSE", "Others"])
     df_ontology = du.deal_with_duplicated_row(df_ontology, "compound_name")
     df_ontology_lvl2 = du.deal_with_duplicated_row(df_ontology_lvl2, "compound_name")
+    return df_ontology, df_ontology_lvl2
+
+
+def run_shiny(global_data, sample_data):
+
+    ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
+    global_data["current_dataframe"] = global_data["metadata"]
+    main_df = du.merge_metadata_with_df(global_data["main_dataframe"],global_data["metadata"])
+    converter = ru.Rconverter
+    pcoa_results = converter.pcoa(converter, main_df, du.get_column_size(global_data["metadata"]))
+    df_ontology, df_ontology_lvl2 = custom_ontology()
 
     ### Variable from shiny module ###
 
@@ -102,8 +111,8 @@ def run_shiny(global_data, sample_data):
                 ui.layout_column_wrap(
                 meta_card,
                 data_card,
-                ontology_card2,
-                ontology_card,
+                # ontology_card2,
+                # ontology_card,
                 output_pcoa,
                 width= 1/2
                 )
@@ -114,11 +123,16 @@ def run_shiny(global_data, sample_data):
             ui.nav("Exploration",
                    iscope_tab_card1,
                    iscope_taxonomic_card,
-                    iscope_pathway_card
+                    # iscope_pathway_card
             ),
             ui.nav("Prototype",
-                   summary_table,
                    
+                   ui.layout_column_wrap(
+                        ui.card(ui.output_data_frame("summary_table"),ui.output_data_frame("bin_summary")),
+                        ui.card(output_widget("summary_taxonomy"),ui.output_data_frame("bin_group")),
+                   ui.output_text(id="printo"),
+                    width= 1/2
+                   )
             )
         )
 
@@ -136,6 +150,7 @@ def run_shiny(global_data, sample_data):
             )
             return fig
         
+
         @output
         @render_widget
         def ontology_barplot():
@@ -163,8 +178,49 @@ def run_shiny(global_data, sample_data):
         @output
         @render.data_frame
         def summary_table():
-            return du.get_metabolic_info(sample_data)
+            global_data["current_dataframe"] = du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data)
+            return render.DataGrid(du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data), row_selection_mode="single")
 
+
+        @output
+        @render_widget
+        def summary_taxonomy():
+            # sample = current_dataframe.iloc[input.summary_table_selected_rows()[0],0]
+            # sample_taxonomy = sm.taxonomic_processing(list_of_individual_bin[sample],taxonomic_data)
+            # fig = px.bar(sample_taxonomy["Genus"],x=sample_taxonomy["Genus"].index,y="Genus",title="Genus repartition in sample")
+            # return fig
+            fig = px.bar(global_data["current_dataframe"], x="Name", y="Numbers of models", color="Antibiotics", text_auto= True,height=500,width=1000)
+            return fig
+        
+
+        @output
+        @render.data_frame
+        def bin_summary():
+            if len(input.summary_table_selected_rows()) != 0:
+                return render.DataGrid(taxonomic_data.loc[taxonomic_data["mgs"].isin(list_of_individual_bin[global_data["current_dataframe"].iloc[input.summary_table_selected_rows()[0],0]])])
+            else: 
+                return global_data["current_dataframe"]
+
+
+        @output
+        @render.data_frame
+        def bin_group():
+            df = taxonomic_data.loc[taxonomic_data["mgs"].isin(list_of_individual_bin[global_data["current_dataframe"].iloc[input.summary_table_selected_rows()[0],0]])]
+            df = df[["mgs",'Genus']]
+            df = df.groupby(["Genus"]).count()
+            df = df.reset_index()
+            df.columns = ["Genus", "Count"]
+            return df
+
+
+        @output
+        @render.text
+        def printo():
+            df = global_data["current_dataframe"]
+            group1 = df[df["Antibiotics"]=="YES"]
+            group2 = df[df["Antibiotics"]=="NO"]
+            res = ttest_ind(group1["Numbers of models"],group2["Numbers of models"])
+            return res
 
         @output
         @render.data_frame
