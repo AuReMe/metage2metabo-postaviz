@@ -5,6 +5,8 @@ from m2m_postaviz.time_decorator import timeit
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 import cProfile
+import time
+import threading
 
 def get_added_value_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["advalue"])
@@ -221,6 +223,14 @@ def retrieve_all_sample_data(path):
     return data_by_sample
 
 
+def retrieve_sample_data(sample_directory_path, sample_name, sample_dictionnary: dict):
+    sample_dictionnary[sample_name] = {}
+    sample_dictionnary[sample_name]["iscope"] = get_scopes("rev_iscope.tsv", sample_directory_path)
+    sample_dictionnary[sample_name]["cscope"] = get_scopes("rev_cscope.tsv", sample_directory_path)
+    sample_dictionnary[sample_name]["advalue"] = open_added_value("addedvalue.json", sample_directory_path)
+    sample_dictionnary[sample_name]["contribution"] = get_contributions("contributions_of_microbes.json", sample_directory_path)
+    return 
+
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
@@ -242,8 +252,20 @@ def build_df(dir_path, metadata):
     Returns:
         pandas_DataFrame:
     """
+    data_by_sample = {}
     sample_data = retrieve_all_sample_data(dir_path)
+    # all_task = []
+    # data_by_sample = {}
+    # for sample_directory in os.listdir(dir_path):
+    #     if os.path.isdir(os.path.join(dir_path, sample_directory)):
+    #         task = threading.Thread(target=retrieve_sample_data,args=(os.path.join(dir_path, sample_directory), sample_directory, data_by_sample))
+    #         task.start()
+    #         all_task.append(task)
 
+    # for task in all_task:
+    #     task.join()
+        
+    
     ### Main dataframe and metadata dataframe. ###
 
     global_data = {}
@@ -268,4 +290,19 @@ def build_df(dir_path, metadata):
     return global_data, sample_data
 
 def performance_test(dir,meta):
-    cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
+    start_time = time.perf_counter()
+
+    # pr = cProfile.Profile()
+    # pr.enable()
+
+    build_df(dir,meta)
+
+
+    end_time = time.perf_counter()
+
+    Total_time = end_time - start_time
+    print("TEST TIME: ", Total_time)
+    # pr.disable()
+    # pr.print_stats(sort='time')
+
+    # cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
