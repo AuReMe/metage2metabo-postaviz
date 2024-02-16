@@ -1,6 +1,6 @@
 import plotly.express as px
 from shiny import App, render, run_app, ui, reactive
-from scipy.stats import ttest_ind
+import scipy.stats as stats
 from m2m_postaviz.time_decorator import timeit
 
 from shinywidgets import output_widget
@@ -9,6 +9,10 @@ from shinywidgets import render_widget
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.rpy2_utils as ru
 import m2m_postaviz.shiny_module as sm
+
+
+def clean_list_duplicate(mylist: list):
+    return list(dict.fromkeys(mylist))
 
 
 def custom_ontology():
@@ -25,8 +29,15 @@ def custom_ontology():
 
 def run_shiny(global_data, sample_data):
 
-    ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
+    ### Declare PROCESSING VARIABLE
+
     global_data["current_dataframe"] = global_data["metadata"]
+    current_dataframe = global_data["current_dataframe"]
+    factor_list = list(global_data["current_dataframe"].columns.values)
+    factor_list.insert(0,"None")
+    print(factor_list, type(factor_list))
+
+    ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
     main_df = du.merge_metadata_with_df(global_data["main_dataframe"],global_data["metadata"])
     converter = ru.Rconverter
     pcoa_results = converter.pcoa(converter, main_df, du.get_column_size(global_data["metadata"]))
@@ -58,10 +69,6 @@ def run_shiny(global_data, sample_data):
                   output_widget("my_widget", width=600),
                   )
 
-    sample_choice =ui.card(ui.row(ui.input_select("sample", label="Sample", choices=list(key for key in sample_data.keys())),ui.input_select("col", label="Column", choices=["antibio", "days"])
-                    ),
-                    ui.layout_column_wrap(ui.output_data_frame("iscope_table"),ui.output_text(id="row_been_selected")),
-                    )
     
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
@@ -103,6 +110,14 @@ def run_shiny(global_data, sample_data):
                                     )
                                 )
 
+    main_panel_dataframe = ui.card(
+                            ui.row(
+                                ui.input_select(id="factor_choice",label="Filter",choices=factor_list,selected=factor_list[0]),
+                                ui.input_select(id="factor_choice2",label="Value",choices=[]),
+                            ),
+        ui.output_data_frame("main_panel_table")
+        )
+
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fluid(
@@ -111,33 +126,103 @@ def run_shiny(global_data, sample_data):
                 ui.layout_column_wrap(
                 meta_card,
                 data_card,
-                # ontology_card2,
-                # ontology_card,
                 output_pcoa,
                 width= 1/2
                 )
                    ),
-            ui.nav("iscope",
-                   sample_choice
+            ui.nav("Main",
+                   ui.layout_sidebar(
+                       ui.sidebar(ui.input_select(id="stat_test_choice",label="Statistical test available.",choices=["Choose test","Student","Wilcoxon","ANOVA","PCOA"]),
+                                  ui.panel_conditional(
+                                    "input.stat_test_choice === 'Wilcoxon' || input.stat_test_choice === 'Student'",
+                                        ui.input_select(id="wilcoxon_variable_select",label="Select a variable",choices=list(current_dataframe.columns)),
+                                        ui.input_select(id="wilcoxon_group1_select",label="Group1 choice",choices=[]),
+                                        ui.input_select(id="wilcoxon_group2_select",label="Group2 choice",choices=[]),
+                                        ui.input_select(id="wilcoxon_tested_value_select",label="Tested value choice",choices=[]),
+                                  ),
+                                  ui.input_action_button("run_test", "run_test"),
+                                  
+                                  ),
+                       main_panel_dataframe,
+                       ui.output_text(id="stat_test_result")
+                   )
                    ),
             ui.nav("Exploration",
                    iscope_tab_card1,
                    iscope_taxonomic_card,
-                    # iscope_pathway_card
+                    iscope_pathway_card,
+                    ontology_card,
+                    ontology_card2
             ),
             ui.nav("Prototype",
-                   
-                   ui.layout_column_wrap(
-                        ui.card(ui.output_data_frame("summary_table"),ui.output_data_frame("bin_summary")),
-                        ui.card(output_widget("summary_taxonomy"),ui.output_data_frame("bin_group")),
-                   ui.output_text(id="printo"),
-                    width= 1/2
-                   )
-            )
-        )
+                   ui.card( 
+                            ui.output_data_frame("summary_table")
+                        ),
+                        
+                        ui.accordion(
+                        ui.accordion_panel("Taxonomy panel",
+                        
+                            ui.layout_column_wrap(
+                                      ui.output_data_frame("bin_summary"),
+                                      ui.output_data_frame("bin_group"),
+                                      width=1/2)
+                        ),open=False),
+                        ui.card(output_widget("summary_taxonomy")),
 
+                        ui.card(
+                            ui.input_action_button("launch_test", "Run"),
+                            ui.output_text(id="test_result")
+                              ),
+                            )
+        )
     )
     def server(input, output, session):
+
+
+        @render.text
+        @reactive.event(input.run_test)
+        def stat_test_result():
+            if input.stat_test_choice() == "Student":
+                return du.student_test(
+                current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][input.wilcoxon_tested_value_select()],
+                current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][input.wilcoxon_tested_value_select()]
+                )
+            if input.stat_test_choice() == "Wilcoxon":
+                return du.wilcoxon_test(
+                current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][input.wilcoxon_tested_value_select()],
+                current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][input.wilcoxon_tested_value_select()]
+                )
+
+
+        @reactive.Effect()
+        @reactive.event(input.wilcoxon_variable_select)
+        def process_wilcoxon():
+            current_factor_choice = clean_list_duplicate(current_dataframe[input.wilcoxon_variable_select()])
+            ui.update_select("wilcoxon_group1_select", choices=current_factor_choice)
+            ui.update_select("wilcoxon_group2_select", choices=current_factor_choice)
+            ui.update_select("wilcoxon_tested_value_select", choices=list(current_dataframe.columns))
+            return
+
+
+        @reactive.Effect()
+        @reactive.event(input.test_sample1)
+        def process():
+            current_factor_choice = clean_list_duplicate(current_dataframe[input.test_sample1()])
+            ui.update_select("test_sample2", choices=current_factor_choice)
+            return
+        
+
+        @reactive.Effect()
+        @reactive.event(input.factor_choice)
+        def process():
+            if input.factor_choice() == "None":
+                return
+            current_factor_choice = clean_list_duplicate(current_dataframe[input.factor_choice()])
+            # current_factor_choice.insert(0,"None")
+            ui.update_select("factor_choice2", choices=current_factor_choice)
+            return
+
+
         @output
         @render_widget
         def my_widget():
@@ -175,11 +260,31 @@ def run_shiny(global_data, sample_data):
             return fig
 
 
+        @render.data_frame
+        def main_panel_table():
+            if input.factor_choice() == factor_list[0]:
+                global_data["current_dataframe"] = du.get_metabolic_info(sample_data, global_data["current_dataframe"], taxonomic_data)
+                return render.DataGrid(du.get_metabolic_info(sample_data, global_data["current_dataframe"], taxonomic_data), row_selection_mode="single")
+            else:
+                try:
+                    factor_choice2 = int(input.factor_choice2())
+                except:
+                    return render.DataGrid(global_data["current_dataframe"].loc[global_data["current_dataframe"][input.factor_choice()] == input.factor_choice2()], row_selection_mode="single")
+                else:
+                    return render.DataGrid(global_data["current_dataframe"].loc[global_data["current_dataframe"][input.factor_choice()] == factor_choice2], row_selection_mode="single")
+            
+
+
         @output
         @render.data_frame
-        def summary_table():
-            global_data["current_dataframe"] = du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data)
-            return render.DataGrid(du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data), row_selection_mode="single")
+        def summary_table(with_filter: bool = False):
+            if not with_filter:
+                global_data["current_dataframe"] = du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data)
+                return render.DataGrid(du.get_metabolic_info(sample_data, global_data["metadata"], taxonomic_data), row_selection_mode="single")
+            else:
+                filter = input.test_sample2()
+                dataframe_with_filter = global_data["current_dataframe"].loc[global_data["current_dataframe"][input.current_data_choice1()] == input.current_data_choice2()]
+                return render.DataGrid(dataframe_with_filter,row_selection_mode="single")
 
 
         @output
@@ -215,12 +320,13 @@ def run_shiny(global_data, sample_data):
 
         @output
         @render.text
-        def printo():
+        def test_result():
             df = global_data["current_dataframe"]
             group1 = df[df["Antibiotics"]=="YES"]
             group2 = df[df["Antibiotics"]=="NO"]
-            res = ttest_ind(group1["Numbers of models"],group2["Numbers of models"])
-            return res
+            res = stats.wilcoxon(group1["Numbers of models"],group2["Numbers of models"])
+            inshape_res = ("Résultat du test de wilcoxon :", res)
+            return inshape_res
 
         @output
         @render.data_frame
@@ -246,16 +352,6 @@ def run_shiny(global_data, sample_data):
             df = du.merge_df(df,taxonomic_data)
             return render.DataGrid(df, row_selection_mode="single")
         
-
-        @output
-        @render.text
-        def row_been_selected():
-            selected = input.iscope_table_selected_rows()
-            thing = ""
-            for f in selected:
-                thing += str(f)
-            return thing
-
 
         @output
         @render_widget

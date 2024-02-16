@@ -36,5 +36,5 @@ def main(args=None):
         metadata = arg_parser["metadata"]
     # du.performance_test("/home/lbrindel/cscope_metadata/", "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv")
     global_data, sample_data = du.build_df(dir_path, metadata)
-    data = du.open_tsv(metadata)
+    # data = du.open_tsv(metadata)
     sh.run_shiny(global_data, sample_data)

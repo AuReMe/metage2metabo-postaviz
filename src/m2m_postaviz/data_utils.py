@@ -7,6 +7,23 @@ from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 import cProfile
 import time
 import threading
+from scipy import stats
+
+def wilcoxon_test(group1,group2):
+    try:
+         res = stats.wilcoxon(group1,group2)
+    except Exception as e:
+        res = e
+    return res
+
+
+def student_test(group1,group2):
+    try:
+         res = stats.ttest_ind(group1,group2)
+    except Exception as e:
+        res = e
+    return res
+
 
 def get_added_value_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["advalue"])
@@ -240,6 +257,30 @@ def merge_df(left_df, right_df, how : str = "left"):
     filter = right_df.loc[right_df["mgs"].isin(data)]
     return filter
 
+
+def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
+    row = row.astype(float)
+    abundance_value = abundance_matrix.at[row.name,sample_id]
+    row *= abundance_value
+    return row
+
+
+def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
+    """Produce a stoichiometric matrix from a binary matrix (presence or absence) and an abundance matrix.
+
+    Args:
+        binary_matrix (pandas.DataFrame): Binary dataframe containing the presence or absence of compounds.
+        abundance_matrix (pandas.DataFrame): Dataframe containing the abundance of each bin in sample.
+        sample_id (str): Name of the sample.
+
+    Returns:
+        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin. 
+    """
+    binary_matrix.set_index("Name",inplace=True)
+    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix,sample_id),axis=1) 
+    return binary_matrix
+
+
 # @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata):
     """
@@ -254,6 +295,9 @@ def build_df(dir_path, metadata):
     """
     data_by_sample = {}
     sample_data = retrieve_all_sample_data(dir_path)
+
+    ### Multi-Threading for building data, slower than vanilla (for NOW).
+
     # all_task = []
     # data_by_sample = {}
     # for sample_directory in os.listdir(dir_path):
@@ -286,7 +330,7 @@ def build_df(dir_path, metadata):
     global_data["metadata"] = open_tsv(metadata)
 
     global_data["main_dataframe"] = main_df
-
+    
     return global_data, sample_data
 
 def performance_test(dir,meta):
