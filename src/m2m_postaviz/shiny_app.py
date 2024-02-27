@@ -51,25 +51,13 @@ def run_shiny(global_data, sample_data):
     ### Pathway ontology 
     individual_pathway_ontology = sm.pathway_data_processing()
     ### ALL CARD OBJECT TO BE ARRANGED ###
-    meta_card = ui.card(ui.input_selectize(
-                id="search_metadata", label="meta_searchbar", choices=list(global_data["metadata"].columns.values), width="400px", multiple=True
-                ),
-                ui.output_data_frame("metadata_table"),
-                )
-    
-    data_card = ui.card(ui.input_selectize(
-                id="search_data", label="data_searchbar", choices=list(global_data["main_dataframe"].columns.values[du.get_column_size(global_data["metadata"]) + 1 :]), width="500px", multiple=True,
-                ),
-                ui.output_data_frame("data_table"),
-                )
-    
-    output_pcoa = ui.card(ui.row(ui.input_select("x", label="Symbol", choices=list(global_data["metadata"].columns.values[1:])),
-                  ui.input_select("color", label="Color", choices=list(global_data["metadata"].columns.values[1:])),
-                  ),
-                  output_widget("my_widget", width=600),
-                  )
 
-    
+    taxonomy_boxplot = ui.card(ui.row(ui.input_select("Taxonomic_rank_input", "Choose a taxonomic rank", list(taxonomic_data.columns), selected="Genus"),
+                                      ui.input_selectize("Taxonomic_choice_input", "Multiple choice possible", [], multiple=True)
+                                      ),
+                                output_widget("Taxonomic_boxplot")
+                               )
+
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     ontology_card = ui.card(ui.card_header("Ontology level 1"),ui.row(ui.input_select("scope_ontology", label="Sample", choices=list(global_data["main_dataframe"]["Name"]))
@@ -122,13 +110,9 @@ def run_shiny(global_data, sample_data):
 
     app_ui = ui.page_fluid(
         ui.navset_tab(
-            ui.nav("cscope",
-                ui.layout_column_wrap(
-                meta_card,
-                data_card,
-                output_pcoa,
-                width= 1/2
-                )
+            ui.nav("Taxonomy",
+                   output_widget("taxonomy_overview"),
+                    taxonomy_boxplot
                    ),
             ui.nav("Main",
                    ui.layout_sidebar(
@@ -179,6 +163,30 @@ def run_shiny(global_data, sample_data):
     def server(input, output, session):
 
 
+        @reactive.Effect()
+        @reactive.event(input.Taxonomic_rank_input)
+        def updapte_taxonomy_choice_list():
+            updated_list = clean_list_duplicate(taxonomic_data[input.Taxonomic_rank_input()])
+            ui.update_select("Taxonomic_choice_input", choices=updated_list)
+            return
+
+
+        @output
+        @render_widget
+        def taxonomy_overview():
+            df = du.taxonomic_overview(list_of_individual_bin, taxonomic_data, global_data["metadata"])
+            plot = px.box(df, x="Antibiotics",y='Count',color='Days')
+            return plot
+
+
+        @output
+        @render_widget
+        def Taxonomic_boxplot():
+            df = du.taxonomic_dataframe_from_input(input.Taxonomic_rank_input(), list_of_individual_bin, input.Taxonomic_choice_input(), taxonomic_data, global_data["metadata"])
+            plot = px.box(df, x="Antibiotics",y='Count',color='Antibiotics')
+            return plot
+
+
         @render.text
         @reactive.event(input.run_test)
         def stat_test_result():
@@ -225,19 +233,6 @@ def run_shiny(global_data, sample_data):
 
         @output
         @render_widget
-        def my_widget():
-            fig = px.scatter(
-                pcoa_results,
-                x="Dim1",
-                y="Dim2",
-                color=input.color(),
-                symbol=input.x(),
-            )
-            return fig
-        
-
-        @output
-        @render_widget
         def ontology_barplot():
             current_df = global_data["main_dataframe"].set_index('Name')
             df = df_ontology.loc[df_ontology.index.isin(current_df.columns.values)]
@@ -272,7 +267,6 @@ def run_shiny(global_data, sample_data):
                     return render.DataGrid(global_data["current_dataframe"].loc[global_data["current_dataframe"][input.factor_choice()] == input.factor_choice2()], row_selection_mode="single")
                 else:
                     return render.DataGrid(global_data["current_dataframe"].loc[global_data["current_dataframe"][input.factor_choice()] == factor_choice2], row_selection_mode="single")
-            
 
 
         @output
@@ -294,7 +288,7 @@ def run_shiny(global_data, sample_data):
             # sample_taxonomy = sm.taxonomic_processing(list_of_individual_bin[sample],taxonomic_data)
             # fig = px.bar(sample_taxonomy["Genus"],x=sample_taxonomy["Genus"].index,y="Genus",title="Genus repartition in sample")
             # return fig
-            fig = px.bar(global_data["current_dataframe"], x="Name", y="Numbers of models", color="Antibiotics", text_auto= True,height=500,width=1000)
+            fig = px.box(global_data["current_dataframe"], x="Name", y="Numbers of models", color="Antibiotics")
             return fig
         
 
@@ -327,21 +321,6 @@ def run_shiny(global_data, sample_data):
             res = stats.wilcoxon(group1["Numbers of models"],group2["Numbers of models"])
             inshape_res = ("Résultat du test de wilcoxon :", res)
             return inshape_res
-
-        @output
-        @render.data_frame
-        def metadata_table():
-            column = du.get_columns_index(main_df, input.search_metadata())
-            df = main_df.iloc[:, column]
-            return df
-
-
-        @output
-        @render.data_frame
-        def data_table():
-            column = du.get_columns_index(global_data["main_dataframe"], input.search_data())
-            df = global_data["main_dataframe"].iloc[:, column]
-            return df
 
 
         @output

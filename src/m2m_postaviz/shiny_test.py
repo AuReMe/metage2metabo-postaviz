@@ -8,16 +8,24 @@ from shinywidgets import output_widget
 from shinywidgets import render_widget
 import json
 
+def sum_abundance_table(abundance_table: pd.DataFrame):
+    new_dataframe =  {}
+    for index,row in abundance_table.iterrows():
+        new_dataframe[index] = row.values.sum()
+    return pd.DataFrame(new_dataframe, index=["E1"])
 
-def multiply_production_abundance(df_row,abundance_matrix,sample_id):
-    print(df_row)
-    return
+
+def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
+    row = row.astype(float)
+    abundance_value = abundance_matrix.at[row.name,sample_id]
+    row *= abundance_value
+    return row
 
 
-def generate_abundance_matrix(sample_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id):
-    abundance_matrix_col = abundance_matrix[sample_id]
-    relative_abundance_matrix = sample_matrix.apply(lambda row: multiply_production_abundance(row,abundance_matrix,abundance_matrix_col),axis=1) 
-    return
+def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
+    binary_matrix.set_index("Name",inplace=True)
+    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix,sample_id),axis=1) 
+    return binary_matrix
 
 
 ### Import data
@@ -31,8 +39,8 @@ mgs_data = pd.read_csv("~/Downloads/specI.mat", sep="\t")
 mgs = mgs_data.columns.values[0]
 
 palleja_abundance_matrix = du.open_tsv("~/Downloads/matrix_palleja.tsv")
-palleja_abundance_matrix.insert(0,"bin_id",palleja_abundance_matrix.index)
-palleja_abundance_matrix.reset_index
+# palleja_abundance_matrix.insert(0,"bin_id",palleja_abundance_matrix.index)
+# palleja_abundance_matrix.reset_index
 
 ########################################
 
@@ -59,8 +67,11 @@ app_ui = ui.page_fluid(
         ui.accordion_panel("Matrix palleja dataframe",
             matrix_palleja
         ),
-        ui.accordion_panel("print",
-            ui.output_text("printo")
+        ui.accordion_panel("Abundance",
+            ui.output_data_frame("abundance_table")
+        ),
+        ui.accordion_panel("Abundance Boxplot",
+            output_widget("abundance_plot")
         ),
         open=False
     )
@@ -75,7 +86,6 @@ def server(input, output, session):
 
     @render.data_frame
     def cross_dataframe():
-        cross_df = mgs_data.loc[mgs_data[mgs].isin(sample_data[input.dataframe_sample_choice()][input.dataframe_type_choice()]["Name"])]
         return render.DataGrid(mgs_data.loc[mgs_data[mgs].isin(sample_data[input.dataframe_sample_choice()][input.dataframe_type_choice()]["Name"])])
 
 
@@ -85,9 +95,18 @@ def server(input, output, session):
         return render.DataGrid(df)
 
 
-    @render.text
-    def printo():
-        return generate_abundance_matrix(sample_data["E1_0"]["cscope"],palleja_abundance_matrix,"ERAS1d0")
+    @render.data_frame
+    def abundance_table():
+        return render.DataGrid(generate_stoichiometric_matrix(sample_data["E1_0"]["cscope"],palleja_abundance_matrix,"ERAS1d0"))
+
+
+    @output
+    @render_widget
+    def abundance_plot():
+        df = generate_stoichiometric_matrix(sample_data["E1_0"]["cscope"],palleja_abundance_matrix,"ERAS1d0")
+        df = sum_abundance_table(df)
+        fig = px.box(df, x=df.index,y=df.columns.values)
+        return fig
 
 app = App(app_ui, server)
 run_app(app=app, launch_browser=True)

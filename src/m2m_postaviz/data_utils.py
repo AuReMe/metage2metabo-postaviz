@@ -9,6 +9,73 @@ import time
 import threading
 from scipy import stats
 
+def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope"):
+    current_selection = []
+    current_rank = taxonomic_dataframe.columns[-1]
+    print(type(current_rank))
+
+    for sample in list_bin_id.keys():
+        tmp_df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(list_bin_id[sample])]
+        tmp_df = tmp_df[['mgs',current_rank]]
+        tmp_df = tmp_df.groupby([current_rank]).count()
+        tmp_df = tmp_df.reset_index()
+        tmp_df.columns = [current_rank,'Count']
+        value, label = get_metadata(sample, metadata)
+        for i in range(len(label)):
+            tmp_df.insert(0,label[i],value[i])
+
+        current_selection.append(tmp_df)
+        
+    return pd.concat(current_selection, join='outer', ignore_index=True)
+
+
+def get_metadata(sample_id: str, metadata: pd.DataFrame):
+    return tuple([metadata.loc[metadata["Name"] == sample_id].values.tolist()[0],metadata.loc[metadata["Name"] == sample_id].columns.to_list()])
+
+
+def taxonomy_groupby(metadata: pd.DataFrame, current_sample: str, bin_id_by_sample: dict, taxonomic_dataframe: pd.DataFrame, target_rank:str = "Genus", taxonomic_choice: list = []):
+    """Generate a taxonomic count dataframe from a sample id, his dataframe and the rank choosen. Return only the selected taxonomic choice. 
+
+    Args:
+        current_sample (str): Sample's id
+        taxonomic_dataframe (pd.DataFrame): The taxonomic dataframe
+        target_rank (str, optional): Selected rank in shiny's input. Defaults to "Genus".
+        taxonomic_choice (list, optional): The list of taxonomic selection from shiny's input to keep in the returned Dataframe. Defaults to [].
+
+    Returns:
+        Dataframe: Pandas dataframe containing the selected taxonomic choice and rank.
+    """
+    taxonomic_choice = list(taxonomic_choice)
+    if len(taxonomic_choice) == 0:
+        print("The taxonomic choice list is empty")
+        return
+    
+    df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(bin_id_by_sample[current_sample])]
+    for choice in taxonomic_choice:
+        if not choice in df[target_rank].unique():
+            taxonomic_choice.remove(choice)
+            print(choice, " Removed.")
+    
+    df = df[["mgs",target_rank]]
+    df = df.groupby([target_rank]).count()
+    df = df.reset_index()
+    df.columns = [target_rank,"Count"]
+    df = df.loc[df[target_rank].isin(taxonomic_choice)]
+    value,label = get_metadata(current_sample, metadata)
+    for i in range(len(label)):
+        df.insert(0, label[i], value[i])
+    return df
+
+
+def taxonomic_dataframe_from_input(taxonomic_rank: str, bin_id_by_sample: dict, taxonomic_choice: list, taxonomic_dataframe: pd.DataFrame, metadata: pd.DataFrame):
+    results = []
+    for sample in bin_id_by_sample.keys():
+        results.append(taxonomy_groupby(metadata, sample, bin_id_by_sample, taxonomic_dataframe, taxonomic_rank, taxonomic_choice))
+    
+    final_results = pd.concat(results, join="outer", ignore_index=True)
+    return final_results
+
+
 def wilcoxon_test(group1,group2):
     try:
          res = stats.wilcoxon(group1,group2)
