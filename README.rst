@@ -21,15 +21,15 @@ Dependencies
 ============
 
 
-    - pandas
-    - padmet
-    - scipy
+- pandas
+- padmet
+- scipy
 
-    """cmd
+::
+
     pip install pandas
     pip install padmet
     pip install scipy
-    """
 
 
 Documentation
