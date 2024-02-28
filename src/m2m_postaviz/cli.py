@@ -18,23 +18,33 @@ import argparse
 
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
+from m2m_postaviz.data_struct import DataStorage
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
+parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 
 
 def main(args=None):
     arg_parser = parser.parse_args()
+
     if arg_parser.test:
         dir_path = "/home/lbrindel/cscope_metadata/"
         metadata = "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv"
+        taxonomic_data = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/taxonomic_database.tsv")
+
     else:
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata = arg_parser["metadata"]
+        taxonomy = arg_parser["taxonomy"]
+        taxonomic_data = du.open_tsv(taxonomy)
+
     # du.performance_test("/home/lbrindel/cscope_metadata/", "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv")
     global_data, sample_data = du.build_df(dir_path, metadata)
-    # data = du.open_tsv(metadata)
-    sh.run_shiny(global_data, sample_data)
+
+    Data = DataStorage(global_data, sample_data, taxonomic_data)
+
+    sh.run_shiny(Data)

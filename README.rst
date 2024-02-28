@@ -17,6 +17,21 @@ You can also install the in-development version with::
 
     pip install git+ssh://git@gitlab.inria.fr/postaviz/m2m-postaviz.git@main
 
+Dependencies
+============
+
+
+    - pandas
+    - padmet
+    - scipy
+
+    """cmd
+    pip install pandas
+    pip install padmet
+    pip install scipy
+    """
+
+
 Documentation
 =============
 

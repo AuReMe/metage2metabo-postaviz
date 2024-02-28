@@ -1,13 +1,16 @@
 import json
 import os
 import os.path
-from m2m_postaviz.time_decorator import timeit
+import time
+
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
-import cProfile
-import time
-import threading
 from scipy import stats
+
+# from m2m_postaviz.time_decorator import timeit
+# import cProfile
+# import threading
+
 
 def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope"):
     current_selection = []
@@ -16,25 +19,34 @@ def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "
 
     for sample in list_bin_id.keys():
         tmp_df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(list_bin_id[sample])]
-        tmp_df = tmp_df[['mgs',current_rank]]
+        tmp_df = tmp_df[["mgs", current_rank]]
         tmp_df = tmp_df.groupby([current_rank]).count()
         tmp_df = tmp_df.reset_index()
-        tmp_df.columns = [current_rank,'Count']
+        tmp_df.columns = [current_rank, "Count"]
         value, label = get_metadata(sample, metadata)
         for i in range(len(label)):
-            tmp_df.insert(0,label[i],value[i])
+            tmp_df.insert(0, label[i], value[i])
 
         current_selection.append(tmp_df)
-        
-    return pd.concat(current_selection, join='outer', ignore_index=True)
+
+    return pd.concat(current_selection, join="outer", ignore_index=True)
 
 
 def get_metadata(sample_id: str, metadata: pd.DataFrame):
-    return tuple([metadata.loc[metadata["Name"] == sample_id].values.tolist()[0],metadata.loc[metadata["Name"] == sample_id].columns.to_list()])
+    return tuple(
+        [metadata.loc[metadata["Name"] == sample_id].values.tolist()[0], metadata.loc[metadata["Name"] == sample_id].columns.to_list()]
+    )
 
 
-def taxonomy_groupby(metadata: pd.DataFrame, current_sample: str, bin_id_by_sample: dict, taxonomic_dataframe: pd.DataFrame, target_rank:str = "Genus", taxonomic_choice: list = []):
-    """Generate a taxonomic count dataframe from a sample id, his dataframe and the rank choosen. Return only the selected taxonomic choice. 
+def taxonomy_groupby(
+    metadata: pd.DataFrame,
+    current_sample: str,
+    bin_id_by_sample: dict,
+    taxonomic_dataframe: pd.DataFrame,
+    target_rank: str = "Genus",
+    taxonomic_choice: list = [],
+):
+    """Generate a taxonomic count dataframe from a sample id, his dataframe and the rank choosen. Return only the selected taxonomic choice.
 
     Args:
         current_sample (str): Sample's id
@@ -45,48 +57,48 @@ def taxonomy_groupby(metadata: pd.DataFrame, current_sample: str, bin_id_by_samp
     Returns:
         Dataframe: Pandas dataframe containing the selected taxonomic choice and rank.
     """
-    taxonomic_choice = list(taxonomic_choice)
-    if len(taxonomic_choice) == 0:
-        print("The taxonomic choice list is empty")
-        return
-    
     df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(bin_id_by_sample[current_sample])]
     for choice in taxonomic_choice:
-        if not choice in df[target_rank].unique():
+        if choice not in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
-    
-    df = df[["mgs",target_rank]]
+
+    df = df[["mgs", target_rank]]
     df = df.groupby([target_rank]).count()
     df = df.reset_index()
-    df.columns = [target_rank,"Count"]
+    df.columns = [target_rank, "Count"]
     df = df.loc[df[target_rank].isin(taxonomic_choice)]
-    value,label = get_metadata(current_sample, metadata)
+    value, label = get_metadata(current_sample, metadata)
     for i in range(len(label)):
         df.insert(0, label[i], value[i])
     return df
 
 
-def taxonomic_dataframe_from_input(taxonomic_rank: str, bin_id_by_sample: dict, taxonomic_choice: list, taxonomic_dataframe: pd.DataFrame, metadata: pd.DataFrame):
+def taxonomic_dataframe_from_input(
+    taxonomic_rank: str, bin_id_by_sample: dict, taxonomic_choice: list, taxonomic_dataframe: pd.DataFrame, metadata: pd.DataFrame
+):
     results = []
+    taxonomic_choice = list(taxonomic_choice)
+    if len(taxonomic_choice) == 0:
+        print("The taxonomic choice list is empty")
+        return
     for sample in bin_id_by_sample.keys():
         results.append(taxonomy_groupby(metadata, sample, bin_id_by_sample, taxonomic_dataframe, taxonomic_rank, taxonomic_choice))
-    
     final_results = pd.concat(results, join="outer", ignore_index=True)
     return final_results
 
 
-def wilcoxon_test(group1,group2):
+def wilcoxon_test(group1, group2):
     try:
-         res = stats.wilcoxon(group1,group2)
+        res = stats.wilcoxon(group1, group2)
     except Exception as e:
         res = e
     return res
 
 
-def student_test(group1,group2):
+def student_test(group1, group2):
     try:
-         res = stats.ttest_ind(group1,group2)
+        res = stats.ttest_ind(group1, group2)
     except Exception as e:
         res = e
     return res
@@ -96,20 +108,20 @@ def get_added_value_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["advalue"])
 
 
-def get_individual_production_size(sample:str, metadataframe: dict):
+def get_individual_production_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["iscope"].columns)
 
 
-def get_total_production_size(sample:str, metadataframe: dict):
+def get_total_production_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["cscope"].columns)
 
 
 def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
     if only_metabolic_model_size:
-       taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
-       return len(taxonomy_size) 
+        taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
+        return len(taxonomy_size)
     taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
-    taxonomy_size = taxonomy_size[["mgs","Genus"]]
+    taxonomy_size = taxonomy_size[["mgs", "Genus"]]
     taxonomy_size = taxonomy_size.groupby(["Genus"]).count()
     taxonomy_size = taxonomy_size.reset_index()
     return len(taxonomy_size)
@@ -135,6 +147,7 @@ def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic
     new_df["Numbers of species"] = taxo_size
     return new_df
 
+
 def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["cscope"].columns)
 
@@ -152,9 +165,9 @@ def add_row(df: pd.DataFrame, row: list):
     df.loc[len(df)] = row
 
 
-def deal_with_duplicated_row(df: pd.DataFrame, dropcol = None):
+def deal_with_duplicated_row(df: pd.DataFrame, dropcol=None):
     if not dropcol == None:
-        df = df.drop(dropcol,axis=1)
+        df = df.drop(dropcol, axis=1)
     df = pd.get_dummies(df, prefix="", prefix_sep="", columns=["category"])
     df = df.groupby(["compound_id"]).sum()
     return df
@@ -170,7 +183,7 @@ def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = 
         transpose (bool, optional): True if the dataframe needs to be transpose (when value in columns and sample in rows). Defaults to False.
 
     Returns:
-        dict: A dictionary, for which key correspond to a sample and value in a nested list of value above threshold and their index. return{sample1 : [[value1,value2],[index_value1,index_value2]]} 
+        dict: A dictionary, for which key correspond to a sample and value in a nested list of value above threshold and their index. return{sample1 : [[value1,value2],[index_value1,index_value2]]}
     """
     if transpose:
         df = df.T
@@ -182,8 +195,8 @@ def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = 
     return results
 
 
-def get_percent_value(df: pd.DataFrame, transpose: bool = False)  -> pd.DataFrame:
-    """Calculate the total of each columns and replace value by their percentage. 
+def get_percent_value(df: pd.DataFrame, transpose: bool = False) -> pd.DataFrame:
+    """Calculate the total of each columns and replace value by their percentage.
 
     Args:
         df (pd.DataFrame): Count matrix as dataframe value must be row indexed and sample in columns.
@@ -199,12 +212,14 @@ def get_percent_value(df: pd.DataFrame, transpose: bool = False)  -> pd.DataFram
     return percentage
 
 
-def get_files(file_name, path, with_directory_name : bool = True):
+def get_files(file_name, path, with_directory_name: bool = True):
     result = []
     for root, dirs, files in os.walk(path):
         if file_name in files:
             if with_directory_name:
-                result.append([os.path.join(root, file_name), os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))])
+                result.append(
+                    [os.path.join(root, file_name), os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))]
+                )
             else:
                 result.append(os.path.join(root, file_name))
     return result
@@ -223,7 +238,7 @@ def open_json(file_path):
     return file_data
 
 
-def open_tsv(file_name, rename_columns : bool = False, first_col : str = "Name"):
+def open_tsv(file_name, rename_columns: bool = False, first_col: str = "Name"):
     data = pd.read_csv(file_name, sep="\t")
     if rename_columns:
         data.columns.values[0] = first_col
@@ -288,7 +303,7 @@ def contribution_processing(file_opened: dict):
 
 
 def get_contributions(file_name, path):
-    for root, dirs , files in os.walk(path):
+    for root, dirs, files in os.walk(path):
         if file_name in files:
             contributions_file = open_json(os.path.join(root, file_name))
             contributions_file = contribution_processing(contributions_file)
@@ -313,21 +328,22 @@ def retrieve_sample_data(sample_directory_path, sample_name, sample_dictionnary:
     sample_dictionnary[sample_name]["cscope"] = get_scopes("rev_cscope.tsv", sample_directory_path)
     sample_dictionnary[sample_name]["advalue"] = open_added_value("addedvalue.json", sample_directory_path)
     sample_dictionnary[sample_name]["contribution"] = get_contributions("contributions_of_microbes.json", sample_directory_path)
-    return 
+    return
+
 
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
 
-def merge_df(left_df, right_df, how : str = "left"):
-    data = left_df.iloc[:,0]
+def merge_df(left_df, right_df, how: str = "left"):
+    data = left_df.iloc[:, 0]
     filter = right_df.loc[right_df["mgs"].isin(data)]
     return filter
 
 
-def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
+def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     row = row.astype(float)
-    abundance_value = abundance_matrix.at[row.name,sample_id]
+    abundance_value = abundance_matrix.at[row.name, sample_id]
     row *= abundance_value
     return row
 
@@ -341,10 +357,10 @@ def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix
         sample_id (str): Name of the sample.
 
     Returns:
-        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin. 
+        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
     """
-    binary_matrix.set_index("Name",inplace=True)
-    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix,sample_id),axis=1) 
+    binary_matrix.set_index("Name", inplace=True)
+    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix, sample_id), axis=1)
     return binary_matrix
 
 
@@ -375,8 +391,7 @@ def build_df(dir_path, metadata):
 
     # for task in all_task:
     #     task.join()
-        
-    
+
     ### Main dataframe and metadata dataframe. ###
 
     global_data = {}
@@ -397,17 +412,17 @@ def build_df(dir_path, metadata):
     global_data["metadata"] = open_tsv(metadata)
 
     global_data["main_dataframe"] = main_df
-    
+
     return global_data, sample_data
 
-def performance_test(dir,meta):
+
+def performance_test(dir, meta):
     start_time = time.perf_counter()
 
     # pr = cProfile.Profile()
     # pr.enable()
 
-    build_df(dir,meta)
-
+    build_df(dir, meta)
 
     end_time = time.perf_counter()
 
