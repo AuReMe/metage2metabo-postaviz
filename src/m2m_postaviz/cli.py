@@ -15,10 +15,10 @@ Why does this file exist, and why not put this in __main__?
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
 import argparse
-
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
 from m2m_postaviz.data_struct import DataStorage
+from os import path
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
@@ -26,14 +26,18 @@ parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 
+SRC_DIR = path.dirname(path.abspath(__file__))
+PROJECT_DIR = path.dirname(path.dirname(SRC_DIR))
+TESTS_DIR = path.join(PROJECT_DIR,"tests/")
+
 
 def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.test:
-        dir_path = "/home/lbrindel/cscope_metadata/"
-        metadata = "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv"
-        taxonomic_data = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/taxonomic_database.tsv")
+        dir_path = TESTS_DIR+"metadata_ouput/"
+        metadata = TESTS_DIR+"metadata_test.tsv"
+        taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
 
     else:
         arg_parser = vars(parser.parse_args())

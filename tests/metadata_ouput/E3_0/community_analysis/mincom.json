@@ -1,0 +1,5859 @@
+{
+    "alternative_symbionts": [
+        "MB2bin590",
+        "MGS_2dra05736",
+        "specI_v2_1594",
+        "MB2bin260",
+        "specI_v2_1706",
+        "MB2bin156",
+        "MB2bin12",
+        "MB2bin489",
+        "MB2bin1",
+        "specI_v2_4813",
+        "MB2bin92",
+        "MB2bin14",
+        "specI_v2_4394",
+        "specI_v2_5296",
+        "MB2bin54",
+        "MB2bin6",
+        "MB2bin205",
+        "MB2bin463",
+        "MB2bin36",
+        "MB2bin264",
+        "MB2bin65",
+        "MB2bin24",
+        "MB2bin691",
+        "specI_v2_4321",
+        "specI_v2_1072",
+        "MB2bin106",
+        "MB2bin21"
+    ],
+    "bacteria": [
+        "MB2bin138",
+        "MB2bin14",
+        "MB2bin176",
+        "MB2bin590",
+        "MB2bin149",
+        "MB2bin360",
+        "MB2bin264",
+        "MB2bin161",
+        "MB2bin169",
+        "MB2bin1077",
+        "MB2bin420",
+        "MB2bin97",
+        "MB2bin164",
+        "MB2bin238",
+        "specI_v2_1159",
+        "MB2bin92",
+        "MB2bin303",
+        "MB2bin86",
+        "MB2bin19",
+        "MB2bin106",
+        "MB2bin156",
+        "MB2bin27",
+        "MB2bin117",
+        "MB2bin94",
+        "MB2bin99",
+        "MB2bin74",
+        "MB2bin22",
+        "MB2bin205",
+        "MB2bin210",
+        "MB2bin414",
+        "specI_v2_0079"
+    ],
+    "essential_symbionts": [
+        "MB2bin138",
+        "MB2bin176",
+        "MB2bin149",
+        "MB2bin360",
+        "MB2bin169",
+        "MB2bin161",
+        "MB2bin1077",
+        "MB2bin420",
+        "MB2bin97",
+        "MB2bin164",
+        "MB2bin238",
+        "specI_v2_1159",
+        "MB2bin303",
+        "MB2bin86",
+        "MB2bin19",
+        "MB2bin27",
+        "MB2bin117",
+        "MB2bin94",
+        "MB2bin99",
+        "MB2bin74",
+        "MB2bin22",
+        "MB2bin210",
+        "MB2bin414",
+        "specI_v2_0079"
+    ],
+    "exchanged": [],
+    "inter_bacteria": [
+        "MB2bin138",
+        "MB2bin176",
+        "MB2bin149",
+        "MB2bin360",
+        "MB2bin169",
+        "MB2bin161",
+        "MB2bin1077",
+        "MB2bin420",
+        "MB2bin97",
+        "MB2bin164",
+        "MB2bin238",
+        "specI_v2_1159",
+        "MB2bin303",
+        "MB2bin86",
+        "MB2bin19",
+        "MB2bin27",
+        "MB2bin117",
+        "MB2bin94",
+        "MB2bin99",
+        "MB2bin74",
+        "MB2bin22",
+        "MB2bin210",
+        "MB2bin414",
+        "specI_v2_0079"
+    ],
+    "inter_exchanged": [],
+    "inter_targetsproducers": {
+        "M_2__45__OCTAPRENYLPHENOL_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c": [
+            "specI_v2_0079",
+            "MB2bin238",
+            "MB2bin360"
+        ],
+        "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin210"
+        ],
+        "M_5__45__AMINO__45__LEVULINATE_c": [
+            "MB2bin161",
+            "MB2bin138",
+            "MB2bin22",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c": [
+            "MB2bin360",
+            "MB2bin117",
+            "specI_v2_0079"
+        ],
+        "M_ACETONE_c": [
+            "MB2bin414"
+        ],
+        "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "MB2bin420",
+            "MB2bin97"
+        ],
+        "M_BETAINE_ALDEHYDE_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "MB2bin117"
+        ],
+        "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c": [
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_C55__45__PP__45__GLCNAC__45__MANNACA_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_CATECHOL_c": [
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin360"
+        ],
+        "M_CELLULOSE_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CHLOROACETIC__45__ACID_c": [
+            "MB2bin138"
+        ],
+        "M_COPROPORPHYRINOGEN_III_c": [
+            "MB2bin97",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079"
+        ],
+        "M_COPROPORPHYRINOGEN_I_c": [
+            "MB2bin19",
+            "MB2bin238",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin138",
+            "specI_v2_0079"
+        ],
+        "M_CPD0__45__1643_c": [
+            "MB2bin176"
+        ],
+        "M_CPD0__45__2298_c": [
+            "specI_v2_1159",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__10116_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__10483_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__10683_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10684_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10792_c": [
+            "MB2bin161"
+        ],
+        "M_CPD__45__1091_c": [
+            "MB2bin161",
+            "specI_v2_1159",
+            "specI_v2_0079",
+            "MB2bin99",
+            "MB2bin1077",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CPD__45__1128_c": [
+            "MB2bin161",
+            "MB2bin360"
+        ],
+        "M_CPD__45__1136_c": [
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin303",
+            "MB2bin360",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__11444_c": [
+            "MB2bin22",
+            "MB2bin99",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin86",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161"
+        ],
+        "M_CPD__45__11533_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__11984_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12115_c": [
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin161",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__12117_c": [
+            "MB2bin210",
+            "MB2bin22",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12118_c": [
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin161",
+            "MB2bin22",
+            "MB2bin117"
+        ],
+        "M_CPD__45__12119_c": [
+            "specI_v2_1159",
+            "MB2bin210",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12120_c": [
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__12125_c": [
+            "MB2bin22",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12126_c": [
+            "MB2bin176",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin164",
+            "MB2bin238",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_CPD__45__12127_c": [
+            "specI_v2_1159",
+            "MB2bin210",
+            "MB2bin27",
+            "MB2bin19"
+        ],
+        "M_CPD__45__12128_c": [
+            "MB2bin210",
+            "MB2bin27",
+            "MB2bin19",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12321_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__12460_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12513_c": [
+            "MB2bin149",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12739_c": [
+            "MB2bin420"
+        ],
+        "M_CPD__45__12855_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__12955_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__13122_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_CPD__45__13712_c": [
+            "MB2bin149"
+        ],
+        "M_CPD__45__13722_c": [
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CPD__45__14205_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__15429_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__15430_c": [
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin176"
+        ],
+        "M_CPD__45__15826_c": [
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin117",
+            "MB2bin303"
+        ],
+        "M_CPD__45__15936_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__16182_c": [
+            "MB2bin303"
+        ],
+        "M_CPD__45__16470_c": [
+            "MB2bin210"
+        ],
+        "M_CPD__45__16522_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__16567_c": [
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin99"
+        ],
+        "M_CPD__45__16606_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16607_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16647_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__17141_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__18260_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__18508_c": [
+            "MB2bin176",
+            "MB2bin22"
+        ],
+        "M_CPD__45__18909_c": [
+            "MB2bin210",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__19135_c": [
+            "MB2bin99"
+        ],
+        "M_CPD__45__191_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin74",
+            "MB2bin99",
+            "MB2bin176"
+        ],
+        "M_CPD__45__19307_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19308_c": [
+            "MB2bin169",
+            "MB2bin97",
+            "MB2bin74"
+        ],
+        "M_CPD__45__19309_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19309_e": [
+            "MB2bin169",
+            "MB2bin94",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin74",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__19317_c": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__19317_e": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__1943_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__20067_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20068_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20069_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20118_c": [
+            "MB2bin420",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21068_c": [
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21306_c": [
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin161",
+            "MB2bin22",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21340_c": [
+            "MB2bin27"
+        ],
+        "M_CPD__45__24084_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24085_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24086_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24087_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__290_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__341_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__37_c": [
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin360",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117"
+        ],
+        "M_CPD__45__389_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin99"
+        ],
+        "M_CPD__45__400_c": [
+            "MB2bin117"
+        ],
+        "M_CPD__45__421_c": [
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_CPD__45__464_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__465_c": [
+            "MB2bin176",
+            "MB2bin22",
+            "MB2bin164"
+        ],
+        "M_CPD__45__507_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_CPD__45__618_c": [
+            "specI_v2_1159",
+            "MB2bin138",
+            "MB2bin169",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin303",
+            "MB2bin360"
+        ],
+        "M_CPD__45__636_c": [
+            "MB2bin94"
+        ],
+        "M_CPD__45__642_c": [
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414"
+        ],
+        "M_CPD__45__667_c": [
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin161",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin22",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94"
+        ],
+        "M_CPD__45__7035_c": [
+            "MB2bin97"
+        ],
+        "M_CPD__45__7246_c": [
+            "MB2bin360",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__822_c": [
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin149"
+        ],
+        "M_CPD__45__9020_c": [
+            "MB2bin161",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__9038_c": [
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22"
+        ],
+        "M_CPD__45__9444_c": [
+            "MB2bin74",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__9610_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__9649_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__9720_c": [
+            "MB2bin161",
+            "MB2bin1077",
+            "MB2bin210",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin74",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__9852_c": [
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__9853_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9862_c": [
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__9863_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9864_c": [
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360"
+        ],
+        "M_DIHYDROSIROHYDROCHLORIN_c": [
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22"
+        ],
+        "M_D__45__aspartate__45__peptidoglycan_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin19"
+        ],
+        "M_D__45__galactopyranose__45__6__45__phosphate_c": [
+            "specI_v2_0079"
+        ],
+        "M_FORMALDEHYDE_c": [
+            "MB2bin360",
+            "MB2bin117",
+            "specI_v2_0079"
+        ],
+        "M_FORMYL__45__COA_c": [
+            "MB2bin138"
+        ],
+        "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin22"
+        ],
+        "M_GLUTARYL__45__COA_c": [
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_HOMO__45__SER_c": [
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin99",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin19",
+            "MB2bin161"
+        ],
+        "M_HOPAN__45__22__45__OL_c": [
+            "MB2bin22"
+        ],
+        "M_HOP__45__2229__45__ENE_c": [
+            "MB2bin22"
+        ],
+        "M_HYDROXYMETHYLBILANE_c": [
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_ISOBUTYRATE_c": [
+            "MB2bin161",
+            "MB2bin1077"
+        ],
+        "M_METOH_c": [
+            "specI_v2_1159",
+            "MB2bin74"
+        ],
+        "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c": [
+            "specI_v2_1159"
+        ],
+        "M_N2__45__SUCCINYLGLUTAMATE_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_N2__45__SUCCINYLORNITHINE_c": [
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin22"
+        ],
+        "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c": [
+            "MB2bin176",
+            "MB2bin74",
+            "MB2bin164"
+        ],
+        "M_OCTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin149",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin74",
+            "MB2bin19"
+        ],
+        "M_OXAMATE_c": [
+            "MB2bin99"
+        ],
+        "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c": [
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin161",
+            "specI_v2_1159"
+        ],
+        "M_PORPHOBILINOGEN_c": [
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "specI_v2_0079",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161"
+        ],
+        "M_PROPANOL_c": [
+            "specI_v2_0079"
+        ],
+        "M_PROTOPORPHYRINOGEN_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_REDUCED__45__MENAQUINONE_c": [
+            "MB2bin210",
+            "MB2bin22",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin161"
+        ],
+        "M_RHAMNULOSE__45__1P_c": [
+            "MB2bin360",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin99",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_SIROHEME_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_SIROHYDROCHLORIN_c": [
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_SQUALENE_c": [
+            "MB2bin22",
+            "MB2bin176"
+        ],
+        "M_S__45__HYDROXYMETHYLGLUTATHIONE_c": [
+            "specI_v2_1159",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin161"
+        ],
+        "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c": [
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_UROPORPHYRINOGEN__45__III_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99"
+        ]
+    },
+    "key_species": [
+        "MB2bin138",
+        "MB2bin14",
+        "MB2bin590",
+        "MB2bin149",
+        "MB2bin489",
+        "MB2bin161",
+        "specI_v2_4321",
+        "MB2bin54",
+        "specI_v2_1072",
+        "MB2bin164",
+        "MB2bin36",
+        "MB2bin238",
+        "MB2bin86",
+        "MB2bin27",
+        "MB2bin74",
+        "MB2bin94",
+        "MB2bin117",
+        "MB2bin99",
+        "specI_v2_4813",
+        "MB2bin210",
+        "MB2bin414",
+        "specI_v2_0079",
+        "specI_v2_1706",
+        "MB2bin176",
+        "MB2bin360",
+        "MB2bin264",
+        "MB2bin65",
+        "MB2bin1077",
+        "MB2bin6",
+        "MB2bin420",
+        "MB2bin97",
+        "specI_v2_5296",
+        "specI_v2_4394",
+        "MB2bin691",
+        "specI_v2_1159",
+        "specI_v2_1594",
+        "MB2bin260",
+        "MB2bin1",
+        "MB2bin303",
+        "MGS_2dra05736",
+        "MB2bin19",
+        "MB2bin106",
+        "MB2bin12",
+        "MB2bin92",
+        "MB2bin156",
+        "MB2bin24",
+        "MB2bin22",
+        "MB2bin21",
+        "MB2bin205",
+        "MB2bin463",
+        "MB2bin169"
+    ],
+    "newly_prod": [
+        "M_CPD__45__10684_c",
+        "M_CPD__45__24087_c",
+        "M_CPD__45__12125_c",
+        "M_CPD__45__12321_c",
+        "M_COPROPORPHYRINOGEN_I_c",
+        "M_CPD__45__20069_c",
+        "M_D__45__galactopyranose__45__6__45__phosphate_c",
+        "M_CPD__45__9038_c",
+        "M_CPD__45__16522_c",
+        "M_CPD__45__10483_c",
+        "M_CPD__45__15429_c",
+        "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c",
+        "M_PORPHOBILINOGEN_c",
+        "M_CPD__45__16647_c",
+        "M_CPD__45__400_c",
+        "M_CPD__45__9444_c",
+        "M_CPD__45__12460_c",
+        "M_CPD__45__9720_c",
+        "M_CPD__45__20118_c",
+        "M_CPD__45__16470_c",
+        "M_CPD__45__12855_c",
+        "M_CPD__45__464_c",
+        "M_SIROHEME_c",
+        "M_CPD__45__507_c",
+        "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+        "M_CPD__45__18508_c",
+        "M_CPD__45__12857_c",
+        "M_CPD__45__12856_c",
+        "M_PROPANOL_c",
+        "M_CPD__45__1136_c",
+        "M_CPD__45__18260_c",
+        "M_HOPAN__45__22__45__OL_c",
+        "M_FORMALDEHYDE_c",
+        "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c",
+        "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c",
+        "M_CPD__45__7002_c",
+        "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c",
+        "M_ISOBUTYRATE_c",
+        "M_CPD__45__556_c",
+        "M_RHAMNULOSE__45__1P_c",
+        "M_CPD__45__16567_c",
+        "M_CPD__45__667_c",
+        "M_DIHYDROSIROHYDROCHLORIN_c",
+        "M_UROPORPHYRINOGEN__45__III_c",
+        "M_2__45__OCTAPRENYLPHENOL_c",
+        "M_METOH_c",
+        "M_COPROPORPHYRINOGEN_III_c",
+        "M_CPD__45__19317_c",
+        "M_CPD__45__12513_c",
+        "M_REDUCED__45__MENAQUINONE_c",
+        "M_CPD__45__15430_c",
+        "M_D__45__aspartate__45__peptidoglycan_c",
+        "M_CPD__45__642_c",
+        "M_CPD__45__20067_c",
+        "M_CPD__45__7246_c",
+        "M_CPD__45__19309_c",
+        "M_CPD0__45__2298_c",
+        "M_SQUALENE_c",
+        "M_CPD__45__17141_c",
+        "M_CPD__45__9862_c",
+        "M_CPD__45__9853_c",
+        "M_CPD__45__24084_c",
+        "M_CPD__45__12739_c",
+        "M_CPD__45__389_c",
+        "M_CPD__45__24086_c",
+        "M_CPD__45__14205_c",
+        "M_OCTAPRENYL__45__DIPHOSPHATE_c",
+        "M_GLUTARYL__45__COA_c",
+        "M_CPD__45__9649_c",
+        "M_CPD__45__12115_c",
+        "M_CPD__45__19309_e",
+        "M_CPD__45__19135_c",
+        "M_CATECHOL_c",
+        "M_PROTOPORPHYRINOGEN_c",
+        "M_CPD__45__16607_c",
+        "M_CPD__45__20068_c",
+        "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c",
+        "M_PHYTYL__45__PYROPHOSPHATE_c",
+        "M_N2__45__SUCCINYLGLUTAMATE_c",
+        "M_ACETONE_c",
+        "M_CPD__45__12120_c",
+        "M_CPD__45__19308_c",
+        "M_CPD__45__13122_c",
+        "M_CPD__45__12119_c",
+        "M_CPD__45__16606_c",
+        "M_BETAINE_ALDEHYDE_c",
+        "M_CPD__45__9852_c",
+        "M_CPD__45__16182_c",
+        "M_CPD__45__15826_c",
+        "M_CHLOROACETIC__45__ACID_c",
+        "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c",
+        "M_CPD__45__341_c",
+        "M_CPD__45__12128_c",
+        "M_FORMYL__45__COA_c",
+        "M_CPD__45__11444_c",
+        "M_CPD__45__12117_c",
+        "M_CPD__45__37_c",
+        "M_CPD__45__13712_c",
+        "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+        "M_CPD__45__7035_c",
+        "M_CPD__45__465_c",
+        "M_CPD__45__191_c",
+        "M_HOMO__45__SER_c",
+        "M_S__45__HYDROXYMETHYLGLUTATHIONE_c",
+        "M_CPD__45__421_c",
+        "M_CPD__45__15427_c",
+        "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c",
+        "M_CPD__45__10683_c",
+        "M_CPD__45__24085_c",
+        "M_CPD__45__21068_c",
+        "M_CPD__45__1091_c",
+        "M_CPD__45__822_c",
+        "M_CPD__45__9020_c",
+        "M_CPD__45__19307_c",
+        "M_CPD__45__12127_c",
+        "M_CPD__45__18913_c",
+        "M_HOP__45__2229__45__ENE_c",
+        "M_CPD__45__11984_c",
+        "M_CPD__45__9863_c",
+        "M_CPD__45__1128_c",
+        "M_CPD__45__12955_c",
+        "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c",
+        "M_C55__45__PP__45__GLCNAC__45__MANNACA_c",
+        "M_CPD__45__9864_c",
+        "M_CPD__45__19317_e",
+        "M_SIROHYDROCHLORIN_c",
+        "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c",
+        "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c",
+        "M_CPD__45__21306_c",
+        "M_CPD__45__7003_c",
+        "M_CPD__45__12118_c",
+        "M_CPD__45__1943_c",
+        "M_CPD__45__13722_c",
+        "M_CPD__45__12126_c",
+        "M_CPD__45__21340_c",
+        "M_CPD__45__10116_c",
+        "M_CPD__45__636_c",
+        "M_OXAMATE_c",
+        "M_CPD0__45__1643_c",
+        "M_CPD__45__18909_c",
+        "M_HYDROXYMETHYLBILANE_c",
+        "M_CPD__45__11533_c",
+        "M_CPD__45__290_c",
+        "M_N2__45__SUCCINYLORNITHINE_c",
+        "M_CPD__45__10792_c",
+        "M_CPD__45__618_c",
+        "M_5__45__AMINO__45__LEVULINATE_c",
+        "M_CPD__45__15936_c",
+        "M_CPD__45__9610_c"
+    ],
+    "one_model": {
+        "chosen_bacteria": [
+            "MB2bin138",
+            "MB2bin14",
+            "MB2bin176",
+            "MB2bin590",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin264",
+            "MB2bin161",
+            "MB2bin169",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin164",
+            "MB2bin238",
+            "specI_v2_1159",
+            "MB2bin92",
+            "MB2bin303",
+            "MB2bin86",
+            "MB2bin19",
+            "MB2bin106",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin94",
+            "MB2bin99",
+            "MB2bin74",
+            "MB2bin22",
+            "MB2bin205",
+            "MB2bin210",
+            "MB2bin414",
+            "specI_v2_0079"
+        ],
+        "newly_producible_target": [
+            "M_CPD__45__10684_c",
+            "M_CPD__45__24087_c",
+            "M_CPD__45__12125_c",
+            "M_CPD__45__12321_c",
+            "M_COPROPORPHYRINOGEN_I_c",
+            "M_CPD__45__20069_c",
+            "M_D__45__galactopyranose__45__6__45__phosphate_c",
+            "M_CPD__45__9038_c",
+            "M_CPD__45__16522_c",
+            "M_CPD__45__10483_c",
+            "M_CPD__45__15429_c",
+            "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c",
+            "M_PORPHOBILINOGEN_c",
+            "M_CPD__45__16647_c",
+            "M_CPD__45__400_c",
+            "M_CPD__45__9444_c",
+            "M_CPD__45__12460_c",
+            "M_CPD__45__9720_c",
+            "M_CPD__45__20118_c",
+            "M_CPD__45__16470_c",
+            "M_CPD__45__12855_c",
+            "M_CPD__45__464_c",
+            "M_SIROHEME_c",
+            "M_CPD__45__507_c",
+            "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+            "M_CPD__45__18508_c",
+            "M_CPD__45__12857_c",
+            "M_CPD__45__12856_c",
+            "M_PROPANOL_c",
+            "M_CPD__45__1136_c",
+            "M_CPD__45__18260_c",
+            "M_HOPAN__45__22__45__OL_c",
+            "M_FORMALDEHYDE_c",
+            "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c",
+            "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c",
+            "M_CPD__45__7002_c",
+            "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c",
+            "M_ISOBUTYRATE_c",
+            "M_CPD__45__556_c",
+            "M_RHAMNULOSE__45__1P_c",
+            "M_CPD__45__16567_c",
+            "M_CPD__45__667_c",
+            "M_DIHYDROSIROHYDROCHLORIN_c",
+            "M_UROPORPHYRINOGEN__45__III_c",
+            "M_2__45__OCTAPRENYLPHENOL_c",
+            "M_METOH_c",
+            "M_COPROPORPHYRINOGEN_III_c",
+            "M_CPD__45__19317_c",
+            "M_CPD__45__12513_c",
+            "M_REDUCED__45__MENAQUINONE_c",
+            "M_CPD__45__15430_c",
+            "M_D__45__aspartate__45__peptidoglycan_c",
+            "M_CPD__45__642_c",
+            "M_CPD__45__20067_c",
+            "M_CPD__45__7246_c",
+            "M_CPD__45__19309_c",
+            "M_CPD0__45__2298_c",
+            "M_SQUALENE_c",
+            "M_CPD__45__17141_c",
+            "M_CPD__45__9862_c",
+            "M_CPD__45__9853_c",
+            "M_CPD__45__24084_c",
+            "M_CPD__45__12739_c",
+            "M_CPD__45__389_c",
+            "M_CPD__45__24086_c",
+            "M_CPD__45__14205_c",
+            "M_OCTAPRENYL__45__DIPHOSPHATE_c",
+            "M_GLUTARYL__45__COA_c",
+            "M_CPD__45__9649_c",
+            "M_CPD__45__12115_c",
+            "M_CPD__45__19309_e",
+            "M_CPD__45__19135_c",
+            "M_CATECHOL_c",
+            "M_PROTOPORPHYRINOGEN_c",
+            "M_CPD__45__16607_c",
+            "M_CPD__45__20068_c",
+            "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c",
+            "M_PHYTYL__45__PYROPHOSPHATE_c",
+            "M_N2__45__SUCCINYLGLUTAMATE_c",
+            "M_ACETONE_c",
+            "M_CPD__45__12120_c",
+            "M_CPD__45__19308_c",
+            "M_CPD__45__13122_c",
+            "M_CPD__45__12119_c",
+            "M_CPD__45__16606_c",
+            "M_BETAINE_ALDEHYDE_c",
+            "M_CPD__45__9852_c",
+            "M_CPD__45__16182_c",
+            "M_CPD__45__15826_c",
+            "M_CHLOROACETIC__45__ACID_c",
+            "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c",
+            "M_CPD__45__341_c",
+            "M_CPD__45__12128_c",
+            "M_FORMYL__45__COA_c",
+            "M_CPD__45__11444_c",
+            "M_CPD__45__12117_c",
+            "M_CPD__45__37_c",
+            "M_CPD__45__13712_c",
+            "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+            "M_CPD__45__7035_c",
+            "M_CPD__45__465_c",
+            "M_CPD__45__191_c",
+            "M_HOMO__45__SER_c",
+            "M_S__45__HYDROXYMETHYLGLUTATHIONE_c",
+            "M_CPD__45__421_c",
+            "M_CPD__45__15427_c",
+            "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c",
+            "M_CPD__45__10683_c",
+            "M_CPD__45__24085_c",
+            "M_CPD__45__21068_c",
+            "M_CPD__45__1091_c",
+            "M_CPD__45__822_c",
+            "M_CPD__45__9020_c",
+            "M_CPD__45__19307_c",
+            "M_CPD__45__12127_c",
+            "M_CPD__45__18913_c",
+            "M_HOP__45__2229__45__ENE_c",
+            "M_CPD__45__11984_c",
+            "M_CPD__45__9863_c",
+            "M_CPD__45__1128_c",
+            "M_CPD__45__12955_c",
+            "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c",
+            "M_C55__45__PP__45__GLCNAC__45__MANNACA_c",
+            "M_CPD__45__9864_c",
+            "M_CPD__45__19317_e",
+            "M_SIROHYDROCHLORIN_c",
+            "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c",
+            "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c",
+            "M_CPD__45__21306_c",
+            "M_CPD__45__7003_c",
+            "M_CPD__45__12118_c",
+            "M_CPD__45__1943_c",
+            "M_CPD__45__13722_c",
+            "M_CPD__45__12126_c",
+            "M_CPD__45__21340_c",
+            "M_CPD__45__10116_c",
+            "M_CPD__45__636_c",
+            "M_OXAMATE_c",
+            "M_CPD0__45__1643_c",
+            "M_CPD__45__18909_c",
+            "M_HYDROXYMETHYLBILANE_c",
+            "M_CPD__45__11533_c",
+            "M_CPD__45__290_c",
+            "M_N2__45__SUCCINYLORNITHINE_c",
+            "M_CPD__45__10792_c",
+            "M_CPD__45__618_c",
+            "M_5__45__AMINO__45__LEVULINATE_c",
+            "M_CPD__45__15936_c",
+            "M_CPD__45__9610_c"
+        ],
+        "producible_target": [
+            "M_CPD__45__10684_c",
+            "M_CPD__45__24087_c",
+            "M_CPD__45__12125_c",
+            "M_CPD__45__12321_c",
+            "M_COPROPORPHYRINOGEN_I_c",
+            "M_CPD__45__20069_c",
+            "M_D__45__galactopyranose__45__6__45__phosphate_c",
+            "M_CPD__45__9038_c",
+            "M_CPD__45__16522_c",
+            "M_CPD__45__10483_c",
+            "M_CPD__45__15429_c",
+            "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c",
+            "M_PORPHOBILINOGEN_c",
+            "M_CPD__45__16647_c",
+            "M_CPD__45__400_c",
+            "M_CPD__45__9444_c",
+            "M_CPD__45__12460_c",
+            "M_CPD__45__9720_c",
+            "M_CPD__45__20118_c",
+            "M_CPD__45__16470_c",
+            "M_CPD__45__12855_c",
+            "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+            "M_CPD__45__464_c",
+            "M_CPD__45__18508_c",
+            "M_CPD__45__507_c",
+            "M_SIROHEME_c",
+            "M_CPD__45__12857_c",
+            "M_CPD__45__12856_c",
+            "M_PROPANOL_c",
+            "M_CPD__45__1136_c",
+            "M_CPD__45__18260_c",
+            "M_HOPAN__45__22__45__OL_c",
+            "M_FORMALDEHYDE_c",
+            "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c",
+            "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c",
+            "M_CPD__45__7002_c",
+            "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c",
+            "M_ISOBUTYRATE_c",
+            "M_CPD__45__556_c",
+            "M_RHAMNULOSE__45__1P_c",
+            "M_CPD__45__16567_c",
+            "M_CPD__45__667_c",
+            "M_DIHYDROSIROHYDROCHLORIN_c",
+            "M_UROPORPHYRINOGEN__45__III_c",
+            "M_2__45__OCTAPRENYLPHENOL_c",
+            "M_METOH_c",
+            "M_COPROPORPHYRINOGEN_III_c",
+            "M_CPD__45__19317_c",
+            "M_CPD__45__12513_c",
+            "M_REDUCED__45__MENAQUINONE_c",
+            "M_CPD__45__15430_c",
+            "M_D__45__aspartate__45__peptidoglycan_c",
+            "M_CPD__45__642_c",
+            "M_CPD__45__20067_c",
+            "M_CPD__45__7246_c",
+            "M_CPD__45__19309_c",
+            "M_SQUALENE_c",
+            "M_CPD0__45__2298_c",
+            "M_CPD__45__17141_c",
+            "M_CPD__45__9862_c",
+            "M_CPD__45__24084_c",
+            "M_CPD__45__9853_c",
+            "M_CPD__45__12739_c",
+            "M_CPD__45__389_c",
+            "M_CPD__45__24086_c",
+            "M_OCTAPRENYL__45__DIPHOSPHATE_c",
+            "M_CPD__45__14205_c",
+            "M_GLUTARYL__45__COA_c",
+            "M_CPD__45__9649_c",
+            "M_CPD__45__12115_c",
+            "M_CPD__45__19309_e",
+            "M_CPD__45__19135_c",
+            "M_CATECHOL_c",
+            "M_PROTOPORPHYRINOGEN_c",
+            "M_CPD__45__16607_c",
+            "M_CPD__45__20068_c",
+            "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c",
+            "M_PHYTYL__45__PYROPHOSPHATE_c",
+            "M_CPD__45__12120_c",
+            "M_ACETONE_c",
+            "M_N2__45__SUCCINYLGLUTAMATE_c",
+            "M_CPD__45__19308_c",
+            "M_CPD__45__13122_c",
+            "M_CPD__45__12119_c",
+            "M_CPD__45__16606_c",
+            "M_BETAINE_ALDEHYDE_c",
+            "M_CPD__45__9852_c",
+            "M_CPD__45__16182_c",
+            "M_CPD__45__15826_c",
+            "M_CHLOROACETIC__45__ACID_c",
+            "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c",
+            "M_CPD__45__341_c",
+            "M_CPD__45__12128_c",
+            "M_FORMYL__45__COA_c",
+            "M_CPD__45__12117_c",
+            "M_CPD__45__11444_c",
+            "M_CPD__45__37_c",
+            "M_CPD__45__13712_c",
+            "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+            "M_CPD__45__7035_c",
+            "M_CPD__45__465_c",
+            "M_CPD__45__191_c",
+            "M_HOMO__45__SER_c",
+            "M_S__45__HYDROXYMETHYLGLUTATHIONE_c",
+            "M_CPD__45__421_c",
+            "M_CPD__45__15427_c",
+            "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c",
+            "M_CPD__45__10683_c",
+            "M_CPD__45__21068_c",
+            "M_CPD__45__24085_c",
+            "M_CPD__45__1091_c",
+            "M_CPD__45__822_c",
+            "M_CPD__45__9020_c",
+            "M_CPD__45__19307_c",
+            "M_CPD__45__12127_c",
+            "M_CPD__45__18913_c",
+            "M_HOP__45__2229__45__ENE_c",
+            "M_CPD__45__11984_c",
+            "M_CPD__45__9863_c",
+            "M_CPD__45__1128_c",
+            "M_CPD__45__12955_c",
+            "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c",
+            "M_C55__45__PP__45__GLCNAC__45__MANNACA_c",
+            "M_CPD__45__9864_c",
+            "M_CPD__45__19317_e",
+            "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c",
+            "M_SIROHYDROCHLORIN_c",
+            "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c",
+            "M_CPD__45__21306_c",
+            "M_CPD__45__7003_c",
+            "M_CPD__45__12118_c",
+            "M_CPD__45__1943_c",
+            "M_CPD__45__13722_c",
+            "M_CPD__45__12126_c",
+            "M_CPD__45__21340_c",
+            "M_CPD__45__10116_c",
+            "M_CPD__45__636_c",
+            "M_OXAMATE_c",
+            "M_CPD0__45__1643_c",
+            "M_CPD__45__18909_c",
+            "M_HYDROXYMETHYLBILANE_c",
+            "M_CELLULOSE_c",
+            "M_N2__45__SUCCINYLORNITHINE_c",
+            "M_CPD__45__290_c",
+            "M_CPD__45__11533_c",
+            "M_CPD__45__10792_c",
+            "M_CPD__45__618_c",
+            "M_5__45__AMINO__45__LEVULINATE_c",
+            "M_CPD__45__15936_c",
+            "M_CPD__45__9610_c"
+        ],
+        "target_producer_coop_selectedcom": {
+            "M_2__45__OCTAPRENYLPHENOL_c": [
+                "specI_v2_0079",
+                "MB2bin264",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin156",
+                "MB2bin117",
+                "MB2bin238"
+            ],
+            "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c": [
+                "MB2bin156",
+                "specI_v2_0079",
+                "MB2bin238",
+                "MB2bin360"
+            ],
+            "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin117",
+                "MB2bin360",
+                "MB2bin210"
+            ],
+            "M_5__45__AMINO__45__LEVULINATE_c": [
+                "MB2bin161",
+                "MB2bin138",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin169",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin74",
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c": [
+                "MB2bin360",
+                "MB2bin117",
+                "specI_v2_0079"
+            ],
+            "M_ACETONE_c": [
+                "MB2bin414"
+            ],
+            "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c": [
+                "MB2bin264",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin590",
+                "MB2bin414",
+                "MB2bin74",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "MB2bin106",
+                "MB2bin420",
+                "MB2bin97"
+            ],
+            "M_BETAINE_ALDEHYDE_c": [
+                "specI_v2_0079",
+                "MB2bin360",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c": [
+                "specI_v2_0079",
+                "MB2bin360"
+            ],
+            "M_C55__45__PP__45__GLCNAC__45__MANNACA_c": [
+                "MB2bin156",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin360"
+            ],
+            "M_CATECHOL_c": [
+                "MB2bin74",
+                "MB2bin19",
+                "MB2bin360",
+                "MB2bin14"
+            ],
+            "M_CELLULOSE_c": [
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin264",
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_CHLOROACETIC__45__ACID_c": [
+                "MB2bin138"
+            ],
+            "M_COPROPORPHYRINOGEN_III_c": [
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin590",
+                "MB2bin414",
+                "MB2bin74",
+                "MB2bin149",
+                "MB2bin303",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079"
+            ],
+            "M_COPROPORPHYRINOGEN_I_c": [
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin238",
+                "MB2bin149",
+                "MB2bin303",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin99",
+                "MB2bin138",
+                "specI_v2_0079",
+                "MB2bin590"
+            ],
+            "M_CPD0__45__1643_c": [
+                "MB2bin176"
+            ],
+            "M_CPD0__45__2298_c": [
+                "specI_v2_1159",
+                "MB2bin360",
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__10116_c": [
+                "MB2bin22"
+            ],
+            "M_CPD__45__10483_c": [
+                "MB2bin19",
+                "MB2bin92",
+                "MB2bin14"
+            ],
+            "M_CPD__45__10683_c": [
+                "MB2bin176"
+            ],
+            "M_CPD__45__10684_c": [
+                "MB2bin176"
+            ],
+            "M_CPD__45__10792_c": [
+                "MB2bin161"
+            ],
+            "M_CPD__45__1091_c": [
+                "MB2bin161",
+                "specI_v2_1159",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin1077",
+                "MB2bin238",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_CPD__45__1128_c": [
+                "MB2bin161",
+                "MB2bin360"
+            ],
+            "M_CPD__45__1136_c": [
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin117",
+                "MB2bin303",
+                "MB2bin360",
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__11444_c": [
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin264",
+                "MB2bin86",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin161"
+            ],
+            "M_CPD__45__11533_c": [
+                "MB2bin22"
+            ],
+            "M_CPD__45__11984_c": [
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__12115_c": [
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin360",
+                "specI_v2_1159",
+                "MB2bin149",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__12117_c": [
+                "MB2bin210",
+                "MB2bin22",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin149",
+                "MB2bin360",
+                "specI_v2_1159",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161"
+            ],
+            "M_CPD__45__12118_c": [
+                "specI_v2_0079",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin360",
+                "specI_v2_1159",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_CPD__45__12119_c": [
+                "specI_v2_1159",
+                "MB2bin210",
+                "MB2bin22",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161"
+            ],
+            "M_CPD__45__12120_c": [
+                "MB2bin22",
+                "MB2bin27",
+                "MB2bin19",
+                "specI_v2_1159",
+                "MB2bin149",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210"
+            ],
+            "M_CPD__45__12125_c": [
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__12126_c": [
+                "MB2bin176",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin1077",
+                "MB2bin106",
+                "MB2bin420",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin164",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin590",
+                "MB2bin74",
+                "specI_v2_1159",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin99",
+                "MB2bin169"
+            ],
+            "M_CPD__45__12127_c": [
+                "specI_v2_1159",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin210",
+                "MB2bin27",
+                "MB2bin19"
+            ],
+            "M_CPD__45__12128_c": [
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin210",
+                "MB2bin27",
+                "MB2bin19",
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__12321_c": [
+                "MB2bin22"
+            ],
+            "M_CPD__45__12460_c": [
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__12513_c": [
+                "MB2bin149",
+                "MB2bin161"
+            ],
+            "M_CPD__45__12739_c": [
+                "MB2bin420"
+            ],
+            "M_CPD__45__12855_c": [
+                "MB2bin92",
+                "MB2bin22",
+                "MB2bin205"
+            ],
+            "M_CPD__45__12856_c": [
+                "MB2bin205"
+            ],
+            "M_CPD__45__12857_c": [
+                "MB2bin205"
+            ],
+            "M_CPD__45__12955_c": [
+                "MB2bin1077"
+            ],
+            "M_CPD__45__13122_c": [
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin590",
+                "MB2bin74",
+                "MB2bin19",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin106",
+                "MB2bin1077",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238"
+            ],
+            "M_CPD__45__13712_c": [
+                "MB2bin149"
+            ],
+            "M_CPD__45__13722_c": [
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_CPD__45__14205_c": [
+                "MB2bin169"
+            ],
+            "M_CPD__45__15427_c": [
+                "MB2bin92"
+            ],
+            "M_CPD__45__15429_c": [
+                "MB2bin164"
+            ],
+            "M_CPD__45__15430_c": [
+                "MB2bin106",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin176",
+                "MB2bin14"
+            ],
+            "M_CPD__45__15826_c": [
+                "MB2bin360",
+                "specI_v2_0079",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin117",
+                "MB2bin303"
+            ],
+            "M_CPD__45__15936_c": [
+                "MB2bin1077"
+            ],
+            "M_CPD__45__16182_c": [
+                "MB2bin303"
+            ],
+            "M_CPD__45__16470_c": [
+                "MB2bin210"
+            ],
+            "M_CPD__45__16522_c": [
+                "MB2bin238"
+            ],
+            "M_CPD__45__16567_c": [
+                "MB2bin19",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin92",
+                "MB2bin99"
+            ],
+            "M_CPD__45__16606_c": [
+                "MB2bin19"
+            ],
+            "M_CPD__45__16607_c": [
+                "MB2bin19"
+            ],
+            "M_CPD__45__16647_c": [
+                "MB2bin1077"
+            ],
+            "M_CPD__45__17141_c": [
+                "MB2bin238"
+            ],
+            "M_CPD__45__18260_c": [
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin238"
+            ],
+            "M_CPD__45__18508_c": [
+                "MB2bin176",
+                "MB2bin22"
+            ],
+            "M_CPD__45__18909_c": [
+                "MB2bin14",
+                "MB2bin210",
+                "MB2bin1077"
+            ],
+            "M_CPD__45__18913_c": [
+                "MB2bin14"
+            ],
+            "M_CPD__45__19135_c": [
+                "MB2bin99"
+            ],
+            "M_CPD__45__191_c": [
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin106",
+                "MB2bin156",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin74",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin99",
+                "MB2bin176"
+            ],
+            "M_CPD__45__19307_c": [
+                "MB2bin169"
+            ],
+            "M_CPD__45__19308_c": [
+                "MB2bin169",
+                "MB2bin97",
+                "MB2bin205",
+                "MB2bin74"
+            ],
+            "M_CPD__45__19309_c": [
+                "MB2bin169"
+            ],
+            "M_CPD__45__19309_e": [
+                "MB2bin169",
+                "MB2bin94",
+                "MB2bin205",
+                "MB2bin106",
+                "MB2bin264",
+                "MB2bin238",
+                "MB2bin303",
+                "MB2bin74",
+                "MB2bin1077"
+            ],
+            "M_CPD__45__19317_c": [
+                "MB2bin86"
+            ],
+            "M_CPD__45__19317_e": [
+                "MB2bin86"
+            ],
+            "M_CPD__45__1943_c": [
+                "MB2bin1077"
+            ],
+            "M_CPD__45__20067_c": [
+                "specI_v2_0079",
+                "MB2bin92",
+                "MB2bin106",
+                "MB2bin156"
+            ],
+            "M_CPD__45__20068_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__20069_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__20118_c": [
+                "MB2bin420",
+                "MB2bin27"
+            ],
+            "M_CPD__45__21068_c": [
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin74",
+                "MB2bin19",
+                "MB2bin303",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin138",
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27"
+            ],
+            "M_CPD__45__21306_c": [
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin92",
+                "MB2bin22",
+                "MB2bin27"
+            ],
+            "M_CPD__45__21340_c": [
+                "MB2bin27"
+            ],
+            "M_CPD__45__24084_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__24085_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__24086_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__24087_c": [
+                "specI_v2_0079"
+            ],
+            "M_CPD__45__290_c": [
+                "MB2bin19",
+                "MB2bin14"
+            ],
+            "M_CPD__45__341_c": [
+                "MB2bin164"
+            ],
+            "M_CPD__45__37_c": [
+                "MB2bin238",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin106",
+                "MB2bin590",
+                "MB2bin74",
+                "MB2bin19",
+                "MB2bin86",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin1077",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_CPD__45__389_c": [
+                "specI_v2_0079",
+                "MB2bin360",
+                "specI_v2_1159",
+                "MB2bin99"
+            ],
+            "M_CPD__45__400_c": [
+                "MB2bin117"
+            ],
+            "M_CPD__45__421_c": [
+                "MB2bin149",
+                "MB2bin360",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_CPD__45__464_c": [
+                "MB2bin22"
+            ],
+            "M_CPD__45__465_c": [
+                "MB2bin176",
+                "MB2bin22",
+                "MB2bin164"
+            ],
+            "M_CPD__45__507_c": [
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin360"
+            ],
+            "M_CPD__45__556_c": [
+                "MB2bin106"
+            ],
+            "M_CPD__45__618_c": [
+                "specI_v2_1159",
+                "MB2bin138",
+                "MB2bin156",
+                "MB2bin169",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin264",
+                "MB2bin303",
+                "MB2bin360"
+            ],
+            "M_CPD__45__636_c": [
+                "MB2bin94"
+            ],
+            "M_CPD__45__642_c": [
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin414"
+            ],
+            "M_CPD__45__667_c": [
+                "MB2bin590",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin74",
+                "specI_v2_1159",
+                "MB2bin92",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin97",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "MB2bin205",
+                "MB2bin106"
+            ],
+            "M_CPD__45__7002_c": [
+                "MB2bin156"
+            ],
+            "M_CPD__45__7003_c": [
+                "MB2bin156"
+            ],
+            "M_CPD__45__7035_c": [
+                "MB2bin97"
+            ],
+            "M_CPD__45__7246_c": [
+                "MB2bin360",
+                "MB2bin1077",
+                "MB2bin97",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin590"
+            ],
+            "M_CPD__45__822_c": [
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin117",
+                "MB2bin360",
+                "MB2bin149"
+            ],
+            "M_CPD__45__9020_c": [
+                "MB2bin161",
+                "MB2bin106",
+                "MB2bin1077"
+            ],
+            "M_CPD__45__9038_c": [
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin94",
+                "MB2bin205",
+                "MB2bin27",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin138",
+                "specI_v2_0079",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin22",
+                "MB2bin156"
+            ],
+            "M_CPD__45__9444_c": [
+                "MB2bin74",
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__9610_c": [
+                "MB2bin19"
+            ],
+            "M_CPD__45__9649_c": [
+                "MB2bin19"
+            ],
+            "M_CPD__45__9720_c": [
+                "MB2bin92",
+                "MB2bin161",
+                "MB2bin1077",
+                "MB2bin210",
+                "MB2bin169",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin106",
+                "MB2bin27",
+                "MB2bin414",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin149",
+                "MB2bin303",
+                "MB2bin360",
+                "MB2bin74",
+                "specI_v2_1159"
+            ],
+            "M_CPD__45__9852_c": [
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210"
+            ],
+            "M_CPD__45__9853_c": [
+                "MB2bin264",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_0079",
+                "MB2bin117",
+                "MB2bin238"
+            ],
+            "M_CPD__45__9862_c": [
+                "specI_v2_0079",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin264",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210"
+            ],
+            "M_CPD__45__9863_c": [
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_0079",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin238"
+            ],
+            "M_CPD__45__9864_c": [
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin360"
+            ],
+            "M_DIHYDROSIROHYDROCHLORIN_c": [
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin414",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin22"
+            ],
+            "M_D__45__aspartate__45__peptidoglycan_c": [
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin19"
+            ],
+            "M_D__45__galactopyranose__45__6__45__phosphate_c": [
+                "specI_v2_0079",
+                "MB2bin156"
+            ],
+            "M_FORMALDEHYDE_c": [
+                "MB2bin360",
+                "MB2bin156",
+                "MB2bin117",
+                "specI_v2_0079"
+            ],
+            "M_FORMYL__45__COA_c": [
+                "MB2bin138",
+                "MB2bin264"
+            ],
+            "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c": [
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin22"
+            ],
+            "M_GLUTARYL__45__COA_c": [
+                "MB2bin360",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_HOMO__45__SER_c": [
+                "MB2bin420",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin94",
+                "MB2bin590",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161"
+            ],
+            "M_HOPAN__45__22__45__OL_c": [
+                "MB2bin22"
+            ],
+            "M_HOP__45__2229__45__ENE_c": [
+                "MB2bin22"
+            ],
+            "M_HYDROXYMETHYLBILANE_c": [
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238"
+            ],
+            "M_ISOBUTYRATE_c": [
+                "MB2bin161",
+                "MB2bin1077"
+            ],
+            "M_METOH_c": [
+                "specI_v2_1159",
+                "MB2bin74"
+            ],
+            "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c": [
+                "specI_v2_1159"
+            ],
+            "M_N2__45__SUCCINYLGLUTAMATE_c": [
+                "MB2bin156",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_N2__45__SUCCINYLORNITHINE_c": [
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin117"
+            ],
+            "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+                "specI_v2_0079",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin22",
+                "MB2bin156"
+            ],
+            "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c": [
+                "MB2bin176",
+                "MB2bin74",
+                "MB2bin164"
+            ],
+            "M_OCTAPRENYL__45__DIPHOSPHATE_c": [
+                "MB2bin149",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "specI_v2_0079",
+                "MB2bin117",
+                "MB2bin74",
+                "MB2bin19"
+            ],
+            "M_OXAMATE_c": [
+                "MB2bin99"
+            ],
+            "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c": [
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin106",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin590",
+                "MB2bin414",
+                "MB2bin74",
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin303",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "specI_v2_1159"
+            ],
+            "M_PHYTYL__45__PYROPHOSPHATE_c": [
+                "MB2bin156"
+            ],
+            "M_PORPHOBILINOGEN_c": [
+                "MB2bin169",
+                "MB2bin117",
+                "MB2bin86",
+                "specI_v2_0079",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin156"
+            ],
+            "M_PROPANOL_c": [
+                "MB2bin156",
+                "specI_v2_0079"
+            ],
+            "M_PROTOPORPHYRINOGEN_c": [
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin205",
+                "MB2bin414",
+                "MB2bin74",
+                "MB2bin149",
+                "MB2bin360"
+            ],
+            "M_REDUCED__45__MENAQUINONE_c": [
+                "MB2bin92",
+                "MB2bin210",
+                "MB2bin22",
+                "MB2bin156",
+                "specI_v2_0079",
+                "MB2bin27",
+                "MB2bin19",
+                "MB2bin149",
+                "MB2bin14",
+                "MB2bin161"
+            ],
+            "M_RHAMNULOSE__45__1P_c": [
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin92",
+                "MB2bin1077",
+                "MB2bin97",
+                "MB2bin156",
+                "MB2bin99",
+                "MB2bin117",
+                "specI_v2_0079",
+                "MB2bin106",
+                "MB2bin590",
+                "MB2bin19",
+                "MB2bin86",
+                "MB2bin238"
+            ],
+            "M_SIROHEME_c": [
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin99",
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin156",
+                "MB2bin264",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238"
+            ],
+            "M_SIROHYDROCHLORIN_c": [
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin1077",
+                "MB2bin420",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin414",
+                "MB2bin360",
+                "MB2bin161",
+                "MB2bin99",
+                "MB2bin169"
+            ],
+            "M_SQUALENE_c": [
+                "MB2bin22",
+                "MB2bin176"
+            ],
+            "M_S__45__HYDROXYMETHYLGLUTATHIONE_c": [
+                "specI_v2_1159",
+                "MB2bin420",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin169",
+                "MB2bin117",
+                "MB2bin238",
+                "MB2bin138",
+                "MB2bin94",
+                "MB2bin205",
+                "specI_v2_0079",
+                "MB2bin27",
+                "MB2bin414",
+                "MB2bin74",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin360",
+                "MB2bin14",
+                "MB2bin161"
+            ],
+            "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c": [
+                "MB2bin264"
+            ],
+            "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c": [
+                "MB2bin117",
+                "MB2bin360",
+                "specI_v2_0079"
+            ],
+            "M_UROPORPHYRINOGEN__45__III_c": [
+                "MB2bin169",
+                "MB2bin138",
+                "MB2bin94",
+                "specI_v2_0079",
+                "MB2bin22",
+                "MB2bin156",
+                "MB2bin27",
+                "MB2bin264",
+                "MB2bin19",
+                "MB2bin117",
+                "MB2bin86",
+                "MB2bin238",
+                "MB2bin303",
+                "MB2bin590",
+                "MB2bin149",
+                "MB2bin360",
+                "MB2bin92",
+                "MB2bin14",
+                "MB2bin161",
+                "MB2bin210",
+                "MB2bin99"
+            ]
+        }
+    },
+    "one_model_targetsproducers": {
+        "M_2__45__OCTAPRENYLPHENOL_c": [
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin156",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c": [
+            "MB2bin156",
+            "specI_v2_0079",
+            "MB2bin238",
+            "MB2bin360"
+        ],
+        "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin210"
+        ],
+        "M_5__45__AMINO__45__LEVULINATE_c": [
+            "MB2bin161",
+            "MB2bin138",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c": [
+            "MB2bin360",
+            "MB2bin117",
+            "specI_v2_0079"
+        ],
+        "M_ACETONE_c": [
+            "MB2bin414"
+        ],
+        "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin264",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin590",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "MB2bin106",
+            "MB2bin420",
+            "MB2bin97"
+        ],
+        "M_BETAINE_ALDEHYDE_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c": [
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_C55__45__PP__45__GLCNAC__45__MANNACA_c": [
+            "MB2bin156",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_CATECHOL_c": [
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin14"
+        ],
+        "M_CELLULOSE_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CHLOROACETIC__45__ACID_c": [
+            "MB2bin138"
+        ],
+        "M_COPROPORPHYRINOGEN_III_c": [
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin590",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079"
+        ],
+        "M_COPROPORPHYRINOGEN_I_c": [
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin238",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin138",
+            "specI_v2_0079",
+            "MB2bin590"
+        ],
+        "M_CPD0__45__1643_c": [
+            "MB2bin176"
+        ],
+        "M_CPD0__45__2298_c": [
+            "specI_v2_1159",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__10116_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__10483_c": [
+            "MB2bin19",
+            "MB2bin92",
+            "MB2bin14"
+        ],
+        "M_CPD__45__10683_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10684_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10792_c": [
+            "MB2bin161"
+        ],
+        "M_CPD__45__1091_c": [
+            "MB2bin161",
+            "specI_v2_1159",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin1077",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CPD__45__1128_c": [
+            "MB2bin161",
+            "MB2bin360"
+        ],
+        "M_CPD__45__1136_c": [
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin117",
+            "MB2bin303",
+            "MB2bin360",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__11444_c": [
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin86",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161"
+        ],
+        "M_CPD__45__11533_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__11984_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12115_c": [
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__12117_c": [
+            "MB2bin210",
+            "MB2bin22",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12118_c": [
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_CPD__45__12119_c": [
+            "specI_v2_1159",
+            "MB2bin210",
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12120_c": [
+            "MB2bin22",
+            "MB2bin27",
+            "MB2bin19",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__12125_c": [
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12126_c": [
+            "MB2bin176",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin106",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin164",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin590",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_CPD__45__12127_c": [
+            "specI_v2_1159",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin210",
+            "MB2bin27",
+            "MB2bin19"
+        ],
+        "M_CPD__45__12128_c": [
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin210",
+            "MB2bin27",
+            "MB2bin19",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12321_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__12460_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12513_c": [
+            "MB2bin149",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12739_c": [
+            "MB2bin420"
+        ],
+        "M_CPD__45__12855_c": [
+            "MB2bin92",
+            "MB2bin22",
+            "MB2bin205"
+        ],
+        "M_CPD__45__12856_c": [
+            "MB2bin205"
+        ],
+        "M_CPD__45__12857_c": [
+            "MB2bin205"
+        ],
+        "M_CPD__45__12955_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__13122_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin590",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin106",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_CPD__45__13712_c": [
+            "MB2bin149"
+        ],
+        "M_CPD__45__13722_c": [
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_CPD__45__14205_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__15427_c": [
+            "MB2bin92"
+        ],
+        "M_CPD__45__15429_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__15430_c": [
+            "MB2bin106",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin176",
+            "MB2bin14"
+        ],
+        "M_CPD__45__15826_c": [
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin117",
+            "MB2bin303"
+        ],
+        "M_CPD__45__15936_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__16182_c": [
+            "MB2bin303"
+        ],
+        "M_CPD__45__16470_c": [
+            "MB2bin210"
+        ],
+        "M_CPD__45__16522_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__16567_c": [
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin92",
+            "MB2bin99"
+        ],
+        "M_CPD__45__16606_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16607_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16647_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__17141_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__18260_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__18508_c": [
+            "MB2bin176",
+            "MB2bin22"
+        ],
+        "M_CPD__45__18909_c": [
+            "MB2bin14",
+            "MB2bin210",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__18913_c": [
+            "MB2bin14"
+        ],
+        "M_CPD__45__19135_c": [
+            "MB2bin99"
+        ],
+        "M_CPD__45__191_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin156",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin74",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin99",
+            "MB2bin176"
+        ],
+        "M_CPD__45__19307_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19308_c": [
+            "MB2bin169",
+            "MB2bin97",
+            "MB2bin205",
+            "MB2bin74"
+        ],
+        "M_CPD__45__19309_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19309_e": [
+            "MB2bin169",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin106",
+            "MB2bin264",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin74",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__19317_c": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__19317_e": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__1943_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__20067_c": [
+            "specI_v2_0079",
+            "MB2bin92",
+            "MB2bin106",
+            "MB2bin156"
+        ],
+        "M_CPD__45__20068_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20069_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20118_c": [
+            "MB2bin420",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21068_c": [
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21306_c": [
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin92",
+            "MB2bin22",
+            "MB2bin27"
+        ],
+        "M_CPD__45__21340_c": [
+            "MB2bin27"
+        ],
+        "M_CPD__45__24084_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24085_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24086_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24087_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__290_c": [
+            "MB2bin19",
+            "MB2bin14"
+        ],
+        "M_CPD__45__341_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__37_c": [
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin590",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_CPD__45__389_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin99"
+        ],
+        "M_CPD__45__400_c": [
+            "MB2bin117"
+        ],
+        "M_CPD__45__421_c": [
+            "MB2bin149",
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_CPD__45__464_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__465_c": [
+            "MB2bin176",
+            "MB2bin22",
+            "MB2bin164"
+        ],
+        "M_CPD__45__507_c": [
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_CPD__45__556_c": [
+            "MB2bin106"
+        ],
+        "M_CPD__45__618_c": [
+            "specI_v2_1159",
+            "MB2bin138",
+            "MB2bin156",
+            "MB2bin169",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin303",
+            "MB2bin360"
+        ],
+        "M_CPD__45__636_c": [
+            "MB2bin94"
+        ],
+        "M_CPD__45__642_c": [
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin414"
+        ],
+        "M_CPD__45__667_c": [
+            "MB2bin590",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin92",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin106"
+        ],
+        "M_CPD__45__7002_c": [
+            "MB2bin156"
+        ],
+        "M_CPD__45__7003_c": [
+            "MB2bin156"
+        ],
+        "M_CPD__45__7035_c": [
+            "MB2bin97"
+        ],
+        "M_CPD__45__7246_c": [
+            "MB2bin360",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin590"
+        ],
+        "M_CPD__45__822_c": [
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin149"
+        ],
+        "M_CPD__45__9020_c": [
+            "MB2bin161",
+            "MB2bin106",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__9038_c": [
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin156"
+        ],
+        "M_CPD__45__9444_c": [
+            "MB2bin74",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__9610_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__9649_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__9720_c": [
+            "MB2bin92",
+            "MB2bin161",
+            "MB2bin1077",
+            "MB2bin210",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin74",
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__9852_c": [
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__9853_c": [
+            "MB2bin264",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9862_c": [
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin264",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210"
+        ],
+        "M_CPD__45__9863_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9864_c": [
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360"
+        ],
+        "M_DIHYDROSIROHYDROCHLORIN_c": [
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22"
+        ],
+        "M_D__45__aspartate__45__peptidoglycan_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin19"
+        ],
+        "M_D__45__galactopyranose__45__6__45__phosphate_c": [
+            "specI_v2_0079",
+            "MB2bin156"
+        ],
+        "M_FORMALDEHYDE_c": [
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin117",
+            "specI_v2_0079"
+        ],
+        "M_FORMYL__45__COA_c": [
+            "MB2bin138",
+            "MB2bin264"
+        ],
+        "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin22"
+        ],
+        "M_GLUTARYL__45__COA_c": [
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_HOMO__45__SER_c": [
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin590",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_HOPAN__45__22__45__OL_c": [
+            "MB2bin22"
+        ],
+        "M_HOP__45__2229__45__ENE_c": [
+            "MB2bin22"
+        ],
+        "M_HYDROXYMETHYLBILANE_c": [
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_ISOBUTYRATE_c": [
+            "MB2bin161",
+            "MB2bin1077"
+        ],
+        "M_METOH_c": [
+            "specI_v2_1159",
+            "MB2bin74"
+        ],
+        "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c": [
+            "specI_v2_1159"
+        ],
+        "M_N2__45__SUCCINYLGLUTAMATE_c": [
+            "MB2bin156",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_N2__45__SUCCINYLORNITHINE_c": [
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin117"
+        ],
+        "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin22",
+            "MB2bin156"
+        ],
+        "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c": [
+            "MB2bin176",
+            "MB2bin74",
+            "MB2bin164"
+        ],
+        "M_OCTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin149",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin74",
+            "MB2bin19"
+        ],
+        "M_OXAMATE_c": [
+            "MB2bin99"
+        ],
+        "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c": [
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin590",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_1159"
+        ],
+        "M_PHYTYL__45__PYROPHOSPHATE_c": [
+            "MB2bin156"
+        ],
+        "M_PORPHOBILINOGEN_c": [
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin86",
+            "specI_v2_0079",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin156"
+        ],
+        "M_PROPANOL_c": [
+            "MB2bin156",
+            "specI_v2_0079"
+        ],
+        "M_PROTOPORPHYRINOGEN_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin360"
+        ],
+        "M_REDUCED__45__MENAQUINONE_c": [
+            "MB2bin92",
+            "MB2bin210",
+            "MB2bin22",
+            "MB2bin156",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin19",
+            "MB2bin149",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_RHAMNULOSE__45__1P_c": [
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin92",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin117",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_SIROHEME_c": [
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin156",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_SIROHYDROCHLORIN_c": [
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_SQUALENE_c": [
+            "MB2bin22",
+            "MB2bin176"
+        ],
+        "M_S__45__HYDROXYMETHYLGLUTATHIONE_c": [
+            "specI_v2_1159",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin169",
+            "MB2bin117",
+            "MB2bin238",
+            "MB2bin138",
+            "MB2bin94",
+            "MB2bin205",
+            "specI_v2_0079",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c": [
+            "MB2bin264"
+        ],
+        "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c": [
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_UROPORPHYRINOGEN__45__III_c": [
+            "MB2bin169",
+            "MB2bin138",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin156",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin19",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin590",
+            "MB2bin149",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin210",
+            "MB2bin99"
+        ]
+    },
+    "producible": [
+        "M_CPD__45__10684_c",
+        "M_CPD__45__24087_c",
+        "M_CPD__45__12125_c",
+        "M_CPD__45__12321_c",
+        "M_COPROPORPHYRINOGEN_I_c",
+        "M_CPD__45__20069_c",
+        "M_D__45__galactopyranose__45__6__45__phosphate_c",
+        "M_CPD__45__9038_c",
+        "M_CPD__45__16522_c",
+        "M_CPD__45__10483_c",
+        "M_CPD__45__15429_c",
+        "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c",
+        "M_PORPHOBILINOGEN_c",
+        "M_CPD__45__16647_c",
+        "M_CPD__45__400_c",
+        "M_CPD__45__9444_c",
+        "M_CPD__45__12460_c",
+        "M_CPD__45__9720_c",
+        "M_CPD__45__20118_c",
+        "M_CPD__45__16470_c",
+        "M_CPD__45__12855_c",
+        "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+        "M_CPD__45__464_c",
+        "M_CPD__45__18508_c",
+        "M_CPD__45__507_c",
+        "M_SIROHEME_c",
+        "M_CPD__45__12857_c",
+        "M_CPD__45__12856_c",
+        "M_PROPANOL_c",
+        "M_CPD__45__1136_c",
+        "M_CPD__45__18260_c",
+        "M_HOPAN__45__22__45__OL_c",
+        "M_FORMALDEHYDE_c",
+        "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c",
+        "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c",
+        "M_CPD__45__7002_c",
+        "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c",
+        "M_ISOBUTYRATE_c",
+        "M_CPD__45__556_c",
+        "M_RHAMNULOSE__45__1P_c",
+        "M_CPD__45__16567_c",
+        "M_CPD__45__667_c",
+        "M_DIHYDROSIROHYDROCHLORIN_c",
+        "M_UROPORPHYRINOGEN__45__III_c",
+        "M_2__45__OCTAPRENYLPHENOL_c",
+        "M_METOH_c",
+        "M_COPROPORPHYRINOGEN_III_c",
+        "M_CPD__45__19317_c",
+        "M_CPD__45__12513_c",
+        "M_REDUCED__45__MENAQUINONE_c",
+        "M_CPD__45__15430_c",
+        "M_D__45__aspartate__45__peptidoglycan_c",
+        "M_CPD__45__642_c",
+        "M_CPD__45__20067_c",
+        "M_CPD__45__7246_c",
+        "M_CPD__45__19309_c",
+        "M_SQUALENE_c",
+        "M_CPD0__45__2298_c",
+        "M_CPD__45__17141_c",
+        "M_CPD__45__9862_c",
+        "M_CPD__45__24084_c",
+        "M_CPD__45__9853_c",
+        "M_CPD__45__12739_c",
+        "M_CPD__45__389_c",
+        "M_CPD__45__24086_c",
+        "M_OCTAPRENYL__45__DIPHOSPHATE_c",
+        "M_CPD__45__14205_c",
+        "M_GLUTARYL__45__COA_c",
+        "M_CPD__45__9649_c",
+        "M_CPD__45__12115_c",
+        "M_CPD__45__19309_e",
+        "M_CPD__45__19135_c",
+        "M_CATECHOL_c",
+        "M_PROTOPORPHYRINOGEN_c",
+        "M_CPD__45__16607_c",
+        "M_CPD__45__20068_c",
+        "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c",
+        "M_PHYTYL__45__PYROPHOSPHATE_c",
+        "M_CPD__45__12120_c",
+        "M_ACETONE_c",
+        "M_N2__45__SUCCINYLGLUTAMATE_c",
+        "M_CPD__45__19308_c",
+        "M_CPD__45__13122_c",
+        "M_CPD__45__12119_c",
+        "M_CPD__45__16606_c",
+        "M_BETAINE_ALDEHYDE_c",
+        "M_CPD__45__9852_c",
+        "M_CPD__45__16182_c",
+        "M_CPD__45__15826_c",
+        "M_CHLOROACETIC__45__ACID_c",
+        "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c",
+        "M_CPD__45__341_c",
+        "M_CPD__45__12128_c",
+        "M_FORMYL__45__COA_c",
+        "M_CPD__45__12117_c",
+        "M_CPD__45__11444_c",
+        "M_CPD__45__37_c",
+        "M_CPD__45__13712_c",
+        "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c",
+        "M_CPD__45__7035_c",
+        "M_CPD__45__465_c",
+        "M_CPD__45__191_c",
+        "M_HOMO__45__SER_c",
+        "M_S__45__HYDROXYMETHYLGLUTATHIONE_c",
+        "M_CPD__45__421_c",
+        "M_CPD__45__15427_c",
+        "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c",
+        "M_CPD__45__10683_c",
+        "M_CPD__45__21068_c",
+        "M_CPD__45__24085_c",
+        "M_CPD__45__1091_c",
+        "M_CPD__45__822_c",
+        "M_CPD__45__9020_c",
+        "M_CPD__45__19307_c",
+        "M_CPD__45__12127_c",
+        "M_CPD__45__18913_c",
+        "M_HOP__45__2229__45__ENE_c",
+        "M_CPD__45__11984_c",
+        "M_CPD__45__9863_c",
+        "M_CPD__45__1128_c",
+        "M_CPD__45__12955_c",
+        "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c",
+        "M_C55__45__PP__45__GLCNAC__45__MANNACA_c",
+        "M_CPD__45__9864_c",
+        "M_CPD__45__19317_e",
+        "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c",
+        "M_SIROHYDROCHLORIN_c",
+        "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c",
+        "M_CPD__45__21306_c",
+        "M_CPD__45__7003_c",
+        "M_CPD__45__12118_c",
+        "M_CPD__45__1943_c",
+        "M_CPD__45__13722_c",
+        "M_CPD__45__12126_c",
+        "M_CPD__45__21340_c",
+        "M_CPD__45__10116_c",
+        "M_CPD__45__636_c",
+        "M_OXAMATE_c",
+        "M_CPD0__45__1643_c",
+        "M_CPD__45__18909_c",
+        "M_HYDROXYMETHYLBILANE_c",
+        "M_CELLULOSE_c",
+        "M_N2__45__SUCCINYLORNITHINE_c",
+        "M_CPD__45__290_c",
+        "M_CPD__45__11533_c",
+        "M_CPD__45__10792_c",
+        "M_CPD__45__618_c",
+        "M_5__45__AMINO__45__LEVULINATE_c",
+        "M_CPD__45__15936_c",
+        "M_CPD__45__9610_c"
+    ],
+    "score_optimum_inter": "31",
+    "score_optimum_union": "31",
+    "still_unprod": [],
+    "union_bacteria": [
+        "MB2bin138",
+        "MB2bin14",
+        "MB2bin590",
+        "MB2bin149",
+        "MB2bin489",
+        "MB2bin161",
+        "specI_v2_4321",
+        "MB2bin54",
+        "specI_v2_1072",
+        "MB2bin164",
+        "MB2bin36",
+        "MB2bin238",
+        "MB2bin86",
+        "MB2bin27",
+        "MB2bin74",
+        "MB2bin94",
+        "MB2bin117",
+        "MB2bin99",
+        "specI_v2_4813",
+        "MB2bin210",
+        "MB2bin414",
+        "specI_v2_0079",
+        "specI_v2_1706",
+        "MB2bin176",
+        "MB2bin360",
+        "MB2bin264",
+        "MB2bin65",
+        "MB2bin1077",
+        "MB2bin6",
+        "MB2bin420",
+        "MB2bin97",
+        "specI_v2_5296",
+        "specI_v2_4394",
+        "MB2bin691",
+        "specI_v2_1159",
+        "specI_v2_1594",
+        "MB2bin260",
+        "MB2bin1",
+        "MB2bin303",
+        "MGS_2dra05736",
+        "MB2bin19",
+        "MB2bin106",
+        "MB2bin12",
+        "MB2bin92",
+        "MB2bin156",
+        "MB2bin24",
+        "MB2bin22",
+        "MB2bin21",
+        "MB2bin205",
+        "MB2bin463",
+        "MB2bin169"
+    ],
+    "union_exchanged": [],
+    "union_targetsproducers": {
+        "M_2__45__OCTAPRENYLPHENOL_c": [
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin238",
+            "specI_v2_0079",
+            "MB2bin54",
+            "specI_v2_5296",
+            "MB2bin264",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin12",
+            "MB2bin210",
+            "MB2bin117"
+        ],
+        "M_3__45__HYDROXY__45__PROPIONYL__45__COA_c": [
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin156",
+            "specI_v2_0079",
+            "specI_v2_4813"
+        ],
+        "M_3__45__OCTAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "MB2bin156",
+            "MB2bin6",
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin117",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin210"
+        ],
+        "M_5__45__AMINO__45__LEVULINATE_c": [
+            "MB2bin138",
+            "MB2bin156",
+            "MB2bin169",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "MB2bin149",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin22",
+            "MB2bin117",
+            "MB2bin360"
+        ],
+        "M_5__45__BETA__45__L__45__THREO__45__PENTAPYRANOSYL__45__4__45__ULOSE__45___c": [
+            "MB2bin12",
+            "MB2bin360",
+            "specI_v2_0079",
+            "specI_v2_4813",
+            "MB2bin117"
+        ],
+        "M_ACETONE_c": [
+            "MB2bin414"
+        ],
+        "M_ALL__45__TRANS__45__HEPTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin264",
+            "MB2bin590",
+            "MB2bin138",
+            "MB2bin260",
+            "MB2bin238",
+            "MB2bin691",
+            "MB2bin205",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "MB2bin106",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin54"
+        ],
+        "M_BETAINE_ALDEHYDE_c": [
+            "specI_v2_0079",
+            "specI_v2_4813",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin156"
+        ],
+        "M_BETAINE__45__ALDEHYDE__45__HYDRATE_c": [
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin360"
+        ],
+        "M_C55__45__PP__45__GLCNAC__45__MANNACA_c": [
+            "MB2bin117",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin156",
+            "specI_v2_0079",
+            "specI_v2_5296",
+            "MB2bin6",
+            "specI_v2_4813"
+        ],
+        "M_CATECHOL_c": [
+            "MB2bin24",
+            "MB2bin74",
+            "specI_v2_4813",
+            "MB2bin14",
+            "specI_v2_1072",
+            "specI_v2_1706",
+            "MB2bin19",
+            "MB2bin360",
+            "specI_v2_4321",
+            "MB2bin21"
+        ],
+        "M_CELLULOSE_c": [
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin149",
+            "specI_v2_4813"
+        ],
+        "M_CHLOROACETIC__45__ACID_c": [
+            "MB2bin138"
+        ],
+        "M_COPROPORPHYRINOGEN_III_c": [
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin24",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin65",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin691",
+            "specI_v2_1072",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin590",
+            "MB2bin12",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin138",
+            "specI_v2_4321"
+        ],
+        "M_COPROPORPHYRINOGEN_I_c": [
+            "MB2bin19",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin1",
+            "MB2bin99",
+            "MB2bin691",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin149",
+            "specI_v2_4813",
+            "MB2bin12",
+            "specI_v2_1072",
+            "specI_v2_1706",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin590"
+        ],
+        "M_CPD0__45__1643_c": [
+            "MB2bin176"
+        ],
+        "M_CPD0__45__2298_c": [
+            "MB2bin360",
+            "specI_v2_1159",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__10116_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__10483_c": [
+            "specI_v2_5296",
+            "specI_v2_1706",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin24",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "specI_v2_1072"
+        ],
+        "M_CPD__45__10683_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10684_c": [
+            "MB2bin176"
+        ],
+        "M_CPD__45__10792_c": [
+            "MB2bin161",
+            "MGS_2dra05736"
+        ],
+        "M_CPD__45__1091_c": [
+            "specI_v2_1159",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin264",
+            "MB2bin149",
+            "MB2bin6",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin360"
+        ],
+        "M_CPD__45__1128_c": [
+            "MB2bin360",
+            "MB2bin161"
+        ],
+        "M_CPD__45__1136_c": [
+            "MB2bin156",
+            "MB2bin303",
+            "MB2bin360",
+            "specI_v2_1159",
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_CPD__45__11444_c": [
+            "MB2bin22",
+            "MB2bin117",
+            "MB2bin86",
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin149",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin161"
+        ],
+        "M_CPD__45__11533_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__11984_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12115_c": [
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin24",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin1",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin117",
+            "MGS_2dra05736",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin463",
+            "specI_v2_1706",
+            "specI_v2_4321"
+        ],
+        "M_CPD__45__12117_c": [
+            "MB2bin210",
+            "MB2bin22",
+            "MB2bin463",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin24",
+            "specI_v2_1159",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin1",
+            "specI_v2_0079",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin117",
+            "MB2bin149",
+            "MB2bin6",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072"
+        ],
+        "M_CPD__45__12118_c": [
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin360",
+            "MB2bin24",
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin156",
+            "MB2bin1",
+            "specI_v2_0079",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin22",
+            "MB2bin117"
+        ],
+        "M_CPD__45__12119_c": [
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin1",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin22",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin24"
+        ],
+        "M_CPD__45__12120_c": [
+            "MB2bin22",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MGS_2dra05736",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin24",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12125_c": [
+            "specI_v2_1072",
+            "MB2bin22",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin210",
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "specI_v2_0079",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12126_c": [
+            "MB2bin176",
+            "MB2bin691",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin106",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin164",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "MB2bin590",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin360",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_1706",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin260",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin24",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin149",
+            "MB2bin65",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin21",
+            "MB2bin489",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_CPD__45__12127_c": [
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin1",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin6",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin210",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin24"
+        ],
+        "M_CPD__45__12128_c": [
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin24",
+            "specI_v2_1159",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin1",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin6"
+        ],
+        "M_CPD__45__12321_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__12460_c": [
+            "specI_v2_1159"
+        ],
+        "M_CPD__45__12513_c": [
+            "MB2bin149",
+            "MB2bin161"
+        ],
+        "M_CPD__45__12739_c": [
+            "MB2bin420"
+        ],
+        "M_CPD__45__12855_c": [
+            "MB2bin92",
+            "MB2bin22",
+            "MB2bin691",
+            "MB2bin205"
+        ],
+        "M_CPD__45__12856_c": [
+            "MB2bin691",
+            "MB2bin205"
+        ],
+        "M_CPD__45__12857_c": [
+            "MB2bin691",
+            "MB2bin205"
+        ],
+        "M_CPD__45__12955_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__13122_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin74",
+            "specI_v2_5296",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin489",
+            "MB2bin14",
+            "specI_v2_1072",
+            "MB2bin106",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin92",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin86",
+            "MB2bin238"
+        ],
+        "M_CPD__45__13712_c": [
+            "MB2bin149"
+        ],
+        "M_CPD__45__13722_c": [
+            "MB2bin149",
+            "specI_v2_4813",
+            "MB2bin360"
+        ],
+        "M_CPD__45__14205_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__15427_c": [
+            "MB2bin92",
+            "MB2bin1"
+        ],
+        "M_CPD__45__15429_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__15430_c": [
+            "specI_v2_1072",
+            "MB2bin106",
+            "MB2bin27",
+            "MB2bin117",
+            "MB2bin12",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin176",
+            "MB2bin24",
+            "MB2bin21",
+            "MB2bin14"
+        ],
+        "M_CPD__45__15826_c": [
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin303"
+        ],
+        "M_CPD__45__15936_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__16182_c": [
+            "MB2bin303"
+        ],
+        "M_CPD__45__16470_c": [
+            "MB2bin210"
+        ],
+        "M_CPD__45__16522_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__16567_c": [
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin99",
+            "MB2bin14",
+            "MB2bin92"
+        ],
+        "M_CPD__45__16606_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16607_c": [
+            "MB2bin19"
+        ],
+        "M_CPD__45__16647_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__17141_c": [
+            "MB2bin238"
+        ],
+        "M_CPD__45__18260_c": [
+            "MB2bin360",
+            "MB2bin210",
+            "MB2bin156",
+            "MB2bin238",
+            "specI_v2_4813",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394"
+        ],
+        "M_CPD__45__18508_c": [
+            "MB2bin176",
+            "MB2bin22"
+        ],
+        "M_CPD__45__18909_c": [
+            "MB2bin12",
+            "MB2bin24",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "specI_v2_5296",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin14",
+            "specI_v2_1072",
+            "MB2bin1077",
+            "MB2bin54",
+            "specI_v2_1706",
+            "MB2bin36"
+        ],
+        "M_CPD__45__18913_c": [
+            "specI_v2_1072",
+            "MB2bin54",
+            "specI_v2_5296",
+            "specI_v2_1706",
+            "MB2bin12",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin24",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin14"
+        ],
+        "M_CPD__45__19135_c": [
+            "MB2bin99"
+        ],
+        "M_CPD__45__191_c": [
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin19",
+            "MB2bin260",
+            "MB2bin238",
+            "MB2bin24",
+            "MB2bin74",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin1",
+            "MB2bin99",
+            "MB2bin176",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin54",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "specI_v2_1706"
+        ],
+        "M_CPD__45__19307_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19308_c": [
+            "MB2bin205",
+            "MB2bin74",
+            "MB2bin169",
+            "MB2bin691",
+            "MB2bin97"
+        ],
+        "M_CPD__45__19309_c": [
+            "MB2bin169"
+        ],
+        "M_CPD__45__19309_e": [
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin74",
+            "MB2bin169",
+            "MB2bin691",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin106",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__19317_c": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__19317_e": [
+            "MB2bin86"
+        ],
+        "M_CPD__45__1943_c": [
+            "MB2bin1077"
+        ],
+        "M_CPD__45__20067_c": [
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin24",
+            "MB2bin21",
+            "MB2bin156",
+            "specI_v2_0079",
+            "specI_v2_1072",
+            "MB2bin106"
+        ],
+        "M_CPD__45__20068_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20069_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__20118_c": [
+            "MB2bin691",
+            "MB2bin27",
+            "MB2bin420"
+        ],
+        "M_CPD__45__21068_c": [
+            "MB2bin260",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin24",
+            "MB2bin74",
+            "specI_v2_5296",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_1072",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin210",
+            "MB2bin463",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1"
+        ],
+        "M_CPD__45__21306_c": [
+            "MB2bin19",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin1",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "MGS_2dra05736",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin22",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36"
+        ],
+        "M_CPD__45__21340_c": [
+            "MB2bin27"
+        ],
+        "M_CPD__45__24084_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24085_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24086_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__24087_c": [
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__290_c": [
+            "specI_v2_1706",
+            "MB2bin19",
+            "MB2bin24",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin14",
+            "specI_v2_1072"
+        ],
+        "M_CPD__45__341_c": [
+            "MB2bin164"
+        ],
+        "M_CPD__45__37_c": [
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin74",
+            "specI_v2_5296",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin489",
+            "MB2bin14",
+            "specI_v2_1072",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin92",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1"
+        ],
+        "M_CPD__45__389_c": [
+            "specI_v2_0079",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin99"
+        ],
+        "M_CPD__45__400_c": [
+            "MB2bin117"
+        ],
+        "M_CPD__45__421_c": [
+            "MB2bin149",
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin156"
+        ],
+        "M_CPD__45__464_c": [
+            "MB2bin22"
+        ],
+        "M_CPD__45__465_c": [
+            "MB2bin176",
+            "MB2bin22",
+            "MB2bin164"
+        ],
+        "M_CPD__45__507_c": [
+            "MB2bin117",
+            "MB2bin360",
+            "specI_v2_0079",
+            "specI_v2_4813"
+        ],
+        "M_CPD__45__556_c": [
+            "MB2bin106",
+            "MB2bin260"
+        ],
+        "M_CPD__45__618_c": [
+            "specI_v2_1159",
+            "MB2bin138",
+            "MB2bin156",
+            "MB2bin169",
+            "specI_v2_0079",
+            "MB2bin264",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin117",
+            "MB2bin303",
+            "MB2bin360"
+        ],
+        "M_CPD__45__636_c": [
+            "MB2bin94"
+        ],
+        "M_CPD__45__642_c": [
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin54",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin264",
+            "specI_v2_1706",
+            "MGS_2dra05736",
+            "MB2bin12",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin24",
+            "MB2bin414"
+        ],
+        "M_CPD__45__667_c": [
+            "MB2bin54",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin6",
+            "MGS_2dra05736",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin22",
+            "specI_v2_1706",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin24",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin489",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin106"
+        ],
+        "M_CPD__45__7002_c": [
+            "MB2bin156",
+            "specI_v2_4813",
+            "MGS_2dra05736"
+        ],
+        "M_CPD__45__7003_c": [
+            "MB2bin156",
+            "MGS_2dra05736",
+            "specI_v2_4813"
+        ],
+        "M_CPD__45__7035_c": [
+            "MB2bin97"
+        ],
+        "M_CPD__45__7246_c": [
+            "specI_v2_4813",
+            "MB2bin489",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "MB2bin590",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_CPD__45__822_c": [
+            "MB2bin156",
+            "MB2bin360",
+            "MB2bin149",
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_CPD__45__9020_c": [
+            "MGS_2dra05736",
+            "MB2bin161",
+            "MB2bin106",
+            "MB2bin1077"
+        ],
+        "M_CPD__45__9038_c": [
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin205",
+            "MB2bin27",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin6",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin210",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1"
+        ],
+        "M_CPD__45__9444_c": [
+            "specI_v2_1159",
+            "MB2bin74"
+        ],
+        "M_CPD__45__9610_c": [
+            "MB2bin12",
+            "MB2bin19",
+            "MB2bin24"
+        ],
+        "M_CPD__45__9649_c": [
+            "MB2bin19",
+            "MB2bin24"
+        ],
+        "M_CPD__45__9720_c": [
+            "specI_v2_1594",
+            "MB2bin21",
+            "MB2bin489",
+            "MB2bin161",
+            "MB2bin1",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin27",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin117",
+            "MB2bin149",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin1077",
+            "MB2bin210",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin74",
+            "specI_v2_1159",
+            "MB2bin463"
+        ],
+        "M_CPD__45__9852_c": [
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "MB2bin210",
+            "MB2bin156",
+            "MB2bin238",
+            "MB2bin360",
+            "specI_v2_4813",
+            "MB2bin161"
+        ],
+        "M_CPD__45__9853_c": [
+            "MB2bin264",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin210",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9862_c": [
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin210",
+            "MB2bin238",
+            "MB2bin264",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin161"
+        ],
+        "M_CPD__45__9863_c": [
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin210",
+            "MB2bin238"
+        ],
+        "M_CPD__45__9864_c": [
+            "MB2bin210",
+            "MB2bin156",
+            "MB2bin238",
+            "MB2bin360",
+            "specI_v2_4813",
+            "MB2bin161",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394"
+        ],
+        "M_DIHYDROSIROHYDROCHLORIN_c": [
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin24",
+            "MB2bin65",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin21",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin414",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin210",
+            "specI_v2_1706",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36"
+        ],
+        "M_D__45__aspartate__45__peptidoglycan_c": [
+            "MB2bin169",
+            "specI_v2_5296",
+            "MB2bin12",
+            "MB2bin138",
+            "MB2bin36",
+            "MB2bin19"
+        ],
+        "M_D__45__galactopyranose__45__6__45__phosphate_c": [
+            "MB2bin156",
+            "specI_v2_4813",
+            "specI_v2_0079"
+        ],
+        "M_FORMALDEHYDE_c": [
+            "MB2bin360",
+            "MB2bin156",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_FORMYL__45__COA_c": [
+            "MB2bin264",
+            "MB2bin138"
+        ],
+        "M_GLUTAMATE__45__1__45__SEMIALDEHYDE_c": [
+            "MB2bin169",
+            "MB2bin22",
+            "MB2bin138"
+        ],
+        "M_GLUTARYL__45__COA_c": [
+            "MB2bin156",
+            "MB2bin360",
+            "specI_v2_4813",
+            "specI_v2_0079",
+            "MB2bin117"
+        ],
+        "M_HOMO__45__SER_c": [
+            "specI_v2_1072",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin54",
+            "specI_v2_1706",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin24",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin99",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin94",
+            "specI_v2_5296",
+            "MB2bin264",
+            "specI_v2_4394",
+            "MB2bin6",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_HOPAN__45__22__45__OL_c": [
+            "MB2bin22",
+            "MB2bin12"
+        ],
+        "M_HOP__45__2229__45__ENE_c": [
+            "MB2bin22",
+            "MB2bin12"
+        ],
+        "M_HYDROXYMETHYLBILANE_c": [
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_1706",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "MGS_2dra05736"
+        ],
+        "M_ISOBUTYRATE_c": [
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "MB2bin161",
+            "MB2bin1077"
+        ],
+        "M_METOH_c": [
+            "specI_v2_1159",
+            "MB2bin74"
+        ],
+        "M_Mono__45__trans__45__poly__45__cis__45__polyprenyl__45__PP_c": [
+            "specI_v2_1159"
+        ],
+        "M_N2__45__SUCCINYLGLUTAMATE_c": [
+            "MB2bin156",
+            "specI_v2_0079",
+            "MB2bin149",
+            "specI_v2_4813",
+            "MB2bin117",
+            "MB2bin360"
+        ],
+        "M_N2__45__SUCCINYLORNITHINE_c": [
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin14",
+            "specI_v2_1072",
+            "specI_v2_0079",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin92",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1"
+        ],
+        "M_NONAPRENYL__45__4__45__HYDROXYBENZOATE_c": [
+            "MB2bin238",
+            "MB2bin360",
+            "MB2bin161",
+            "MB2bin156",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin210",
+            "MB2bin22"
+        ],
+        "M_N__45__ACETYL__45__L__45__24__45__DIAMINOBUTANOATE_c": [
+            "MB2bin176",
+            "MB2bin74",
+            "MB2bin164"
+        ],
+        "M_OCTAPRENYL__45__DIPHOSPHATE_c": [
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin24",
+            "MB2bin210",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin1",
+            "MB2bin74",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_1072",
+            "specI_v2_0079",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin19"
+        ],
+        "M_OXAMATE_c": [
+            "MB2bin99"
+        ],
+        "M_O__45__PHOSPHO__45__L__45__HOMOSERINE_c": [
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin86",
+            "MB2bin260",
+            "MB2bin238",
+            "MB2bin691",
+            "MB2bin205",
+            "MB2bin414",
+            "MB2bin74",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin489",
+            "MB2bin14",
+            "MB2bin161",
+            "specI_v2_1072",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin97",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin12",
+            "MB2bin303",
+            "MB2bin92",
+            "MB2bin360",
+            "MB2bin24",
+            "specI_v2_1159",
+            "MB2bin463"
+        ],
+        "M_PHYTYL__45__PYROPHOSPHATE_c": [
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin156"
+        ],
+        "M_PORPHOBILINOGEN_c": [
+            "MB2bin169",
+            "MB2bin86",
+            "specI_v2_0079",
+            "MB2bin149",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin156"
+        ],
+        "M_PROPANOL_c": [
+            "MB2bin156",
+            "specI_v2_0079"
+        ],
+        "M_PROTOPORPHYRINOGEN_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin97",
+            "MB2bin54",
+            "MB2bin264",
+            "MB2bin117",
+            "MB2bin360",
+            "MB2bin156",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin205",
+            "MB2bin414",
+            "MB2bin74",
+            "MB2bin149",
+            "MB2bin65",
+            "specI_v2_4394",
+            "specI_v2_4813"
+        ],
+        "M_REDUCED__45__MENAQUINONE_c": [
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin210",
+            "MB2bin22",
+            "specI_v2_1706",
+            "MB2bin19",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "specI_v2_0079",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "MGS_2dra05736",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_RHAMNULOSE__45__1P_c": [
+            "MB2bin360",
+            "MB2bin24",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin99",
+            "specI_v2_0079",
+            "MB2bin106",
+            "MB2bin54",
+            "specI_v2_5296",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin489",
+            "MB2bin14",
+            "MB2bin12",
+            "MB2bin92",
+            "specI_v2_1072",
+            "MB2bin1077",
+            "MB2bin97",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin36",
+            "MB2bin590",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin260",
+            "MB2bin238"
+        ],
+        "M_SIROHEME_c": [
+            "MGS_2dra05736",
+            "MB2bin360",
+            "MB2bin138",
+            "MB2bin156",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin65",
+            "specI_v2_4394",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin264",
+            "MB2bin117"
+        ],
+        "M_SIROHYDROCHLORIN_c": [
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin1077",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin54",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "MGS_2dra05736",
+            "MB2bin12",
+            "MB2bin360",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin414",
+            "MB2bin65",
+            "specI_v2_4394",
+            "MB2bin6",
+            "specI_v2_4813",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169"
+        ],
+        "M_SQUALENE_c": [
+            "MB2bin176",
+            "MB2bin12",
+            "MB2bin22"
+        ],
+        "M_S__45__HYDROXYMETHYLGLUTATHIONE_c": [
+            "MB2bin12",
+            "specI_v2_1072",
+            "MB2bin420",
+            "MB2bin22",
+            "MB2bin117",
+            "specI_v2_1706",
+            "MB2bin138",
+            "MB2bin36",
+            "MB2bin19",
+            "MB2bin360",
+            "specI_v2_1159",
+            "MB2bin463",
+            "specI_v2_4321",
+            "MB2bin21",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin169",
+            "MB2bin238",
+            "MB2bin94",
+            "MB2bin205",
+            "specI_v2_0079",
+            "MB2bin54",
+            "MB2bin27",
+            "MB2bin414",
+            "MB2bin74",
+            "specI_v2_5296",
+            "MB2bin264",
+            "specI_v2_4394",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161"
+        ],
+        "M_TRANS__45__3__45__METHYL__45__GLUTACONYL__45__COA_c": [
+            "specI_v2_4394",
+            "MB2bin264"
+        ],
+        "M_UDP__45__4__45__AMINO__45__4__45__DEOXY__45__L__45__ARABINOSE_c": [
+            "MB2bin117",
+            "specI_v2_4813",
+            "MB2bin12",
+            "MB2bin360",
+            "specI_v2_0079"
+        ],
+        "M_UROPORPHYRINOGEN__45__III_c": [
+            "MB2bin463",
+            "specI_v2_1706",
+            "MB2bin138",
+            "specI_v2_4321",
+            "MB2bin36",
+            "MB2bin156",
+            "MB2bin1",
+            "MB2bin19",
+            "MB2bin86",
+            "MB2bin238",
+            "MB2bin303",
+            "MB2bin24",
+            "MB2bin149",
+            "MB2bin6",
+            "specI_v2_1594",
+            "specI_v2_4813",
+            "MB2bin14",
+            "MB2bin161",
+            "MB2bin99",
+            "MB2bin169",
+            "MB2bin691",
+            "MB2bin94",
+            "specI_v2_0079",
+            "MB2bin22",
+            "MB2bin27",
+            "specI_v2_5296",
+            "MB2bin264",
+            "MB2bin117",
+            "specI_v2_4394",
+            "MGS_2dra05736",
+            "MB2bin590",
+            "MB2bin12",
+            "MB2bin92",
+            "MB2bin360",
+            "specI_v2_1072",
+            "MB2bin210"
+        ]
+    }
+}
