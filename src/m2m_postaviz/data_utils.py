@@ -11,6 +11,60 @@ from scipy import stats
 # import cProfile
 # import threading
 
+def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
+    df_row = df_row.astype(float)
+    abundance_value = abundance_matrix.at[df_row.name,sample_id]
+    df_row *= abundance_value
+    return df_row
+
+
+def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
+    """
+    Produce a stoichiometric matrix from a binary matrix (presence or absence) and an abundance matrix.
+
+    Args:
+        binary_matrix (pandas.DataFrame): Binary dataframe containing the presence or absence of compounds.
+        abundance_matrix (pandas.DataFrame): Dataframe containing the abundance of each bin in sample.
+        sample_id (str): Name of the sample.
+
+    Returns:
+        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin. 
+    """
+    if not is_indexed_by_id(binary_matrix):
+        binary_matrix.set_index("smplID",inplace=True)
+    # Normalisation
+    normalized_abundance = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
+    # Multiplication par abondance
+    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, normalized_abundance,sample_id),axis=1) 
+    # Retourne une matrice type CSCOPE avec un abondance relative a la quantité de bin.
+    return binary_matrix
+
+
+def relative_abundance_calc(abundance_file_path, sample_data):
+    abundance_matrix = open_tsv(abundance_file_path)
+    all_sample_abundance = []
+    sample_index = []
+    for sample in sample_data.keys():
+        all_sample_abundance.append(sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        sample_index.append(str(sample))
+
+    global_sample_abundance = pd.concat(all_sample_abundance, join="outer", ignore_index=True)
+    global_sample_abundance.fillna(0,inplace=True)
+    global_sample_abundance.insert(0,"SmplID",sample_index)
+    global_sample_abundance.set_index("SmplID",inplace=True,drop=True)
+    return global_sample_abundance
+
+
+def sum_abundance_table(abundance_table: pd.DataFrame, sample_id: str):
+    # Prend la nouvelle matrice d'abondance du sample crée
+    new_dataframe =  {}
+    # Flip avec métabolites en index et bin en column
+    abundance_table = abundance_table.T
+    for index,row in abundance_table.iterrows():
+        # Pour chaque métabolites, calcul le total crée par l'ensemble des bin de l'échantillon
+        new_dataframe[index] = row.values.sum()
+    return pd.DataFrame(new_dataframe, index=[sample_id])
+
 
 def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope"):
     current_selection = []
@@ -34,7 +88,7 @@ def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "
 
 def get_metadata(sample_id: str, metadata: pd.DataFrame):
     return tuple(
-        [metadata.loc[metadata["Name"] == sample_id].values.tolist()[0], metadata.loc[metadata["Name"] == sample_id].columns.to_list()]
+        [metadata.loc[metadata["smplID"] == sample_id].values.tolist()[0], metadata.loc[metadata["smplID"] == sample_id].columns.to_list()]
     )
 
 
@@ -118,9 +172,9 @@ def get_total_production_size(sample: str, metadataframe: dict):
 
 def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
     if only_metabolic_model_size:
-        taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
+        taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["smplID"])]
         return len(taxonomy_size)
-    taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["Name"])]
+    taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["smplID"])]
     taxonomy_size = taxonomy_size[["mgs", "Genus"]]
     taxonomy_size = taxonomy_size.groupby(["Genus"]).count()
     taxonomy_size = taxonomy_size.reset_index()
@@ -133,7 +187,7 @@ def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic
     ad_size = []
     taxo_size = []
     model_size = []
-    for sample in metadataframe["Name"]:
+    for sample in metadataframe["smplID"]:
         tot_size.append(get_total_production_size(sample, sample_data))
         ind_size.append(get_individual_production_size(sample, sample_data))
         ad_size.append(get_added_value_size(sample, sample_data))
@@ -153,11 +207,10 @@ def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
 
 
 def remove_metadata(df: pd.DataFrame) -> pd.DataFrame:
-    new_df = df.drop("Test", axis=1)
-    new_df = new_df.drop("Days", axis=1)
+    new_df = new_df.drop("Time_rel", axis=1)
     # df = df.drop("Name", axis=1)
     new_df = new_df.drop("Antibiotics", axis=1)
-    new_df = new_df.set_index("Name")
+    new_df = new_df.set_index("smplID")
     return new_df
 
 
@@ -238,7 +291,7 @@ def open_json(file_path):
     return file_data
 
 
-def open_tsv(file_name, rename_columns: bool = False, first_col: str = "Name"):
+def open_tsv(file_name, rename_columns: bool = False, first_col: str = "smplID"):
     data = pd.read_csv(file_name, sep="\t")
     if rename_columns:
         data.columns.values[0] = first_col
@@ -260,6 +313,13 @@ def convert_to_dict(file_as_list):
         value = [1]
         data[i] = value
     return data
+
+
+def is_indexed_by_id(df: pd.DataFrame):
+    if df.index.name == "smplID":
+        return True
+    else:
+        return False
 
 
 def get_column_size(df: pd.DataFrame):
@@ -359,13 +419,13 @@ def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix
     Returns:
         pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
     """
-    binary_matrix.set_index("Name", inplace=True)
+    binary_matrix.set_index("smplID", inplace=True)
     binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix, sample_id), axis=1)
     return binary_matrix
 
 
 # @timeit(repeat=3,number=10)
-def build_df(dir_path, metadata):
+def build_df(dir_path, metadata, abundance_path):
     """
     Extract community scopes present in directory then build the a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -407,13 +467,15 @@ def build_df(dir_path, metadata):
     main_df = pd.concat(all_df, join="outer", ignore_index=True)
     main_df = main_df.fillna(0)
     main_df = main_df.astype(int)
-    main_df.insert(0, "Name", dir_list)
+    main_df.insert(0, "smplID", dir_list)
 
     global_data["metadata"] = open_tsv(metadata)
 
     global_data["main_dataframe"] = main_df
 
-    return global_data, sample_data
+    abundance_data = relative_abundance_calc(abundance_path, sample_data)
+
+    return global_data, sample_data, abundance_data
 
 
 def performance_test(dir, meta):

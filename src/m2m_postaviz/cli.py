@@ -35,8 +35,10 @@ def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.test:
-        dir_path = TESTS_DIR+"metadata_ouput/"
-        metadata = TESTS_DIR+"metadata_test.tsv"
+        # dir_path = TESTS_DIR+"metadata_ouput/"
+        dir_path = "/home/lbrindel/output/palleja/"
+        metadata = TESTS_DIR+"palleja_refined_metadata.tsv"
+        abundance_path = "~/Downloads/matrix_palleja.tsv"
         taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
 
     else:
@@ -47,8 +49,8 @@ def main(args=None):
         taxonomic_data = du.open_tsv(taxonomy)
 
     # du.performance_test("/home/lbrindel/cscope_metadata/", "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv")
-    global_data, sample_data = du.build_df(dir_path, metadata)
+    global_data, sample_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)
 
-    Data = DataStorage(global_data, sample_data, taxonomic_data)
+    Data = DataStorage(global_data, sample_data, taxonomic_data, abundance_data)
 
     sh.run_shiny(Data)
