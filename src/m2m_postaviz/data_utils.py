@@ -14,7 +14,7 @@ from scipy import stats
 # import threading
 
 def extract_tarfile(tar_file, outdir):
-    file = tarfile.open(tarfile, 'r:gz')
+    file = tarfile.open(tar_file, 'r:gz')
 
     file.extractall(outdir, filter='data')
     # if sys.version_info >= (3, 12):
@@ -488,13 +488,6 @@ def build_df(dir_path, metadata, abundance_path):
 
     abundance_data = global_data["metadata"].merge(abundance_data.reset_index(), how="outer")
 
-    # global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv",sep='\t')
-    # global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv",sep='\t')
-    # abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv",sep='\t')
-    # for sample in sample_data.keys():
-    #     sample_data[sample]["cscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_cscope_"+sample+".tsv", sep='\t')
-    #     sample_data[sample]["iscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_iscope_"+sample+".tsv", sep='\t')
-    # quit()
     return global_data, sample_data, abundance_data
 
 
@@ -503,19 +496,27 @@ def build_test_data(test_dir_path):
     sample_data = {}
     for file in os.listdir(test_dir_path):
         filename = os.fsdecode(file)
-        if filename.endswith('.tsv'):
-            if not filename.startswith("sample"):
-                if filename == 'main_table.tsv':
-                    global_data["main_dataframe"] = open_tsv(filename)
-                if filename == 'metadata.tsv':
-                    global_data["metadata"] = open_tsv(filename)
-                if filename == 'abundance_table.tsv':
-                    abundance_table = open_tsv(filename)
-            else:
-                current_file = os.path.basename(filename)
-                current_file = os.path.splitext(current_file)[0]
-                current_file.split("_")
-                sample_data[current_file[2]][current_file[1]] = open_tsv(filename)
+        if not filename.endswith('.tsv'):
+            continue
+        if not filename.startswith("sample"):
+            if filename == 'main_table.tsv':
+                global_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path,filename))
+            if filename == 'metadata_table.tsv':
+                global_data["metadata"] = open_tsv(os.path.join(test_dir_path,filename))
+            if filename == 'abundance_table.tsv':
+                abundance_table = open_tsv(os.path.join(test_dir_path,filename))
+        else:
+            current_file = os.path.splitext(filename)[0]
+            current_file = current_file.split("_")
+            sample_data[current_file[2]] = {}
+
+    for sample_file in os.listdir(test_dir_path):
+        filename = os.fsdecode(sample_file)
+        if filename.startswith('sample'):
+            current_file = os.path.splitext(filename)[0]
+            current_file = current_file.split("_")
+            sample_data[current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path,filename))
+
     return global_data, sample_data, abundance_table
 
 def performance_test(dir, meta):
@@ -534,3 +535,12 @@ def performance_test(dir, meta):
     # pr.print_stats(sort='time')
 
     # cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
+
+def produce_test_data(global_data, sample_data, abundance_data):
+    global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv",sep='\t', index=False)
+    global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv",sep='\t', index=False)
+    abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv",sep='\t', index=False)
+    for sample in sample_data.keys():
+        sample_data[sample]["cscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_cscope_"+sample+".tsv", sep='\t', index=False)
+        sample_data[sample]["iscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_iscope_"+sample+".tsv", sep='\t', index=False)
+    quit()

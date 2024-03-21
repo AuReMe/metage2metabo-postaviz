@@ -33,16 +33,16 @@ TESTS_DIR = os.path.join(SRC_DIR, 'tests/')
 
 data_table_filepath = os.path.join(TESTS_DIR, 'table_test_postaviz.tar.gz')
 
-          
-
 
 def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.dev:
-      if os.path.isfile(data_table_filepath):
+      if not os.path.isdir(os.path.join(TESTS_DIR, 'data_test/')):
+        print("No data_test/ directory found.")
         du.extract_tarfile(data_table_filepath, TESTS_DIR)
-      global_data, sample_data, abundance_data = du.build_test_data(TESTS_DIR)
+      data_test_dir = os.path.join(TESTS_DIR, 'data_test/')
+      global_data, sample_data, abundance_data = du.build_test_data(data_test_dir)
       taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
 
     elif arg_parser.test:
