@@ -54,4 +54,4 @@ target-version = ["py38"]
 [tool.setuptools]
 packages = ['m2m_postaviz']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
-package-data = {'metage2metabo' = ['tests/metadata_ouput/', 'tests/palleja_refined_metadata.tsv', tests/taxonomic_database.tsv]}
+package-data = {'m2m_postaviz' = ['table_test_postaviz.tar.gz']}

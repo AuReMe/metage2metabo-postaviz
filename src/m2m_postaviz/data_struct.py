@@ -25,5 +25,8 @@ class DataStorage:
 
     def get_factor_list(self):
         query = list(self.main_data["metadata"].columns)
-        query.insert(0, "None")
+        # query.insert(0, "None")
         return query
+
+    def get_factor_len(self):
+        return len(self.main_data["metadata"].columns)

@@ -2,6 +2,8 @@ import json
 import os
 import os.path
 import time
+import tarfile
+# import sys
 
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
@@ -10,6 +12,15 @@ from scipy import stats
 # from m2m_postaviz.time_decorator import timeit
 # import cProfile
 # import threading
+
+def extract_tarfile(tar_file, outdir):
+    file = tarfile.open(tarfile, 'r:gz')
+
+    file.extractall(outdir, filter='data')
+    # if sys.version_info >= (3, 12):
+    # else:
+    #     tar.extractall(outdir)
+
 
 def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
     df_row = df_row.astype(float)
@@ -50,8 +61,8 @@ def relative_abundance_calc(abundance_file_path, sample_data):
 
     global_sample_abundance = pd.concat(all_sample_abundance, join="outer", ignore_index=True)
     global_sample_abundance.fillna(0,inplace=True)
-    global_sample_abundance.insert(0,"SmplID",sample_index)
-    global_sample_abundance.set_index("SmplID",inplace=True,drop=True)
+    global_sample_abundance.insert(0,"smplID",sample_index)
+    global_sample_abundance.set_index("smplID",inplace=True,drop=True)
     return global_sample_abundance
 
 
@@ -475,8 +486,37 @@ def build_df(dir_path, metadata, abundance_path):
 
     abundance_data = relative_abundance_calc(abundance_path, sample_data)
 
+    abundance_data = global_data["metadata"].merge(abundance_data.reset_index(), how="outer")
+
+    # global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv",sep='\t')
+    # global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv",sep='\t')
+    # abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv",sep='\t')
+    # for sample in sample_data.keys():
+    #     sample_data[sample]["cscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_cscope_"+sample+".tsv", sep='\t')
+    #     sample_data[sample]["iscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_iscope_"+sample+".tsv", sep='\t')
+    # quit()
     return global_data, sample_data, abundance_data
 
+
+def build_test_data(test_dir_path):
+    global_data = {}
+    sample_data = {}
+    for file in os.listdir(test_dir_path):
+        filename = os.fsdecode(file)
+        if filename.endswith('.tsv'):
+            if not filename.startswith("sample"):
+                if filename == 'main_table.tsv':
+                    global_data["main_dataframe"] = open_tsv(filename)
+                if filename == 'metadata.tsv':
+                    global_data["metadata"] = open_tsv(filename)
+                if filename == 'abundance_table.tsv':
+                    abundance_table = open_tsv(filename)
+            else:
+                current_file = os.path.basename(filename)
+                current_file = os.path.splitext(current_file)[0]
+                current_file.split("_")
+                sample_data[current_file[2]][current_file[1]] = open_tsv(filename)
+    return global_data, sample_data, abundance_table
 
 def performance_test(dir, meta):
     start_time = time.perf_counter()

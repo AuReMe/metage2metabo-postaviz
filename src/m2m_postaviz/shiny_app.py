@@ -42,11 +42,19 @@ def run_shiny(data: DataStorage):
 
     ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
     # main_df = du.merge_metadata_with_df(global_data["main_dataframe"],global_data["metadata"])
-    df_ontology, df_ontology_lvl2 = custom_ontology()
+    # df_ontology, df_ontology_lvl2 = custom_ontology()
 
     ### Pathway ontology
     individual_pathway_ontology = sm.pathway_data_processing()
     ### ALL CARD OBJECT TO BE ARRANGED ###
+
+    abundance_boxplot = ui.card(
+        ui.row(
+            ui.input_select("abplot_input1", "Label for X axis", factor_list),
+            ui.input_selectize("abplot_input2", "Compound for Y axis", list(data.abundance_data.columns.values[data.get_factor_len():]))
+        ),
+        output_widget("Abundance_boxplot")
+    )
 
     taxonomy_boxplot = ui.card(
         ui.row(
@@ -55,7 +63,7 @@ def run_shiny(data: DataStorage):
         ),
         output_widget("Taxonomic_boxplot"),
     )
-
+    main_table = ui.card(ui.output_data_frame("main_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     iscope_tab_card1 = ui.card(
@@ -97,6 +105,12 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fluid(
         ui.navset_tab(
+            ui.nav("Dev mod",
+                main_table
+            ),
+            ui.nav("Abundance",
+                   abundance_boxplot
+                   ),
             ui.nav("Taxonomy", output_widget("taxonomy_overview"), taxonomy_boxplot),
             ui.nav(
                 "Main",
@@ -147,7 +161,7 @@ def run_shiny(data: DataStorage):
     def server(input, output, session):
         @reactive.Effect()
         @reactive.event(input.Taxonomic_rank_input)
-        def updapte_taxonomy_choice_list():
+        def update_taxonomy_choice_list():
             updated_list = del_list_duplicate(taxonomic_data[input.Taxonomic_rank_input()])
             ui.update_select("Taxonomic_choice_input", choices=updated_list)
             return
@@ -158,6 +172,15 @@ def run_shiny(data: DataStorage):
             df = du.taxonomic_overview(list_of_bin, taxonomic_data, metadata)
             plot = px.box(df, x="Antibiotics", y="Count", color="Days")
             return plot
+
+
+        @output
+        @render_widget
+        def Abundance_boxplot():
+            try:
+                return px.box(data.abundance_data, x=input.abplot_input1(),y=input.abplot_input2())
+            except:
+                print("No valid input.")
 
         @output
         @render_widget
@@ -218,6 +241,12 @@ def run_shiny(data: DataStorage):
             # current_factor_choice.insert(0,"None")
             ui.update_select("factor_choice2", choices=current_factor_choice)
             return
+
+
+        @render.data_frame
+        def main_table():
+            return render.DataGrid(main_dataframe)
+
 
         @render.data_frame
         def main_panel_table():
