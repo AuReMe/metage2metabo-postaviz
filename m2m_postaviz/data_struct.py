@@ -7,6 +7,7 @@ class DataStorage:
         self.sample_data = sample_data_container
         self.taxonomic_data = taxonomic_data_container
         self.abundance_data = abundance_data
+        self.list_of_factor = list(self.main_data["metadata"].columns)
 
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
@@ -22,14 +23,14 @@ class DataStorage:
         for sample in self.sample_data.keys():
             bin_list[sample] = self.sample_data[sample][mode].index.to_list()
         return bin_list
-
-    def get_factor_list(self):
-        query = list(self.main_data["metadata"].columns)
-        # query.insert(0, "None")
-        return query
-
+        
     def get_factor_len(self):
         return len(self.main_data["metadata"].columns)
     
     def get_relevant_metadata(self):
         return list(self.main_data["metadata"].columns)[1:]
+    
+    def get_factor_by_id(self, sample_id, factor):
+        query = self.main_data["metadata"].loc[self.main_data['metadata']["smplID"] == sample_id][factor]
+        print("get_factor : ", sample_id, factor, "found : ",query)
+        return query

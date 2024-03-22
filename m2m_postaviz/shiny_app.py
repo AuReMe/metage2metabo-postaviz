@@ -37,7 +37,7 @@ def run_shiny(data: DataStorage):
     taxonomic_data = data.taxonomic_data
     list_of_bin = data.get_bin_list()
     main_dataframe = data.main_data["main_dataframe"]
-    factor_list = data.get_factor_list()
+    factor_list = data.list_of_factor
     print(factor_list)
 
     ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
@@ -64,6 +64,7 @@ def run_shiny(data: DataStorage):
         output_widget("Taxonomic_boxplot"),
     )
     main_table = ui.card(ui.output_data_frame("main_table"))
+    dev_table = ui.card(ui.output_data_frame("dev_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     iscope_tab_card1 = ui.card(
@@ -106,7 +107,8 @@ def run_shiny(data: DataStorage):
     app_ui = ui.page_fluid(
         ui.navset_tab(
             ui.nav("Dev mod",
-                main_table
+                main_table,
+                dev_table
             ),
             ui.nav("Abundance",
                    abundance_boxplot
@@ -247,9 +249,16 @@ def run_shiny(data: DataStorage):
             return
 
 
+
+        @render.data_frame
+        def dev_table():
+            return render.DataGrid(du.wid_to_long_format(data.abundance_data))
+
+
+
         @render.data_frame
         def main_table():
-            return render.DataGrid(main_dataframe)
+            return render.DataGrid(data.abundance_data)
 
 
         @render.data_frame
