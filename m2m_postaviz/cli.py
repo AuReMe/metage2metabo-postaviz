@@ -29,7 +29,7 @@ parser.add_argument("--dev", help="Run postaviz for dev only", action="store_tru
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SRC_DIR))
-TESTS_DIR = os.path.join(SRC_DIR, 'tests/')
+TESTS_DIR = os.path.join(SRC_DIR, 'postaviz_test_data/')
 
 data_table_filepath = os.path.join(TESTS_DIR, 'table_test_postaviz.tar.gz')
 
