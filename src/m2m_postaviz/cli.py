@@ -37,7 +37,7 @@ data_table_filepath = os.path.join(TESTS_DIR, 'table_test_postaviz.tar.gz')
 def main(args=None):
     arg_parser = parser.parse_args()
 
-    if arg_parser.dev:
+    if arg_parser.test:
       if not os.path.isdir(os.path.join(TESTS_DIR, 'data_test/')):
         print("No data_test/ directory found.")
         du.extract_tarfile(data_table_filepath, TESTS_DIR)
@@ -45,7 +45,7 @@ def main(args=None):
       global_data, sample_data, abundance_data = du.build_test_data(data_test_dir)
       taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
 
-    elif arg_parser.test:
+    elif arg_parser.dev:
       # dir_path = TESTS_DIR+"metadata_ouput/"
       dir_path = "/home/lbrindel/output/palleja/"
       metadata = TESTS_DIR+"palleja_refined_metadata.tsv"

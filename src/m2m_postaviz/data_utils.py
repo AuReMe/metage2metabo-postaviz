@@ -77,20 +77,21 @@ def sum_abundance_table(abundance_table: pd.DataFrame, sample_id: str):
     return pd.DataFrame(new_dataframe, index=[sample_id])
 
 
-def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope"):
+def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope",with_count: bool = True):
     current_selection = []
     current_rank = taxonomic_dataframe.columns[-1]
-    print(type(current_rank))
 
     for sample in list_bin_id.keys():
         tmp_df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(list_bin_id[sample])]
         tmp_df = tmp_df[["mgs", current_rank]]
-        tmp_df = tmp_df.groupby([current_rank]).count()
-        tmp_df = tmp_df.reset_index()
-        tmp_df.columns = [current_rank, "Count"]
+        if with_count:
+            tmp_df = tmp_df.groupby([current_rank]).count()
+            tmp_df = tmp_df.reset_index()
+            tmp_df.columns = [current_rank, "Count"]
         value, label = get_metadata(sample, metadata)
         for i in range(len(label)):
             tmp_df.insert(0, label[i], value[i])
+        tmp_df.insert(0, 'nb_taxon', tmp_df[current_rank].nunique())
 
         current_selection.append(tmp_df)
 

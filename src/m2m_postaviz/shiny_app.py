@@ -167,10 +167,14 @@ def run_shiny(data: DataStorage):
             return
 
         @output
-        @render_widget
+        @render_widget()
         def taxonomy_overview():
             df = du.taxonomic_overview(list_of_bin, taxonomic_data, metadata)
-            plot = px.box(df, x="Antibiotics", y="Count", color="Days")
+            ### IF NO INPUT -- DEFAULT
+
+            plot = px.box(df, y="nb_taxon")
+
+            # plot = px.box(df, x="Antibiotics", y="Count", color="Days")
             return plot
 
 

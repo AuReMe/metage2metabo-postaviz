@@ -54,4 +54,4 @@ target-version = ["py38"]
 [tool.setuptools]
 packages = ['m2m_postaviz']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
-package-data = {'m2m_postaviz' = ['table_test_postaviz.tar.gz']}
+package-data = {'m2m_postaviz' = ['tests/table_test_postaviz.tar.gz']}

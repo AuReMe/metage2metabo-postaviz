@@ -30,3 +30,6 @@ class DataStorage:
 
     def get_factor_len(self):
         return len(self.main_data["metadata"].columns)
+    
+    def get_relevant_metadata(self):
+        return list(self.main_data["metadata"].columns)[1:]
