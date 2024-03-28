@@ -48,7 +48,7 @@ def main(args=None):
     elif arg_parser.dev:
       # dir_path = TESTS_DIR+"metadata_ouput/"
       dir_path = "/home/lbrindel/output/palleja/"
-      metadata = TESTS_DIR+"palleja_refined_metadata.tsv"
+      metadata = TESTS_DIR+"refined_palleja_metadata.tsv"
       abundance_path = "~/Downloads/matrix_palleja.tsv"
       taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
       global_data, sample_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)

@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.scripts]
-m2m = "m2m_postaviz.cli:main"
+m2m_postaviz = "m2m_postaviz.cli:main"
 
 [project.urls]
 Homepage = "https://gitlab.inria.fr/postaviz/"

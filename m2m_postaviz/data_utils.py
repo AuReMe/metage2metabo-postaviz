@@ -67,7 +67,7 @@ def relative_abundance_calc(abundance_file_path, sample_data):
     global_sample_abundance = pd.concat(all_sample_abundance, join="outer", ignore_index=True)
     global_sample_abundance.fillna(0,inplace=True)
     global_sample_abundance.insert(0,"smplID",sample_index)
-    # global_sample_abundance.set_index("smplID",inplace=True,drop=True)
+    global_sample_abundance.set_index("smplID",inplace=True,drop=True)
     return global_sample_abundance
 
 
@@ -491,8 +491,6 @@ def build_df(dir_path, metadata, abundance_path):
     global_data["main_dataframe"] = main_df
 
     abundance_data = relative_abundance_calc(abundance_path, sample_data)
-
-    # abundance_data = global_data["metadata"].merge(abundance_data.reset_index(), how="outer")
 
     return global_data, sample_data, abundance_data
 

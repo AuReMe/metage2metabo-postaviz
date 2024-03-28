@@ -38,6 +38,7 @@ def run_shiny(data: DataStorage):
     list_of_bin = data.get_bin_list()
     main_dataframe = data.main_data["main_dataframe"]
     factor_list = data.list_of_factor
+    factor_list.insert(0, 'None')
     print(factor_list)
 
     ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
@@ -50,8 +51,9 @@ def run_shiny(data: DataStorage):
 
     abundance_boxplot = ui.card(
         ui.row(
-            ui.input_select("abplot_input1", "Label for X axis", factor_list),
-            ui.input_selectize("abplot_input2", "Compound for Y axis", list(data.abundance_data.columns.values[data.get_factor_len():]))
+            ui.input_select("abplot_inputx1", "Label for X axis", factor_list),
+            ui.input_select("abplot_inputx2", "Label for 2nd X axis", factor_list),
+            ui.input_selectize("abplot_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True)
         ),
         output_widget("Abundance_boxplot")
     )
@@ -63,8 +65,8 @@ def run_shiny(data: DataStorage):
         ),
         output_widget("Taxonomic_boxplot"),
     )
-    main_table = ui.card(ui.output_data_frame("main_table"))
-    dev_table = ui.card(ui.output_data_frame("dev_table"))
+    main_table = ui.card(ui.layout_column_wrap(ui.output_data_frame("dev_table"),output_widget("main_table"),width=1/2))
+    dev_table = ui.card(ui.output_text("dev_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     iscope_tab_card1 = ui.card(
@@ -183,10 +185,13 @@ def run_shiny(data: DataStorage):
         @output
         @render_widget
         def Abundance_boxplot():
-            try:
-                return px.box(data.abundance_data, x=input.abplot_input1(),y=input.abplot_input2())
-            except:
-                print("No valid input.")
+            df = data.produce_long_abundance_dataframe()
+            print(len(input.abplot_inputy1()))
+            ##### CHECK INPUT
+            if not input.abplot_inputx1() == 'None':
+                return px.box(df,x=input.abplot_inputx1(), y='Quantity')
+            ##### MAKE PLOT
+            return px.box(df, y='Quantity')
 
         @output
         @render_widget
@@ -199,37 +204,6 @@ def run_shiny(data: DataStorage):
                 return plot
             except:
                 return
-
-        @render.text
-        @reactive.event(input.run_test)
-        def stat_test_result():
-            if input.stat_test_choice() == "Student":
-                return du.student_test(
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                )
-            if input.stat_test_choice() == "Wilcoxon":
-                return du.wilcoxon_test(
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                )
-
-        @reactive.Effect()
-        @reactive.event(input.wilcoxon_variable_select)
-        def process_wilcoxon():
-            current_factor_choice = del_list_duplicate(current_dataframe[input.wilcoxon_variable_select()])
-            ui.update_select("wilcoxon_group1_select", choices=current_factor_choice)
-            ui.update_select("wilcoxon_group2_select", choices=current_factor_choice)
-            ui.update_select("wilcoxon_tested_value_select", choices=list(current_dataframe.columns))
-            return
 
         @reactive.Effect()
         @reactive.event(input.test_sample1)
@@ -250,15 +224,16 @@ def run_shiny(data: DataStorage):
 
 
 
-        @render.data_frame
+        @render.text
         def dev_table():
-            return render.DataGrid(du.wid_to_long_format(data.abundance_data))
+            return "RENDER TEXT STILL FUNCTIONAL"
 
 
-
-        @render.data_frame
+        @render_widget
         def main_table():
-            return render.DataGrid(data.abundance_data)
+            df = data.produce_long_abundance_dataframe()
+            fig = px.box(df, x='Days', y='Quantity', color='Group')
+            return fig
 
 
         @render.data_frame
