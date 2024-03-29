@@ -13,6 +13,11 @@ from scipy import stats
 # import cProfile
 # import threading
 
+
+def wid_to_long_format(df: pd.DataFrame):
+    return df.melt('smplID',var_name='Compound',value_name='Quantity')
+
+
 def extract_tarfile(tar_file, outdir):
     file = tarfile.open(tar_file, 'r:gz')
 
@@ -486,8 +491,6 @@ def build_df(dir_path, metadata, abundance_path):
     global_data["main_dataframe"] = main_df
 
     abundance_data = relative_abundance_calc(abundance_path, sample_data)
-
-    abundance_data = global_data["metadata"].merge(abundance_data.reset_index(), how="outer")
 
     return global_data, sample_data, abundance_data
 

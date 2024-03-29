@@ -1,4 +1,5 @@
 import plotly.express as px
+import plotly.graph_objects as go
 import scipy.stats as stats
 from shiny import App
 from shiny import reactive
@@ -16,19 +17,6 @@ from m2m_postaviz.data_struct import DataStorage
 def del_list_duplicate(mylist: list):
     return list(dict.fromkeys(mylist))
 
-
-def custom_ontology():
-    df_ontology = du.open_tsv("/home/lbrindel/m2m-postaviz/tests/compounds_26_5_level1.tsv")
-    df_ontology_lvl2 = du.open_tsv("/home/lbrindel/Downloads/compounds_26_5_level2.tsv")
-    du.add_row(df_ontology, ["ALTROSE", "ALTROSE", "Others"])
-    du.add_row(df_ontology, ["PSICOSE", "PSICOSE", "Others"])
-    du.add_row(df_ontology_lvl2, ["ALTROSE", "ALTROSE", "Others"])
-    du.add_row(df_ontology_lvl2, ["PSICOSE", "PSICOSE", "Others"])
-    df_ontology = du.deal_with_duplicated_row(df_ontology, "compound_name")
-    df_ontology_lvl2 = du.deal_with_duplicated_row(df_ontology_lvl2, "compound_name")
-    return df_ontology, df_ontology_lvl2
-
-
 def run_shiny(data: DataStorage):
     ### Declare PROCESSING VARIABLE
 
@@ -37,22 +25,19 @@ def run_shiny(data: DataStorage):
     taxonomic_data = data.taxonomic_data
     list_of_bin = data.get_bin_list()
     main_dataframe = data.main_data["main_dataframe"]
-    factor_list = data.get_factor_list()
+    factor_list = data.list_of_factor
+    factor_list.insert(0, 'None')
     print(factor_list)
 
-    ### ALL GLOBAL OBJECT, TO BE REMOVED AT SOME POINT ###
-    # main_df = du.merge_metadata_with_df(global_data["main_dataframe"],global_data["metadata"])
-    # df_ontology, df_ontology_lvl2 = custom_ontology()
 
-    ### Pathway ontology
-    individual_pathway_ontology = sm.pathway_data_processing()
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
+    abundance_input = ui.row(
+            ui.input_select("box_inputx1", "Label for X axis", factor_list),
+            ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
+            ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True)
+        )
     abundance_boxplot = ui.card(
-        ui.row(
-            ui.input_select("abplot_input1", "Label for X axis", factor_list),
-            ui.input_selectize("abplot_input2", "Compound for Y axis", list(data.abundance_data.columns.values[data.get_factor_len():]))
-        ),
         output_widget("Abundance_boxplot")
     )
 
@@ -63,35 +48,9 @@ def run_shiny(data: DataStorage):
         ),
         output_widget("Taxonomic_boxplot"),
     )
-    main_table = ui.card(ui.output_data_frame("main_table"))
+    main_table = ui.card(ui.output_data_frame("dev_table"),output_widget("main_table"))
+    # dev_table = ui.card(ui.output_text("dev_text"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
-
-    iscope_tab_card1 = ui.card(
-        ui.row(
-            ui.input_select("iscope_sample", label="Sample", choices=[key for key in list_of_bin.keys()]),
-            ui.input_select("iscope_bin", label="Bin", choices=[key for key in individual_pathway_ontology[0].keys()]),
-        )
-    )
-
-    iscope_taxonomic_card = ui.card(
-        ui.layout_column_wrap(
-            output_widget("taxonomic_domain"),
-            output_widget("taxonomic_kingdom"),
-            output_widget("taxonomic_phylum"),
-            output_widget("taxonomic_order"),
-            output_widget("taxonomic_family"),
-            output_widget("taxonomic_genus"),
-            width=1 / 2,
-        )
-    )
-
-    iscope_pathway_card = ui.card(
-        ui.layout_column_wrap(
-            output_widget("pathwaylvl1_widget"),
-            output_widget("pathwaylvl2_widget"),
-            width=1 / 2,
-        )
-    )
 
     main_panel_dataframe = ui.card(
         ui.row(
@@ -106,9 +65,11 @@ def run_shiny(data: DataStorage):
     app_ui = ui.page_fluid(
         ui.navset_tab(
             ui.nav("Dev mod",
-                main_table
+                main_table,
+                # dev_table
             ),
             ui.nav("Abundance",
+                   abundance_input,
                    abundance_boxplot
                    ),
             ui.nav("Taxonomy", output_widget("taxonomy_overview"), taxonomy_boxplot),
@@ -135,12 +96,6 @@ def run_shiny(data: DataStorage):
                     main_panel_dataframe,
                     ui.output_text(id="stat_test_result"),
                 ),
-            ),
-            ui.nav(
-                "Exploration",
-                iscope_tab_card1,
-                iscope_taxonomic_card,
-                iscope_pathway_card,
             ),
             ui.nav(
                 "Prototype",
@@ -181,10 +136,39 @@ def run_shiny(data: DataStorage):
         @output
         @render_widget
         def Abundance_boxplot():
-            try:
-                return px.box(data.abundance_data, x=input.abplot_input1(),y=input.abplot_input2())
-            except:
-                print("No valid input.")
+            df = data.produce_long_abundance_dataframe()
+            df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
+            print(len(input.box_inputy1()))
+            y1 = input.box_inputy1()
+            if len(y1) == 0:
+                y1 = 'Quantity'
+            if not input.box_inputx1() == 'None':
+                if input.box_inputx2() == 'None':
+                    return px.box(df,x=input.box_inputx1(), y='Quantity')
+                else:
+                    conditionx2 = df[input.box_inputx2()]
+                    conditionx2 = conditionx2.unique()
+
+                    fig = go.Figure()
+                    
+                    for condition in conditionx2:
+
+                        fig.add_trace(go.Box(
+                            x=df.loc[df[input.box_inputx2()] == condition][input.box_inputx1()] ,
+                            y=df.loc[(df[input.box_inputx2()] == condition) & (df["Quantity"] != 0)]['Quantity'],
+                            name=str(condition),
+                            # marker_color='green'
+                        ))
+                    # fig.add_trace(go.Box(
+                    #     x=df[input.box_inputx1()],
+                    #     y=df.loc[(df["Group"] == 'Treatment') & (df["Quantity"] != 0)]['Quantity'],
+                    #     name='Treatment',
+                    #     marker_color='blue'
+                    # ))
+                    fig.update_layout(boxmode='group')
+                    return fig
+            ##### MAKE PLOT
+            return px.box(df, y='Quantity')
 
         @output
         @render_widget
@@ -197,37 +181,6 @@ def run_shiny(data: DataStorage):
                 return plot
             except:
                 return
-
-        @render.text
-        @reactive.event(input.run_test)
-        def stat_test_result():
-            if input.stat_test_choice() == "Student":
-                return du.student_test(
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                )
-            if input.stat_test_choice() == "Wilcoxon":
-                return du.wilcoxon_test(
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group1_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                    current_dataframe.loc[current_dataframe[input.wilcoxon_variable_select()] == input.wilcoxon_group2_select()][
-                        input.wilcoxon_tested_value_select()
-                    ],
-                )
-
-        @reactive.Effect()
-        @reactive.event(input.wilcoxon_variable_select)
-        def process_wilcoxon():
-            current_factor_choice = del_list_duplicate(current_dataframe[input.wilcoxon_variable_select()])
-            ui.update_select("wilcoxon_group1_select", choices=current_factor_choice)
-            ui.update_select("wilcoxon_group2_select", choices=current_factor_choice)
-            ui.update_select("wilcoxon_tested_value_select", choices=list(current_dataframe.columns))
-            return
 
         @reactive.Effect()
         @reactive.event(input.test_sample1)
@@ -248,8 +201,15 @@ def run_shiny(data: DataStorage):
 
 
         @render.data_frame
+        def dev_table():
+            return render.DataGrid(data.melted_abundance_dataframe)
+
+
+        @render_widget
         def main_table():
-            return render.DataGrid(main_dataframe)
+            df = data.produce_long_abundance_dataframe()
+            fig = px.box(df, x='Days', y='Quantity', color='Group')
+            return fig
 
 
         @render.data_frame
@@ -329,77 +289,5 @@ def run_shiny(data: DataStorage):
             inshape_res = ("Résultat du test de wilcoxon :", res)
             return inshape_res
 
-        @output
-        @render.data_frame
-        def iscope_table():
-            # data = du.open_tsv("~/Downloads/mapping_mgs_genus.txt")
-            df = data.sample_data[input.sample()]["iscope"]
-            df = du.merge_df(df, taxonomic_data)
-            return render.DataGrid(df, row_selection_mode="single")
-
-        @output
-        @render_widget
-        def taxonomic_domain():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Domain"], x=current_sample["Domain"].index, y="Domain", title="Domain repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def taxonomic_kingdom():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Kingdom"], x=current_sample["Kingdom"].index, y="Kingdom", title="Kingdom repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def taxonomic_phylum():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Phylum"], x=current_sample["Phylum"].index, y="Phylum", title="Phylum repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def taxonomic_order():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Order"], x=current_sample["Order"].index, y="Order", title="Order repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def taxonomic_family():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Family"], x=current_sample["Family"].index, y="Family", title="Family repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def taxonomic_genus():
-            current_sample = sm.taxonomic_processing(list_of_bin[input.iscope_sample()], taxonomic_data)
-            fig = px.bar(current_sample["Genus"], x=current_sample["Genus"].index, y="Genus", title="Genus repartition in sample")
-            return fig
-
-        @output
-        @render_widget
-        def pathwaylvl1_widget():
-            fig = px.bar(
-                individual_pathway_ontology[0][input.iscope_bin()],
-                x="category",
-                y="count",
-                title="Ontology lvl1 for " + str(input.iscope_bin()),
-            )
-            return fig
-
-        @output
-        @render_widget
-        def pathwaylvl2_widget():
-            fig = px.bar(
-                individual_pathway_ontology[1][input.iscope_bin()],
-                x="category",
-                y="count",
-                title="Ontology lvl2 for " + str(input.iscope_bin()),
-            )
-            return fig
-
     app = App(app_ui, server)
-    run_app(app=app, launch_browser=True)
+    run_app(app=app, launch_browser=True,reload_dirs="./")
