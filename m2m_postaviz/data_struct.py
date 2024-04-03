@@ -11,7 +11,6 @@ class DataStorage:
         self.abundance_dataframe : pd.DataFrame = self.main_data["metadata"].merge(self.abundance_matrix.reset_index(), how="outer")
         ### Created on the roll
         self.melted_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
-        print(self.melted_abundance_dataframe)
         self.factorize_metadata()
 
     def _is_indexed(self, df: pd.DataFrame):

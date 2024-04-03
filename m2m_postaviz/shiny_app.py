@@ -28,6 +28,7 @@ def run_shiny(data: DataStorage):
     factor_list = data.list_of_factor
     factor_list.insert(0, 'None')
     print(factor_list)
+    melted_abundance_df = data.melted_abundance_dataframe.copy()
 
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
@@ -35,10 +36,11 @@ def run_shiny(data: DataStorage):
     abundance_input = ui.row(
             ui.input_select("box_inputx1", "Label for X axis", factor_list),
             ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
-            ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True)
+            ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True),
+            # ui.input_action_button("abundance_boxplot_button","Launch")
         )
     abundance_boxplot = ui.card(
-        output_widget("Abundance_boxplot")
+        output_widget("Abundance_boxplot",height="600px")
     )
 
     taxonomy_boxplot = ui.card(
@@ -62,7 +64,7 @@ def run_shiny(data: DataStorage):
 
     ### APPLICATION TREE ###
 
-    app_ui = ui.page_fluid(
+    app_ui = ui.page_fillable(
         ui.navset_tab(
             ui.nav("Dev mod",
                 main_table,
@@ -121,7 +123,6 @@ def run_shiny(data: DataStorage):
             ui.update_select("Taxonomic_choice_input", choices=updated_list)
             return
 
-        @output
         @render_widget()
         def taxonomy_overview():
             df = du.taxonomic_overview(list_of_bin, taxonomic_data, metadata)
@@ -133,20 +134,20 @@ def run_shiny(data: DataStorage):
             return plot
 
 
-        @output
         @render_widget
         def Abundance_boxplot():
-            df = data.produce_long_abundance_dataframe()
-            df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
-            print(len(input.box_inputy1()))
+            df = melted_abundance_df
+            # df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
             y1 = input.box_inputy1()
+            x1 = input.box_inputx1()
+            x2 = input.box_inputx2()
             if len(y1) == 0:
-                y1 = 'Quantity'
-            if not input.box_inputx1() == 'None':
-                if input.box_inputx2() == 'None':
-                    return px.box(df,x=input.box_inputx1(), y='Quantity')
+                y1 = df['Compound'].unique()
+            if not x1 == 'None':
+                if x2 == 'None':
+                    return px.box(df,x=df.loc[(df["Compound"].isin(y1)) & df["Quantity"] != 0][x1], y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]['Quantity'])
                 else:
-                    conditionx2 = df[input.box_inputx2()]
+                    conditionx2 = df[x2]
                     conditionx2 = conditionx2.unique()
 
                     fig = go.Figure()
@@ -154,20 +155,15 @@ def run_shiny(data: DataStorage):
                     for condition in conditionx2:
 
                         fig.add_trace(go.Box(
-                            x=df.loc[df[input.box_inputx2()] == condition][input.box_inputx1()] ,
-                            y=df.loc[(df[input.box_inputx2()] == condition) & (df["Quantity"] != 0)]['Quantity'],
+                            x=df.loc[df[x2] == condition][x1] ,
+                            y=df.loc[(df[x2] == condition) & (df["Quantity"] != 0) & (df["Compound"].isin(y1))]['Quantity'],
                             name=str(condition),
                             # marker_color='green'
                         ))
-                    # fig.add_trace(go.Box(
-                    #     x=df[input.box_inputx1()],
-                    #     y=df.loc[(df["Group"] == 'Treatment') & (df["Quantity"] != 0)]['Quantity'],
-                    #     name='Treatment',
-                    #     marker_color='blue'
-                    # ))
+
                     fig.update_layout(boxmode='group')
                     return fig
-            ##### MAKE PLOT
+                
             return px.box(df, y='Quantity')
 
         @output

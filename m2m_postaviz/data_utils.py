@@ -282,7 +282,17 @@ def get_percent_value(df: pd.DataFrame, transpose: bool = False) -> pd.DataFrame
     return percentage
 
 
-def get_files(file_name, path, with_directory_name: bool = True):
+def get_files(file_name: str, path: str, with_directory_name: bool = True):
+    """Retrieve files from the name within the directory path given in CLI.
+
+    Args:
+        file_name (str): Name of the file
+        path (str): directory path (-d from cli) from which os.walk begin the search.
+        with_directory_name (bool, optional): If True, also return the directory name containing the file. Defaults to True.
+
+    Returns:
+        _type_: _description_
+    """
     result = []
     for root, dirs, files in os.walk(path):
         if file_name in files:
@@ -323,10 +333,10 @@ def get_scopes(file_name, path):
             return iscope_dataframe
 
 
-def convert_to_dict(file_as_list):
-    decoded_list = sbml_to_classic(file_as_list)
+def convert_to_dict(list_of_produced_cpd):
+    decoded_cpd_list = sbml_to_classic(list_of_produced_cpd)
     data = {}
-    for i in decoded_list:
+    for i in decoded_cpd_list:
         value = [1]
         data[i] = value
     return data
@@ -388,14 +398,22 @@ def get_contributions(file_name, path):
 
 
 def retrieve_all_sample_data(path):
+    """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
+
+    Args:
+        path (str): Directory path given in CLI.
+
+    Returns:
+        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files. 
+    """
     data_by_sample = {}
     for sample in os.listdir(path):
         if os.path.isdir(os.path.join(path, sample)):
             data_by_sample[sample] = {}
-            data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            # data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
             data_by_sample[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
-            data_by_sample[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-            data_by_sample[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+            # data_by_sample[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
+            # data_by_sample[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
     return data_by_sample
 
 
@@ -444,14 +462,16 @@ def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix
 # @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata, abundance_path):
     """
-    Extract community scopes present in directory then build the a single dataframe from the metabolites produced by each comm_scopes.
+    Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
     Args:
         dir_path (str): Directory path containing comm scopes
         metadata (tsv file): tsv file containing the metadata of the scopes. The number of row must be equal to the number of comm_scopes given in dir_path.
 
     Returns:
-        pandas_DataFrame:
+        global_data: dict
+        sample_data: dict
+        abundance_data: pandas dataframe
     """
     data_by_sample = {}
     sample_data = retrieve_all_sample_data(dir_path)
@@ -496,6 +516,14 @@ def build_df(dir_path, metadata, abundance_path):
 
 
 def build_test_data(test_dir_path):
+    """Load, open and return the test data to be used by the DataStorage object.
+
+    Args:
+        test_dir_path (_type_): Path en the archive
+
+    Returns:
+        _type_: 2 dict, 1 pandas dataframe
+    """
     global_data = {}
     sample_data = {}
     for file in os.listdir(test_dir_path):
@@ -548,3 +576,6 @@ def produce_test_data(global_data, sample_data, abundance_data):
         sample_data[sample]["cscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_cscope_"+sample+".tsv", sep='\t', index=False)
         sample_data[sample]["iscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_iscope_"+sample+".tsv", sep='\t', index=False)
     quit()
+
+def unit_test_1():
+    return
