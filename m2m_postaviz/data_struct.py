@@ -22,7 +22,7 @@ class DataStorage:
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
 
-    def get_columns_label(self, sample_id: str, mode: str = "cscope"):
+    def get_cpd_label(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode].columns
 
     def get_taxonomic_data_by_sample(self, sample_id: str) -> pd.DataFrame:

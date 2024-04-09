@@ -28,6 +28,7 @@ def run_shiny(data: DataStorage):
     factor_list = data.list_of_factor
     factor_list.insert(0, 'None')
     print(factor_list)
+    metadata_label = data.get_metadata_label()
     melted_abundance_df = data.melted_abundance_dataframe.copy()
 
 
@@ -37,10 +38,11 @@ def run_shiny(data: DataStorage):
             ui.input_select("box_inputx1", "Label for X axis", factor_list),
             ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
             ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True),
+            ui.input_checkbox("ab_norm","With normalized data")
             # ui.input_action_button("abundance_boxplot_button","Launch")
         )
     abundance_boxplot = ui.card(
-        output_widget("Abundance_boxplot",height="600px")
+        output_widget("Abundance_boxplot",height="100%",width="100%")
     )
 
     taxonomy_boxplot = ui.card(
@@ -51,7 +53,6 @@ def run_shiny(data: DataStorage):
         output_widget("Taxonomic_boxplot"),
     )
     main_table = ui.card(ui.output_data_frame("dev_table"),output_widget("main_table"))
-    # dev_table = ui.card(ui.output_text("dev_text"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     main_panel_dataframe = ui.card(
@@ -61,6 +62,7 @@ def run_shiny(data: DataStorage):
         ),
         ui.output_data_frame("main_panel_table"),
     )
+    pcoa_plot_dev_table = ui.card(output_widget("pcoa_plot"))
 
     ### APPLICATION TREE ###
 
@@ -68,11 +70,27 @@ def run_shiny(data: DataStorage):
         ui.navset_tab(
             ui.nav("Dev mod",
                 main_table,
+                
                 # dev_table
             ),
+            ui.nav(
+                "PCOA",
+                ui.layout_sidebar(
+                    ui.sidebar(
+                        ui.input_select(
+                            id="pcoa_color",
+                            label="Plot color.",
+                            choices=metadata_label,
+                            selected=metadata_label[0]
+                    )),
+                    pcoa_plot_dev_table
+                    )),
             ui.nav("Abundance",
-                   abundance_input,
-                   abundance_boxplot
+                   ui.layout_sidebar(
+                       ui.sidebar(
+                           abundance_input),
+                           abundance_boxplot
+                           )
                    ),
             ui.nav("Taxonomy", output_widget("taxonomy_overview"), taxonomy_boxplot),
             ui.nav(
@@ -143,9 +161,11 @@ def run_shiny(data: DataStorage):
             x2 = input.box_inputx2()
             if len(y1) == 0:
                 y1 = df['Compound'].unique()
-            if not x1 == 'None':
+            if x1 == 'None':
+                return px.box(df, y=df.loc[df["Quantity"] != 0 & df['Compound'].isin(y1)]['Quantity'])
+            else:
                 if x2 == 'None':
-                    return px.box(df,x=df.loc[(df["Compound"].isin(y1)) & df["Quantity"] != 0][x1], y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]['Quantity'])
+                    return px.box(df,x=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)][x1], y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]['Quantity'])
                 else:
                     conditionx2 = df[x2]
                     conditionx2 = conditionx2.unique()
@@ -164,7 +184,6 @@ def run_shiny(data: DataStorage):
                     fig.update_layout(boxmode='group')
                     return fig
                 
-            return px.box(df, y='Quantity')
 
         @output
         @render_widget
@@ -195,6 +214,11 @@ def run_shiny(data: DataStorage):
             ui.update_select("factor_choice2", choices=current_factor_choice)
             return
 
+        @render_widget
+        def pcoa_plot():
+            input_color = input.pcoa_color()
+            res = du.run_pcoa(main_dataframe, metadata)
+            return px.scatter(res.samples, x='PC1' , y='PC2', color=input_color)
 
         @render.data_frame
         def dev_table():
@@ -204,7 +228,7 @@ def run_shiny(data: DataStorage):
         @render_widget
         def main_table():
             df = data.produce_long_abundance_dataframe()
-            fig = px.box(df, x='Days', y='Quantity', color='Group')
+            fig = px.box(df, x='Days', y='Quantity', color='Patient')
             return fig
 
 

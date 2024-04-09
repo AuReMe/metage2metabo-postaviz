@@ -3,15 +3,98 @@ import os
 import os.path
 import time
 import tarfile
-# import sys
 
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
-
+from scipy.spatial.distance import pdist
+from scipy.spatial.distance import squareform
+from skbio.stats.ordination import pcoa
 # from m2m_postaviz.time_decorator import timeit
 # import cProfile
 # import threading
+
+
+
+def weird_way_to_do_it(id_value: str, metadata_col: str, metadata: pd.DataFrame):
+    if is_indexed_by_id(metadata):
+        metadata.reset_index(inplace=True)
+    result = metadata.loc[metadata['smplID'] == id_value][metadata_col].values[0]
+    return result
+
+
+def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame):
+    """Calculate Principal Coordinate Analysis with dataframe given in first arg.
+    Use metadata's drataframe as second argument to return the full ordination result plus
+    all metadata column inserted along Ordination.samples dataframe.
+    Ready to be plotted.
+
+    Args:
+        main_df (pd.DataFrame): Main dataframe of compound production
+        metadata (pd.DataFrame): Metadata's dataframe
+
+    Returns:
+        _type_: Ordination results object from skbio's package.
+    """
+    df = main_df.copy()
+    # Need the matrix version for distance calculation.
+    if not is_indexed_by_id(main_df):
+        main_df.set_index("smplID", inplace=True)
+
+    # Add metadata columns with the accurate value in temporary dataframe.
+    for col in metadata.columns:
+        if col == "smplID":
+            continue
+        df[col] = df["smplID"].apply(lambda row: weird_way_to_do_it(row,col,metadata))
+
+    # Calculate distance matrix with Bray-Curtis method.
+    dist_m = pdist(main_df, 'braycurtis')
+    # Transform distance matrix into squareform.
+    squaref_m = squareform(dist_m)
+    # Run the PCOA with the newly generated distance matrix.
+    pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0]-1)
+
+    # Verify if PCOA_results's samples dataframe is aligned with df dataframe.
+    df = df.set_index(pcoa_results.samples.index)
+    # Put each metadata column in the pcoa results's dataframe for PLOT.
+    for col in metadata.columns:
+        if col == "smplID":
+            continue
+        pcoa_results.samples[col] = df[col].astype('category')
+
+    if is_indexed_by_id(main_df):
+        main_df.reset_index(inplace=True)
+
+    return pcoa_results
+
+def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
+    results = {}
+    for model in model_list:
+        if not model in results.keys():
+            value = 1
+            results[model] = value
+        elif with_quantity:
+            results[model] += value
+    return pd.Series(results)
+
+
+def intest_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
+    # temporary solution, should be species if available.
+    rank = 'Genus'
+    id_col = 'mgs'
+    all_series = {}
+    # for each sample get the row of the taxo_df.
+    for sample in binlist_by_id.keys():
+        res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
+        all_series[sample] = list_to_boolean_serie(res)
+    # Concatenation of the series into a dataframe.
+    matrix = pd.DataFrame(all_series)
+    matrix.fillna(0,inplace=True)
+    # matrix = matrix.T
+    matrix.reset_index(inplace=True)
+
+    # print(matrix)
+    return matrix
 
 
 def wid_to_long_format(df: pd.DataFrame):
@@ -34,7 +117,7 @@ def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFr
     return df_row
 
 
-def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
+def generate_normalized_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
     """
     Produce a stoichiometric matrix from a binary matrix (presence or absence) and an abundance matrix.
 
@@ -61,7 +144,7 @@ def relative_abundance_calc(abundance_file_path, sample_data):
     all_sample_abundance = []
     sample_index = []
     for sample in sample_data.keys():
-        all_sample_abundance.append(sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        all_sample_abundance.append(sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
         sample_index.append(str(sample))
 
     global_sample_abundance = pd.concat(all_sample_abundance, join="outer", ignore_index=True)
@@ -130,7 +213,7 @@ def taxonomy_groupby(
     """
     df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(bin_id_by_sample[current_sample])]
     for choice in taxonomic_choice:
-        if choice not in df[target_rank].unique():
+        if not choice in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
 
@@ -188,6 +271,16 @@ def get_total_production_size(sample: str, metadataframe: dict):
 
 
 def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
+    """Return the numbers of different species in one sample.
+
+    Args:
+        sample_data (pd.DataFrame): dataframe of one sample.
+        taxonomic_dataframe (pd.DataFrame): taxonomic dataframe of all samples.
+        only_metabolic_model_size (bool, optional): Return only the number of individual in the sample. Defaults to False.
+
+    Returns:
+        int: Number of individual or number of different species.
+    """
     if only_metabolic_model_size:
         taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["smplID"])]
         return len(taxonomy_size)
@@ -199,6 +292,17 @@ def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFra
 
 
 def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic_dataframe: pd.DataFrame):
+    """Really ugly and probably useless need rework.
+    Return a dataframe with global information of all the sample in input.
+
+    Args:
+        sample_data (dict): _description_
+        metadataframe (pd.DataFrame): _description_
+        taxonomic_dataframe (pd.DataFrame): _description_
+
+    Returns:
+        _type_: _description_
+    """
     tot_size = []
     ind_size = []
     ad_size = []
@@ -318,7 +422,17 @@ def open_json(file_path):
     return file_data
 
 
-def open_tsv(file_name, rename_columns: bool = False, first_col: str = "smplID"):
+def open_tsv(file_name: str, rename_columns: bool = False, first_col: str = "smplID"):
+    """Open tsv file as a pandas dataframe.
+
+    Args:
+        file_name (str): Path of the file
+        rename_columns (bool, optional): Rename the first column and decode the metabolites names in sbml format into readable format. Defaults to False.
+        first_col (str, optional): Label of the first col if rename_columns is True. Defaults to "smplID".
+
+    Returns:
+        Dataframe: Pandas dataframe
+    """
     data = pd.read_csv(file_name, sep="\t")
     if rename_columns:
         data.columns.values[0] = first_col
@@ -417,13 +531,13 @@ def retrieve_all_sample_data(path):
     return data_by_sample
 
 
-def retrieve_sample_data(sample_directory_path, sample_name, sample_dictionnary: dict):
-    sample_dictionnary[sample_name] = {}
-    sample_dictionnary[sample_name]["iscope"] = get_scopes("rev_iscope.tsv", sample_directory_path)
-    sample_dictionnary[sample_name]["cscope"] = get_scopes("rev_cscope.tsv", sample_directory_path)
-    sample_dictionnary[sample_name]["advalue"] = open_added_value("addedvalue.json", sample_directory_path)
-    sample_dictionnary[sample_name]["contribution"] = get_contributions("contributions_of_microbes.json", sample_directory_path)
-    return
+# def retrieve_sample_data(sample_directory_path, sample_name, sample_dictionnary: dict):
+#     sample_dictionnary[sample_name] = {}
+#     sample_dictionnary[sample_name]["iscope"] = get_scopes("rev_iscope.tsv", sample_directory_path)
+#     sample_dictionnary[sample_name]["cscope"] = get_scopes("rev_cscope.tsv", sample_directory_path)
+#     sample_dictionnary[sample_name]["advalue"] = open_added_value("addedvalue.json", sample_directory_path)
+#     sample_dictionnary[sample_name]["contribution"] = get_contributions("contributions_of_microbes.json", sample_directory_path)
+#     return
 
 
 def merge_metadata_with_df(main_dataframe, metadata):
@@ -519,10 +633,10 @@ def build_test_data(test_dir_path):
     """Load, open and return the test data to be used by the DataStorage object.
 
     Args:
-        test_dir_path (_type_): Path en the archive
+        test_dir_path (_type_): Path to the archive
 
     Returns:
-        _type_: 2 dict, 1 pandas dataframe
+        dict, dict, pd.dataframe: 2 dict, 1 pandas dataframe
     """
     global_data = {}
     sample_data = {}
@@ -578,4 +692,14 @@ def produce_test_data(global_data, sample_data, abundance_data):
     quit()
 
 def unit_test_1():
+    mock_dataframe = pd.DataFrame(
+        {
+            "SmplID": ["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"],
+            "A": [1,0,0,0,1,1,0],
+            "B": [0,0,1,0,1,1,0],
+            "C": [1,0,0,1,1,1,1],
+            "D": [0,1,0,0,0,0,0]
+        }
+    )
+    print(mock_dataframe)
     return
