@@ -2,15 +2,21 @@ import pandas as pd
 
 
 class DataStorage:
-    def __init__(self, main_data_container: dict, sample_data_container: dict, taxonomic_data_container: pd.DataFrame, abundance_data: pd.DataFrame):
+    def __init__(self, main_data_container: dict, sample_data_container: dict, taxonomic_data_container: pd.DataFrame, norm_abundance_data: pd.DataFrame, abundance_data: pd.DataFrame):
         self.main_data = main_data_container
         self.sample_data = sample_data_container
         self.taxonomic_data = taxonomic_data_container
+
+        self.normalised_abundance_matrix = norm_abundance_data
         self.abundance_matrix = abundance_data
-        self.list_of_factor = list(self.main_data["metadata"].columns)
+
         self.abundance_dataframe : pd.DataFrame = self.main_data["metadata"].merge(self.abundance_matrix.reset_index(), how="outer")
+        self.normalised_abundance_dataframe : pd.DataFrame = self.main_data["metadata"].merge(self.normalised_abundance_matrix.reset_index(), how="outer")
         ### Created on the roll
-        self.melted_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
+        self.melted_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe(with_normalisation=False)
+        self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
+
+        self.list_of_factor = list(self.main_data["metadata"].columns)
         self.factorize_metadata()
 
     def _is_indexed(self, df: pd.DataFrame):
@@ -47,10 +53,13 @@ class DataStorage:
         print("get_factor : ", sample_id, factor, "found : ",query)
         return query
     
-    def produce_long_abundance_dataframe(self):
-        ### Input
-        current_df = self.abundance_matrix
-        current_df = current_df.reset_index()
+    def produce_long_abundance_dataframe(self, with_normalisation: bool = True):
+        if with_normalisation:
+            current_df = self.normalised_abundance_matrix
+        else:
+            current_df = self.abundance_matrix
+        if self._is_indexed(current_df):
+            current_df = current_df.reset_index()
         current_df = current_df.melt('smplID',var_name='Compound',value_name='Quantity')
         all_new_columns = {}
         for factor in self.get_metadata_label():
