@@ -23,7 +23,7 @@ def weird_way_to_do_it(id_value: str, metadata_col: str, metadata: pd.DataFrame)
     return result
 
 
-def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame):
+def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
     """Calculate Principal Coordinate Analysis with dataframe given in first arg.
     Use metadata's drataframe as second argument to return the full ordination result plus
     all metadata column inserted along Ordination.samples dataframe.
@@ -47,8 +47,10 @@ def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame):
             continue
         df[col] = df["smplID"].apply(lambda row: weird_way_to_do_it(row,col,metadata))
 
+    # Normalisation
+    main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
     # Calculate distance matrix with Bray-Curtis method.
-    dist_m = pdist(main_df, 'braycurtis')
+    dist_m = pdist(main_df, distance_method)
     # Transform distance matrix into squareform.
     squaref_m = squareform(dist_m)
     # Run the PCOA with the newly generated distance matrix.
@@ -133,25 +135,49 @@ def generate_normalized_stoichiometric_matrix(binary_matrix: pd.DataFrame, abund
         binary_matrix.set_index("smplID",inplace=True)
     # Normalisation
     normalized_abundance = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
+
     # Multiplication par abondance
     binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, normalized_abundance,sample_id),axis=1) 
     # Retourne une matrice type CSCOPE avec un abondance relative a la quantité de bin.
     return binary_matrix
 
 
-def relative_abundance_calc(abundance_file_path, sample_data):
-    abundance_matrix = open_tsv(abundance_file_path)
-    all_sample_abundance = []
-    sample_index = []
-    for sample in sample_data.keys():
-        all_sample_abundance.append(sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
-        sample_index.append(str(sample))
+def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
+    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create an 2 abundance dataframe.
+    1 with normalised bin quantity with x / x.sum(), the other without any transformation.
 
-    global_sample_abundance = pd.concat(all_sample_abundance, join="outer", ignore_index=True)
-    global_sample_abundance.fillna(0,inplace=True)
-    global_sample_abundance.insert(0,"smplID",sample_index)
-    global_sample_abundance.set_index("smplID",inplace=True,drop=True)
-    return global_sample_abundance
+    Args:
+        abundance_file_path (str): path to the abundance file.
+        sample_data (dict): dictionnary of the cscope, iscope of each sample.
+
+    Returns:
+        Tuple: (Normalised abundance dataframe, Abundance dataframe)
+    """
+    abundance_matrix = open_tsv(abundance_file_path)
+    smpl_norm_abundance = []
+    smpl_norm_index = []
+    smpl_abundance = []
+    smpl_index = []
+
+    for sample in sample_data.keys():
+        smpl_abundance.append(sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        smpl_index.append(str(sample))
+
+    for sample in sample_data.keys():
+        smpl_norm_abundance.append(sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        smpl_norm_index.append(str(sample))
+
+    normalized_abundance = pd.concat(smpl_norm_abundance, join="outer", ignore_index=True)
+    normalized_abundance.fillna(0,inplace=True)
+    normalized_abundance.insert(0,"smplID",smpl_norm_index)
+    normalized_abundance.set_index("smplID",inplace=True,drop=True)
+
+    vanilla_abundance = pd.concat(smpl_abundance, join="outer", ignore_index=True)
+    vanilla_abundance.fillna(0,inplace=True)
+    vanilla_abundance.insert(0,"smplID",smpl_index)
+    vanilla_abundance.set_index("smplID",inplace=True,drop=True)
+
+    return normalized_abundance, vanilla_abundance
 
 
 def sum_abundance_table(abundance_table: pd.DataFrame, sample_id: str):
@@ -197,7 +223,7 @@ def taxonomy_groupby(
     current_sample: str,
     bin_id_by_sample: dict,
     taxonomic_dataframe: pd.DataFrame,
-    target_rank: str = "Genus",
+    target_rank: str = "s",
     taxonomic_choice: list = [],
 ):
     """Generate a taxonomic count dataframe from a sample id, his dataframe and the rank choosen. Return only the selected taxonomic choice.
@@ -568,7 +594,9 @@ def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix
     Returns:
         pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
     """
-    binary_matrix.set_index("smplID", inplace=True)
+    if not is_indexed_by_id(binary_matrix):
+        binary_matrix.set_index("smplID", inplace=True)
+
     binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix, sample_id), axis=1)
     return binary_matrix
 
@@ -624,9 +652,9 @@ def build_df(dir_path, metadata, abundance_path):
 
     global_data["main_dataframe"] = main_df
 
-    abundance_data = relative_abundance_calc(abundance_path, sample_data)
+    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_path, sample_data)
 
-    return global_data, sample_data, abundance_data
+    return global_data, sample_data, norm_abundance_data, abundance_data
 
 
 def build_test_data(test_dir_path):

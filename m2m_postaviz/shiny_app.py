@@ -24,13 +24,13 @@ def run_shiny(data: DataStorage):
     metadata = data.main_data["metadata"]
     taxonomic_data = data.taxonomic_data
     list_of_bin = data.get_bin_list()
-    main_dataframe = data.main_data["main_dataframe"]
+    main_dataframe = data.main_data["main_dataframe"].copy()
     factor_list = data.list_of_factor
     factor_list.insert(0, 'None')
     print(factor_list)
     metadata_label = data.get_metadata_label()
     melted_abundance_df = data.melted_abundance_dataframe.copy()
-
+    melted_normalised_abundance_df = data.melted_normalised_abundance_dataframe.copy()
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -38,7 +38,7 @@ def run_shiny(data: DataStorage):
             ui.input_select("box_inputx1", "Label for X axis", factor_list),
             ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
             ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True),
-            ui.input_checkbox("ab_norm","With normalized data")
+            ui.input_checkbox("ab_norm","With normalised data")
             # ui.input_action_button("abundance_boxplot_button","Launch")
         )
     abundance_boxplot = ui.card(
@@ -52,7 +52,7 @@ def run_shiny(data: DataStorage):
         ),
         output_widget("Taxonomic_boxplot"),
     )
-    main_table = ui.card(ui.output_data_frame("dev_table"),output_widget("main_table"))
+    main_table = ui.card(ui.output_data_frame("dev_table"),ui.output_data_frame("main_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     main_panel_dataframe = ui.card(
@@ -78,11 +78,9 @@ def run_shiny(data: DataStorage):
                 ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(
-                            id="pcoa_color",
-                            label="Plot color.",
-                            choices=metadata_label,
-                            selected=metadata_label[0]
-                    )),
+                            id="pcoa_color",label="Plot color.",choices=metadata_label,selected=metadata_label[0]),
+                        ui.input_checkbox("pcoa_check","with abundance data.")
+                    ),
                     pcoa_plot_dev_table
                     )),
             ui.nav("Abundance",
@@ -154,7 +152,11 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def Abundance_boxplot():
-            df = melted_abundance_df
+            with_normalised_data = input.ab_norm()
+            if with_normalised_data:
+                df = melted_normalised_abundance_df
+            else:
+                df = melted_abundance_df
             # df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
@@ -216,20 +218,23 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def pcoa_plot():
+            input_ab = input.pcoa_check()
             input_color = input.pcoa_color()
-            res = du.run_pcoa(main_dataframe, metadata)
+            if input_ab:
+                in_df = data.abundance_dataframe.drop(["Days","Group","Antibiotics","Patient"],axis=1)
+                res = du.run_pcoa(in_df, metadata,'braycurtis')
+            else:
+                res = du.run_pcoa(main_dataframe, metadata)
             return px.scatter(res.samples, x='PC1' , y='PC2', color=input_color)
 
         @render.data_frame
         def dev_table():
-            return render.DataGrid(data.melted_abundance_dataframe)
+            return render.DataGrid(data.abundance_dataframe)
 
 
-        @render_widget
+        @render.data_frame
         def main_table():
-            df = data.produce_long_abundance_dataframe()
-            fig = px.box(df, x='Days', y='Quantity', color='Patient')
-            return fig
+            return render.DataGrid(data.abundance_matrix)
 
 
         @render.data_frame

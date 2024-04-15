@@ -50,8 +50,8 @@ def main(args=None):
       dir_path = "/home/lbrindel/output/palleja/"
       metadata = TESTS_DIR+"refined_palleja_metadata.tsv"
       abundance_path = "~/Downloads/matrix_palleja.tsv"
-      taxonomic_data = du.open_tsv(TESTS_DIR+"taxonomic_database.tsv")
-      global_data, sample_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)
+      taxonomic_data = du.open_tsv("~/Downloads/gtdbtk.summary_split.tsv")
+      global_data, sample_data, norm_abundance_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)
 
     else:
       arg_parser = vars(parser.parse_args())
@@ -63,6 +63,6 @@ def main(args=None):
 
     # du.performance_test("/home/lbrindel/cscope_metadata/", "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv")
 
-    Data = DataStorage(global_data, sample_data, taxonomic_data, abundance_data)
+    Data = DataStorage(global_data, sample_data, taxonomic_data, norm_abundance_data, abundance_data)
 
     sh.run_shiny(Data)
