@@ -154,9 +154,9 @@ def run_shiny(data: DataStorage):
         def Abundance_boxplot():
             with_normalised_data = input.ab_norm()
             if with_normalised_data:
-                df = melted_normalised_abundance_df
+                df = data.get_melted_norm_ab_dataframe()
             else:
-                df = melted_abundance_df
+                df = data.get_melted_ab_dataframe()
             # df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
@@ -183,7 +183,7 @@ def run_shiny(data: DataStorage):
                             # marker_color='green'
                         ))
 
-                    fig.update_layout(boxmode='group')
+                    fig.update_layout(boxmode='group',hovermode='y')
                     return fig
                 
 
@@ -221,10 +221,10 @@ def run_shiny(data: DataStorage):
             input_ab = input.pcoa_check()
             input_color = input.pcoa_color()
             if input_ab:
-                in_df = data.abundance_dataframe.drop(["Days","Group","Antibiotics","Patient"],axis=1)
-                res = du.run_pcoa(in_df, metadata,'braycurtis')
+                in_df = data.get_ab_dataframe().drop(["Days","Group","Antibiotics","Patient"],axis=1)
+                res = data.run_pcoa(in_df, metadata,'braycurtis')
             else:
-                res = du.run_pcoa(main_dataframe, metadata)
+                res = data.run_pcoa(main_dataframe, metadata)
             return px.scatter(res.samples, x='PC1' , y='PC2', color=input_color)
 
         @render.data_frame
@@ -315,4 +315,4 @@ def run_shiny(data: DataStorage):
             return inshape_res
 
     app = App(app_ui, server)
-    run_app(app=app, launch_browser=True,reload_dirs="./")
+    run_app(app=app, launch_browser=False,reload_dirs="./")

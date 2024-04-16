@@ -6,68 +6,7 @@ import tarfile
 
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
-from scipy import stats
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
-from skbio.stats.ordination import pcoa
-# from m2m_postaviz.time_decorator import timeit
-# import cProfile
-# import threading
 
-
-
-def weird_way_to_do_it(id_value: str, metadata_col: str, metadata: pd.DataFrame):
-    if is_indexed_by_id(metadata):
-        metadata.reset_index(inplace=True)
-    result = metadata.loc[metadata['smplID'] == id_value][metadata_col].values[0]
-    return result
-
-
-def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
-    """Calculate Principal Coordinate Analysis with dataframe given in first arg.
-    Use metadata's drataframe as second argument to return the full ordination result plus
-    all metadata column inserted along Ordination.samples dataframe.
-    Ready to be plotted.
-
-    Args:
-        main_df (pd.DataFrame): Main dataframe of compound production
-        metadata (pd.DataFrame): Metadata's dataframe
-
-    Returns:
-        _type_: Ordination results object from skbio's package.
-    """
-    df = main_df.copy()
-    # Need the matrix version for distance calculation.
-    if not is_indexed_by_id(main_df):
-        main_df.set_index("smplID", inplace=True)
-
-    # Add metadata columns with the accurate value in temporary dataframe.
-    for col in metadata.columns:
-        if col == "smplID":
-            continue
-        df[col] = df["smplID"].apply(lambda row: weird_way_to_do_it(row,col,metadata))
-
-    # Normalisation
-    main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
-    # Calculate distance matrix with Bray-Curtis method.
-    dist_m = pdist(main_df, distance_method)
-    # Transform distance matrix into squareform.
-    squaref_m = squareform(dist_m)
-    # Run the PCOA with the newly generated distance matrix.
-    pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0]-1)
-
-    # Verify if PCOA_results's samples dataframe is aligned with df dataframe.
-    df = df.set_index(pcoa_results.samples.index)
-    # Put each metadata column in the pcoa results's dataframe for PLOT.
-    for col in metadata.columns:
-        if col == "smplID":
-            continue
-        pcoa_results.samples[col] = df[col].astype('category')
-
-    if is_indexed_by_id(main_df):
-        main_df.reset_index(inplace=True)
-
-    return pcoa_results
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     results = {}
@@ -94,13 +33,7 @@ def intest_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame
     matrix.fillna(0,inplace=True)
     # matrix = matrix.T
     matrix.reset_index(inplace=True)
-
-    # print(matrix)
     return matrix
-
-
-def wid_to_long_format(df: pd.DataFrame):
-    return df.melt('smplID',var_name='Compound',value_name='Quantity')
 
 
 def extract_tarfile(tar_file, outdir):
@@ -268,20 +201,20 @@ def taxonomic_dataframe_from_input(
     return final_results
 
 
-def wilcoxon_test(group1, group2):
-    try:
-        res = stats.wilcoxon(group1, group2)
-    except Exception as e:
-        res = e
-    return res
+# def wilcoxon_test(group1, group2):
+#     try:
+#         res = stats.wilcoxon(group1, group2)
+#     except Exception as e:
+#         res = e
+#     return res
 
 
-def student_test(group1, group2):
-    try:
-        res = stats.ttest_ind(group1, group2)
-    except Exception as e:
-        res = e
-    return res
+# def student_test(group1, group2):
+#     try:
+#         res = stats.ttest_ind(group1, group2)
+#     except Exception as e:
+#         res = e
+#     return res
 
 
 def get_added_value_size(sample: str, metadataframe: dict):
