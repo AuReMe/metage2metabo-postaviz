@@ -1,8 +1,8 @@
 import json
 import os
 import os.path
-import time
 import tarfile
+import time
 
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
@@ -11,7 +11,7 @@ from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     results = {}
     for model in model_list:
-        if not model in results.keys():
+        if model not in results.keys():
             value = 1
             results[model] = value
         elif with_quantity:
@@ -21,8 +21,8 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
 
 def intest_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
     # temporary solution, should be species if available.
-    rank = 'Genus'
-    id_col = 'mgs'
+    rank = "Genus"
+    id_col = "mgs"
     all_series = {}
     # for each sample get the row of the taxo_df.
     for sample in binlist_by_id.keys():
@@ -30,24 +30,24 @@ def intest_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame
         all_series[sample] = list_to_boolean_serie(res)
     # Concatenation of the series into a dataframe.
     matrix = pd.DataFrame(all_series)
-    matrix.fillna(0,inplace=True)
+    matrix.fillna(0, inplace=True)
     # matrix = matrix.T
     matrix.reset_index(inplace=True)
     return matrix
 
 
 def extract_tarfile(tar_file, outdir):
-    file = tarfile.open(tar_file, 'r:gz')
+    file = tarfile.open(tar_file, "r:gz")
 
-    file.extractall(outdir, filter='data')
+    file.extractall(outdir, filter="data")
     # if sys.version_info >= (3, 12):
     # else:
     #     tar.extractall(outdir)
 
 
-def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFrame,sample_id):
+def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     df_row = df_row.astype(float)
-    abundance_value = abundance_matrix.at[df_row.name,sample_id]
+    abundance_value = abundance_matrix.at[df_row.name, sample_id]
     df_row *= abundance_value
     return df_row
 
@@ -62,15 +62,15 @@ def generate_normalized_stoichiometric_matrix(binary_matrix: pd.DataFrame, abund
         sample_id (str): Name of the sample.
 
     Returns:
-        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin. 
+        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
     """
     if not is_indexed_by_id(binary_matrix):
-        binary_matrix.set_index("smplID",inplace=True)
+        binary_matrix.set_index("smplID", inplace=True)
     # Normalisation
     normalized_abundance = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
     # Multiplication par abondance
-    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, normalized_abundance,sample_id),axis=1) 
+    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, normalized_abundance, sample_id), axis=1)
     # Retourne une matrice type CSCOPE avec un abondance relative a la quantité de bin.
     return binary_matrix
 
@@ -93,38 +93,42 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     smpl_index = []
 
     for sample in sample_data.keys():
-        smpl_abundance.append(sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        smpl_abundance.append(
+            sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample), sample)
+        )
         smpl_index.append(str(sample))
 
     for sample in sample_data.keys():
-        smpl_norm_abundance.append(sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample),sample))
+        smpl_norm_abundance.append(
+            sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample), sample)
+        )
         smpl_norm_index.append(str(sample))
 
     normalized_abundance = pd.concat(smpl_norm_abundance, join="outer", ignore_index=True)
-    normalized_abundance.fillna(0,inplace=True)
-    normalized_abundance.insert(0,"smplID",smpl_norm_index)
-    normalized_abundance.set_index("smplID",inplace=True,drop=True)
+    normalized_abundance.fillna(0, inplace=True)
+    normalized_abundance.insert(0, "smplID", smpl_norm_index)
+    normalized_abundance.set_index("smplID", inplace=True, drop=True)
 
     vanilla_abundance = pd.concat(smpl_abundance, join="outer", ignore_index=True)
-    vanilla_abundance.fillna(0,inplace=True)
-    vanilla_abundance.insert(0,"smplID",smpl_index)
-    vanilla_abundance.set_index("smplID",inplace=True,drop=True)
+    vanilla_abundance.fillna(0, inplace=True)
+    vanilla_abundance.insert(0, "smplID", smpl_index)
+    vanilla_abundance.set_index("smplID", inplace=True, drop=True)
 
     return normalized_abundance, vanilla_abundance
 
 
 def sum_abundance_table(abundance_table: pd.DataFrame, sample_id: str):
     # Prend la nouvelle matrice d'abondance du sample crée
-    new_dataframe =  {}
+    new_dataframe = {}
     # Flip avec métabolites en index et bin en column
     abundance_table = abundance_table.T
-    for index,row in abundance_table.iterrows():
+    for index, row in abundance_table.iterrows():
         # Pour chaque métabolites, calcul le total crée par l'ensemble des bin de l'échantillon
         new_dataframe[index] = row.values.sum()
     return pd.DataFrame(new_dataframe, index=[sample_id])
 
 
-def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope",with_count: bool = True):
+def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope", with_count: bool = True):
     current_selection = []
     current_rank = taxonomic_dataframe.columns[-1]
 
@@ -138,7 +142,7 @@ def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "
         value, label = get_metadata(sample, metadata)
         for i in range(len(label)):
             tmp_df.insert(0, label[i], value[i])
-        tmp_df.insert(0, 'nb_taxon', tmp_df[current_rank].nunique())
+        tmp_df.insert(0, "nb_taxon", tmp_df[current_rank].nunique())
 
         current_selection.append(tmp_df)
 
@@ -172,7 +176,7 @@ def taxonomy_groupby(
     """
     df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(bin_id_by_sample[current_sample])]
     for choice in taxonomic_choice:
-        if not choice in df[target_rank].unique():
+        if choice not in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
 
@@ -477,7 +481,7 @@ def retrieve_all_sample_data(path):
         path (str): Directory path given in CLI.
 
     Returns:
-        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files. 
+        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
     data_by_sample = {}
     for sample in os.listdir(path):
@@ -603,15 +607,15 @@ def build_test_data(test_dir_path):
     sample_data = {}
     for file in os.listdir(test_dir_path):
         filename = os.fsdecode(file)
-        if not filename.endswith('.tsv'):
+        if not filename.endswith(".tsv"):
             continue
         if not filename.startswith("sample"):
-            if filename == 'main_table.tsv':
-                global_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path,filename))
-            if filename == 'metadata_table.tsv':
-                global_data["metadata"] = open_tsv(os.path.join(test_dir_path,filename))
-            if filename == 'abundance_table.tsv':
-                abundance_table = open_tsv(os.path.join(test_dir_path,filename))
+            if filename == "main_table.tsv":
+                global_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path, filename))
+            if filename == "metadata_table.tsv":
+                global_data["metadata"] = open_tsv(os.path.join(test_dir_path, filename))
+            if filename == "abundance_table.tsv":
+                abundance_table = open_tsv(os.path.join(test_dir_path, filename))
         else:
             current_file = os.path.splitext(filename)[0]
             current_file = current_file.split("_")
@@ -619,12 +623,13 @@ def build_test_data(test_dir_path):
 
     for sample_file in os.listdir(test_dir_path):
         filename = os.fsdecode(sample_file)
-        if filename.startswith('sample'):
+        if filename.startswith("sample"):
             current_file = os.path.splitext(filename)[0]
             current_file = current_file.split("_")
-            sample_data[current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path,filename))
+            sample_data[current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path, filename))
 
     return global_data, sample_data, abundance_table
+
 
 def performance_test(dir, meta):
     start_time = time.perf_counter()
@@ -643,23 +648,29 @@ def performance_test(dir, meta):
 
     # cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
 
+
 def produce_test_data(global_data, sample_data, abundance_data):
-    global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv",sep='\t', index=False)
-    global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv",sep='\t', index=False)
-    abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv",sep='\t', index=False)
+    global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv", sep="\t", index=False)
+    global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv", sep="\t", index=False)
+    abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv", sep="\t", index=False)
     for sample in sample_data.keys():
-        sample_data[sample]["cscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_cscope_"+sample+".tsv", sep='\t', index=False)
-        sample_data[sample]["iscope"].to_csv("/home/lbrindel/output/postaviz/data_test/sample_iscope_"+sample+".tsv", sep='\t', index=False)
+        sample_data[sample]["cscope"].to_csv(
+            "/home/lbrindel/output/postaviz/data_test/sample_cscope_" + sample + ".tsv", sep="\t", index=False
+        )
+        sample_data[sample]["iscope"].to_csv(
+            "/home/lbrindel/output/postaviz/data_test/sample_iscope_" + sample + ".tsv", sep="\t", index=False
+        )
     quit()
+
 
 def unit_test_1():
     mock_dataframe = pd.DataFrame(
         {
             "SmplID": ["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"],
-            "A": [1,0,0,0,1,1,0],
-            "B": [0,0,1,0,1,1,0],
-            "C": [1,0,0,1,1,1,1],
-            "D": [0,1,0,0,0,0,0]
+            "A": [1, 0, 0, 0, 1, 1, 0],
+            "B": [0, 0, 1, 0, 1, 1, 0],
+            "C": [1, 0, 0, 1, 1, 1, 1],
+            "D": [0, 1, 0, 0, 0, 0, 0],
         }
     )
     print(mock_dataframe)

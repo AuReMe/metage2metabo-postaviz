@@ -1,15 +1,20 @@
 import pandas as pd
-from scipy import stats
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 
-class DataStorage:
 
-    column_identifier = 'smplID'
-    
-    def __init__(self, main_data_container: dict, sample_data_container: dict, taxonomic_data_container: pd.DataFrame, norm_abundance_data: pd.DataFrame, abundance_data: pd.DataFrame):
-        
+class DataStorage:
+    column_identifier = "smplID"
+
+    def __init__(
+        self,
+        main_data_container: dict,
+        sample_data_container: dict,
+        taxonomic_data_container: pd.DataFrame,
+        norm_abundance_data: pd.DataFrame,
+        abundance_data: pd.DataFrame,
+    ):
         self.main_data = main_data_container
         self.sample_data = sample_data_container
         self.taxonomic_data = taxonomic_data_container
@@ -17,8 +22,10 @@ class DataStorage:
         self.normalised_abundance_matrix = norm_abundance_data
         self.abundance_matrix = abundance_data
 
-        self.abundance_dataframe : pd.DataFrame = self.main_data["metadata"].merge(self.abundance_matrix.reset_index(), how="outer")
-        self.normalised_abundance_dataframe : pd.DataFrame = self.main_data["metadata"].merge(self.normalised_abundance_matrix.reset_index(), how="outer")
+        self.abundance_dataframe: pd.DataFrame = self.main_data["metadata"].merge(self.abundance_matrix.reset_index(), how="outer")
+        self.normalised_abundance_dataframe: pd.DataFrame = self.main_data["metadata"].merge(
+            self.normalised_abundance_matrix.reset_index(), how="outer"
+        )
 
         self.melted_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe(with_normalisation=False)
         self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
@@ -70,20 +77,20 @@ class DataStorage:
         for sample in self.sample_data.keys():
             bin_list[sample] = self.sample_data[sample][mode].index.to_list()
         return bin_list
-    
+
     def get_factor_len(self):
         return len(self.main_data["metadata"].columns)
-    
+
     def get_metadata_label(self):
         if self.is_indexed(self.main_data["metadata"]):
             return list(self.main_data["metadata"].columns)
         return list(self.main_data["metadata"].columns)[1:]
-    
+
     def get_factor_by_id(self, sample_id, factor):
-        query = self.main_data["metadata"].loc[self.main_data['metadata']["smplID"] == sample_id][factor]
-        print("get_factor : ", sample_id, factor, "found : ",query)
+        query = self.main_data["metadata"].loc[self.main_data["metadata"]["smplID"] == sample_id][factor]
+        print("get_factor : ", sample_id, factor, "found : ", query)
         return query
-    
+
     def produce_long_abundance_dataframe(self, with_normalisation: bool = True):
         """Transform the wide format abundance dataframe into a long format.
         Usefull for anyplot.
@@ -99,22 +106,22 @@ class DataStorage:
             current_df = self.get_ab_matrix()
         if self.is_indexed(current_df):
             current_df = current_df.reset_index()
-        current_df = current_df.melt('smplID',var_name='Compound',value_name='Quantity')
+        current_df = current_df.melt("smplID", var_name="Compound", value_name="Quantity")
         all_new_columns = {}
         for factor in self.get_metadata_label():
-            all_new_columns[factor] = self.add_factor_column(current_df['smplID'],factor)
-        
+            all_new_columns[factor] = self.add_factor_column(current_df["smplID"], factor)
+
         current_df = current_df.assign(**all_new_columns)
         return current_df
-    
-    def add_factor_column(self,serie_id,factor_id):
+
+    def add_factor_column(self, serie_id, factor_id):
         metadata = self.get_main_metadata()
-        metadata.set_index('smplID',inplace=True,drop=True)
+        metadata.set_index("smplID", inplace=True, drop=True)
         new_col = []
         for value in serie_id:
-            new_col.append(str(metadata.at[value,factor_id]))
+            new_col.append(str(metadata.at[value, factor_id]))
         return new_col
-    
+
     def factorize_metadata(self):
         for factor in self.get_metadata_label():
             self.main_data["metadata"][factor] = self.main_data["metadata"][factor].astype("category")
@@ -122,7 +129,7 @@ class DataStorage:
     def weird_way_to_do_it(self, id_value: str, metadata_col: str, metadata: pd.DataFrame):
         if self.is_indexed(metadata):
             metadata.reset_index(inplace=True)
-        result = metadata.loc[metadata['smplID'] == id_value][metadata_col].values[0]
+        result = metadata.loc[metadata["smplID"] == id_value][metadata_col].values[0]
         return result
 
     def run_pcoa(self, main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
@@ -147,7 +154,7 @@ class DataStorage:
         for col in metadata.columns:
             if col == "smplID":
                 continue
-            df[col] = df["smplID"].apply(lambda row: self.weird_way_to_do_it(row,col,metadata))
+            df[col] = df["smplID"].apply(lambda row: self.weird_way_to_do_it(row, col, metadata))
 
         # Normalisation
         main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
@@ -156,7 +163,7 @@ class DataStorage:
         # Transform distance matrix into squareform.
         squaref_m = squareform(dist_m)
         # Run the PCOA with the newly generated distance matrix.
-        pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0]-1)
+        pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0] - 1)
 
         # Verify if PCOA_results's samples dataframe is aligned with df dataframe.
         df = df.set_index(pcoa_results.samples.index)
@@ -164,7 +171,6 @@ class DataStorage:
         for col in metadata.columns:
             if col == "smplID":
                 continue
-            pcoa_results.samples[col] = df[col].astype('category')
+            pcoa_results.samples[col] = df[col].astype("category")
 
         return pcoa_results
-    
