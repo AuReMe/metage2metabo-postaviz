@@ -179,6 +179,7 @@ def taxonomy_groupby(
         if choice not in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
+            print(choice, " Removed.")
 
     df = df[["mgs", target_rank]]
     df = df.groupby([target_rank]).count()
@@ -198,27 +199,12 @@ def taxonomic_dataframe_from_input(
     taxonomic_choice = list(taxonomic_choice)
     if len(taxonomic_choice) == 0:
         print("The taxonomic choice list is empty")
+        print("The taxonomic choice list is empty")
         return
     for sample in bin_id_by_sample.keys():
         results.append(taxonomy_groupby(metadata, sample, bin_id_by_sample, taxonomic_dataframe, taxonomic_rank, taxonomic_choice))
     final_results = pd.concat(results, join="outer", ignore_index=True)
     return final_results
-
-
-# def wilcoxon_test(group1, group2):
-#     try:
-#         res = stats.wilcoxon(group1, group2)
-#     except Exception as e:
-#         res = e
-#     return res
-
-
-# def student_test(group1, group2):
-#     try:
-#         res = stats.ttest_ind(group1, group2)
-#     except Exception as e:
-#         res = e
-#     return res
 
 
 def get_added_value_size(sample: str, metadataframe: dict):
@@ -288,14 +274,6 @@ def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic
 
 def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["cscope"].columns)
-
-
-def remove_metadata(df: pd.DataFrame) -> pd.DataFrame:
-    new_df = new_df.drop("Time_rel", axis=1)
-    # df = df.drop("Name", axis=1)
-    new_df = new_df.drop("Antibiotics", axis=1)
-    new_df = new_df.set_index("smplID")
-    return new_df
 
 
 def add_row(df: pd.DataFrame, row: list):
@@ -494,15 +472,6 @@ def retrieve_all_sample_data(path):
     return data_by_sample
 
 
-# def retrieve_sample_data(sample_directory_path, sample_name, sample_dictionnary: dict):
-#     sample_dictionnary[sample_name] = {}
-#     sample_dictionnary[sample_name]["iscope"] = get_scopes("rev_iscope.tsv", sample_directory_path)
-#     sample_dictionnary[sample_name]["cscope"] = get_scopes("rev_cscope.tsv", sample_directory_path)
-#     sample_dictionnary[sample_name]["advalue"] = open_added_value("addedvalue.json", sample_directory_path)
-#     sample_dictionnary[sample_name]["contribution"] = get_contributions("contributions_of_microbes.json", sample_directory_path)
-#     return
-
-
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
@@ -643,6 +612,7 @@ def performance_test(dir, meta):
 
     Total_time = end_time - start_time
     print("TEST TIME: ", Total_time)
+    print("TEST TIME: ", Total_time)
     # pr.disable()
     # pr.print_stats(sort='time')
 
@@ -664,14 +634,50 @@ def produce_test_data(global_data, sample_data, abundance_data):
 
 
 def unit_test_1():
-    mock_dataframe = pd.DataFrame(
-        {
-            "SmplID": ["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"],
-            "A": [1, 0, 0, 0, 1, 1, 0],
-            "B": [0, 0, 1, 0, 1, 1, 0],
-            "C": [1, 0, 0, 1, 1, 1, 1],
-            "D": [0, 1, 0, 0, 0, 0, 0],
-        }
+    mock_cscope1 = pd.DataFrame(
+        data=[
+            [1, 0, 0, 0, 1, 1, 0],
+            [0, 0, 1, 0, 1, 1, 0],
+            [1, 0, 0, 1, 1, 1, 1],
+            [0, 1, 0, 0, 0, 0, 0],
+        ],
+        index=["bin1", "bin3", "spec437", "bin1030"],
+        columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
     )
-    print(mock_dataframe)
+    mock_cscope1.index.name = "smplID"
+    mock_cscope2 = pd.DataFrame(
+        data=[
+            [1, 0, 0, 0, 1, 1, 0],
+            [0, 0, 1, 0, 1, 1, 0],
+            [1, 0, 0, 1, 1, 1, 1],
+            [0, 1, 0, 0, 0, 0, 0],
+        ],
+        index=["bin1", "spec88", "bin1030", "bin502"],
+        columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
+    )
+    mock_cscope2.index.name = "smplID"
+    # print(mock_cscope)
+    # print(mock_cscope)
+    mock_abundance_df = pd.DataFrame(
+        data=[
+            [10, 0, 2, 5],
+            [0, 30, 12, 2],
+            [8, 0, 0, 1],
+            [0, 1, 18, 0],
+            [10, 0, 2, 5],
+            [0, 30, 12, 2],
+            [8, 2, 6, 1],
+            [0, 1, 18, 0],
+        ],
+        index=["bin1", "spec88", "bin1030", "bin502", "bin3", "spec437","bin999","spec999"],
+        columns=["mock1", "mock2", "mock3", "mock4"]
+    )
+    sample_mock = dict()
+    sample_mock["mock1"] = mock_cscope1
+    sample_mock["mock2"] = mock_cscope2
+    normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
+    expected_results = sample_mock["mock1"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"].index)]["mock1"])
+    print(expected_results.T)
+    observed_results = generate_normalized_stoichiometric_matrix(sample_mock["mock1"], mock_abundance_df, "mock1")
+    print(observed_results)
     return

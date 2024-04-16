@@ -26,6 +26,7 @@ parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
+parser.add_argument("-ut", help="Run postaviz unit test for dev only", action="store_true")
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SRC_DIR))
@@ -37,6 +38,9 @@ data_table_filepath = os.path.join(TESTS_DIR, 'table_test_postaviz.tar.gz')
 def main(args=None):
     arg_parser = parser.parse_args()
 
+    if arg_parser.ut:
+      du.unit_test_1()
+      quit()
     if arg_parser.test:
       if not os.path.isdir(os.path.join(TESTS_DIR, 'data_test/')):
         print("No data_test/ directory found.")
