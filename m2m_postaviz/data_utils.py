@@ -19,7 +19,7 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     return pd.Series(results)
 
 
-def intest_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
+def indev_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
     # temporary solution, should be species if available.
     rank = "Genus"
     id_col = "mgs"
@@ -52,29 +52,6 @@ def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFr
     return df_row
 
 
-def generate_normalized_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
-    """
-    Produce a stoichiometric matrix from a binary matrix (presence or absence) and an abundance matrix.
-
-    Args:
-        binary_matrix (pandas.DataFrame): Binary dataframe containing the presence or absence of compounds.
-        abundance_matrix (pandas.DataFrame): Dataframe containing the abundance of each bin in sample.
-        sample_id (str): Name of the sample.
-
-    Returns:
-        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
-    """
-    if not is_indexed_by_id(binary_matrix):
-        binary_matrix.set_index("smplID", inplace=True)
-    # Normalisation
-    normalized_abundance = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
-
-    # Multiplication par abondance
-    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, normalized_abundance, sample_id), axis=1)
-    # Retourne une matrice type CSCOPE avec un abondance relative a la quantité de bin.
-    return binary_matrix
-
-
 def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create an 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
@@ -87,29 +64,46 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
         Tuple: (Normalised abundance dataframe, Abundance dataframe)
     """
     abundance_matrix = open_tsv(abundance_file_path)
+
     smpl_norm_abundance = []
     smpl_norm_index = []
     smpl_abundance = []
     smpl_index = []
 
     for sample in sample_data.keys():
-        smpl_abundance.append(
-            sum_abundance_table(generate_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample), sample)
-        )
+
+        sample_matrix = sample_data[sample]["cscope"].copy()
+
+        if not is_indexed_by_id(sample_matrix):
+            sample_matrix.set_index("smplID", inplace=True)
+
+        sample_matrix = sample_matrix.apply(lambda row: row.astype(float)*abundance_matrix.at[row.name,sample], axis=1)
+        sample_matrix = sum_squash_table(sample_matrix, sample)
+
+        smpl_abundance.append(sample_matrix)
         smpl_index.append(str(sample))
 
     for sample in sample_data.keys():
-        smpl_norm_abundance.append(
-            sum_abundance_table(generate_normalized_stoichiometric_matrix(sample_data[sample]["cscope"], abundance_matrix, sample), sample)
-        )
+
+        abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(),axis=0)
+
+        sample_matrix = sample_data[sample]["cscope"].copy()
+
+        if not is_indexed_by_id(sample_matrix):
+            sample_matrix.set_index("smplID", inplace=True)
+
+        sample_matrix = sample_matrix.apply(lambda row: row.astype(float)*abundance_matrix_normalised.at[row.name,sample], axis=1)
+        sample_matrix = sum_squash_table(sample_matrix, sample)
+
+        smpl_norm_abundance.append(sample_matrix)
         smpl_norm_index.append(str(sample))
 
-    normalized_abundance = pd.concat(smpl_norm_abundance, join="outer", ignore_index=True)
+    normalized_abundance = pd.concat(smpl_norm_abundance)
     normalized_abundance.fillna(0, inplace=True)
     normalized_abundance.insert(0, "smplID", smpl_norm_index)
     normalized_abundance.set_index("smplID", inplace=True, drop=True)
 
-    vanilla_abundance = pd.concat(smpl_abundance, join="outer", ignore_index=True)
+    vanilla_abundance = pd.concat(smpl_abundance)
     vanilla_abundance.fillna(0, inplace=True)
     vanilla_abundance.insert(0, "smplID", smpl_index)
     vanilla_abundance.set_index("smplID", inplace=True, drop=True)
@@ -117,8 +111,8 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     return normalized_abundance, vanilla_abundance
 
 
-def sum_abundance_table(abundance_table: pd.DataFrame, sample_id: str):
-    # Prend la nouvelle matrice d'abondance du sample crée
+def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
+    # Prend la nouvelle matrice d'abondance du sample
     new_dataframe = {}
     # Flip avec métabolites en index et bin en column
     abundance_table = abundance_table.T
@@ -489,24 +483,6 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     return row
 
 
-def generate_stoichiometric_matrix(binary_matrix: pd.DataFrame, abundance_matrix: pd.DataFrame, sample_id: str):
-    """Produce a stoichiometric matrix from a binary matrix (presence or absence) and an abundance matrix.
-
-    Args:
-        binary_matrix (pandas.DataFrame): Binary dataframe containing the presence or absence of compounds.
-        abundance_matrix (pandas.DataFrame): Dataframe containing the abundance of each bin in sample.
-        sample_id (str): Name of the sample.
-
-    Returns:
-        pandas Dataframe: Dataframe with the theorical quantity of compounds produced by each bin.
-    """
-    if not is_indexed_by_id(binary_matrix):
-        binary_matrix.set_index("smplID", inplace=True)
-
-    binary_matrix = binary_matrix.apply(lambda row: multiply_production_abundance(row, abundance_matrix, sample_id), axis=1)
-    return binary_matrix
-
-
 # @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata, abundance_path):
     """
@@ -678,6 +654,6 @@ def unit_test_1():
     normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
     expected_results = sample_mock["mock1"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"].index)]["mock1"])
     print(expected_results.T)
-    observed_results = generate_normalized_stoichiometric_matrix(sample_mock["mock1"], mock_abundance_df, "mock1")
-    print(observed_results)
+    # observed_results = generate_normalized_stoichiometric_matrix(sample_mock["mock1"], mock_abundance_df, "mock1")
+    # print(observed_results)
     return

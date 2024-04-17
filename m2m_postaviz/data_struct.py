@@ -33,6 +33,9 @@ class DataStorage:
         self.list_of_factor = list(self.main_data["metadata"].columns)
         self.factorize_metadata()
 
+    def get_sample_data(self, smpl_id, mode: str = "cscope", as_copy: bool = True):
+        return self.sample_data[smpl_id][mode].copy()
+
     def get_main_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.main_data["main_dataframe"].copy() if as_copy else self.main_data["main_dataframe"]
 
