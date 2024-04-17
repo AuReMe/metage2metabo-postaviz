@@ -10,12 +10,12 @@ from shinywidgets import output_widget
 from shinywidgets import render_widget
 
 import m2m_postaviz.data_utils as du
-import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 
 
 def del_list_duplicate(mylist: list):
     return list(dict.fromkeys(mylist))
+
 
 def run_shiny(data: DataStorage):
     ### Declare PROCESSING VARIABLE
@@ -26,24 +26,20 @@ def run_shiny(data: DataStorage):
     list_of_bin = data.get_bin_list()
     main_dataframe = data.main_data["main_dataframe"].copy()
     factor_list = data.list_of_factor
-    factor_list.insert(0, 'None')
+    factor_list.insert(0, "None")
     print(factor_list)
     metadata_label = data.get_metadata_label()
-    melted_abundance_df = data.melted_abundance_dataframe.copy()
-    melted_normalised_abundance_df = data.melted_normalised_abundance_dataframe.copy()
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
     abundance_input = ui.row(
-            ui.input_select("box_inputx1", "Label for X axis", factor_list),
-            ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
-            ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(),multiple=True),
-            ui.input_checkbox("ab_norm","With normalised data")
-            # ui.input_action_button("abundance_boxplot_button","Launch")
-        )
-    abundance_boxplot = ui.card(
-        output_widget("Abundance_boxplot",height="100%",width="100%")
+        ui.input_select("box_inputx1", "Label for X axis", factor_list),
+        ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
+        ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(), multiple=True),
+        ui.input_checkbox("ab_norm", "With normalised data")
+        # ui.input_action_button("abundance_boxplot_button","Launch")
     )
+    abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"))
 
     taxonomy_boxplot = ui.card(
         ui.row(
@@ -52,7 +48,7 @@ def run_shiny(data: DataStorage):
         ),
         output_widget("Taxonomic_boxplot"),
     )
-    main_table = ui.card(ui.output_data_frame("dev_table"),ui.output_data_frame("main_table"))
+    main_table = ui.card(ui.output_data_frame("dev_table"), ui.output_data_frame("main_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     main_panel_dataframe = ui.card(
@@ -68,28 +64,22 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Dev mod",
+            ui.nav(
+                "Dev mod",
                 main_table,
-                
                 # dev_table
             ),
             ui.nav(
                 "PCOA",
                 ui.layout_sidebar(
                     ui.sidebar(
-                        ui.input_select(
-                            id="pcoa_color",label="Plot color.",choices=metadata_label,selected=metadata_label[0]),
-                        ui.input_checkbox("pcoa_check","with abundance data.")
+                        ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
+                        ui.input_checkbox("pcoa_check", "with abundance data."),
                     ),
-                    pcoa_plot_dev_table
-                    )),
-            ui.nav("Abundance",
-                   ui.layout_sidebar(
-                       ui.sidebar(
-                           abundance_input),
-                           abundance_boxplot
-                           )
-                   ),
+                    pcoa_plot_dev_table,
+                ),
+            ),
+            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot)),
             ui.nav("Taxonomy", output_widget("taxonomy_overview"), taxonomy_boxplot),
             ui.nav(
                 "Main",
@@ -149,43 +139,46 @@ def run_shiny(data: DataStorage):
             # plot = px.box(df, x="Antibiotics", y="Count", color="Days")
             return plot
 
-
         @render_widget
         def Abundance_boxplot():
             with_normalised_data = input.ab_norm()
             if with_normalised_data:
-                df = melted_normalised_abundance_df
+                df = data.get_melted_norm_ab_dataframe()
             else:
-                df = melted_abundance_df
+                df = data.get_melted_ab_dataframe()
             # df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
             x2 = input.box_inputx2()
             if len(y1) == 0:
-                y1 = df['Compound'].unique()
-            if x1 == 'None':
-                return px.box(df, y=df.loc[df["Quantity"] != 0 & df['Compound'].isin(y1)]['Quantity'])
+                y1 = df["Compound"].unique()
+            if x1 == "None":
+                return px.box(df, y=df.loc[df["Quantity"] != 0 & df["Compound"].isin(y1)]["Quantity"])
             else:
-                if x2 == 'None':
-                    return px.box(df,x=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)][x1], y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]['Quantity'])
+                if x2 == "None":
+                    return px.box(
+                        df,
+                        x=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)][x1],
+                        y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]["Quantity"],
+                    )
                 else:
                     conditionx2 = df[x2]
                     conditionx2 = conditionx2.unique()
 
                     fig = go.Figure()
-                    
+
                     for condition in conditionx2:
+                        fig.add_trace(
+                            go.Box(
+                                x=df.loc[df[x2] == condition][x1],
+                                y=df.loc[(df[x2] == condition) & (df["Quantity"] != 0) & (df["Compound"].isin(y1))]["Quantity"],
+                                name=str(condition),
+                                # marker_color='green'
+                            )
+                        )
 
-                        fig.add_trace(go.Box(
-                            x=df.loc[df[x2] == condition][x1] ,
-                            y=df.loc[(df[x2] == condition) & (df["Quantity"] != 0) & (df["Compound"].isin(y1))]['Quantity'],
-                            name=str(condition),
-                            # marker_color='green'
-                        ))
-
-                    fig.update_layout(boxmode='group')
+                    fig.update_layout(boxmode="group", hovermode="y")
                     return fig
-                
 
         @output
         @render_widget
@@ -221,21 +214,19 @@ def run_shiny(data: DataStorage):
             input_ab = input.pcoa_check()
             input_color = input.pcoa_color()
             if input_ab:
-                in_df = data.abundance_dataframe.drop(["Days","Group","Antibiotics","Patient"],axis=1)
-                res = du.run_pcoa(in_df, metadata,'braycurtis')
+                in_df = data.get_ab_dataframe().drop(["Days", "Group", "Antibiotics", "Patient"], axis=1)
+                res = data.run_pcoa(in_df, metadata, "braycurtis")
             else:
-                res = du.run_pcoa(main_dataframe, metadata)
-            return px.scatter(res.samples, x='PC1' , y='PC2', color=input_color)
+                res = data.run_pcoa(main_dataframe, metadata)
+            return px.scatter(res.samples, x="PC1", y="PC2", color=input_color)
 
         @render.data_frame
         def dev_table():
             return render.DataGrid(data.abundance_dataframe)
 
-
         @render.data_frame
         def main_table():
             return render.DataGrid(data.abundance_matrix)
-
 
         @render.data_frame
         def main_panel_table():
@@ -315,4 +306,4 @@ def run_shiny(data: DataStorage):
             return inshape_res
 
     app = App(app_ui, server)
-    run_app(app=app, launch_browser=True,reload_dirs="./")
+    run_app(app=app, launch_browser=False, reload_dirs="./")
