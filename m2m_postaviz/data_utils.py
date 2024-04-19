@@ -8,34 +8,6 @@ import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
 
-def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
-    results = {}
-    for model in model_list:
-        if model not in results.keys():
-            value = 1
-            results[model] = value
-        elif with_quantity:
-            results[model] += value
-    return pd.Series(results)
-
-
-def indev_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
-    # temporary solution, should be species if available.
-    rank = "Genus"
-    id_col = "mgs"
-    all_series = {}
-    # for each sample get the row of the taxo_df.
-    for sample in binlist_by_id.keys():
-        res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
-        all_series[sample] = list_to_boolean_serie(res)
-    # Concatenation of the series into a dataframe.
-    matrix = pd.DataFrame(all_series)
-    matrix.fillna(0, inplace=True)
-    # matrix = matrix.T
-    matrix.reset_index(inplace=True)
-    return matrix
-
-
 def extract_tarfile(tar_file, outdir):
     file = tarfile.open(tar_file, "r:gz")
 
@@ -69,7 +41,8 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     smpl_norm_index = []
     smpl_abundance = []
     smpl_index = []
-
+    print(abundance_matrix)
+    # print(sample_data)
     for sample in sample_data.keys():
 
         sample_matrix = sample_data[sample]["cscope"].copy()
@@ -173,7 +146,6 @@ def taxonomy_groupby(
         if choice not in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
-            print(choice, " Removed.")
 
     df = df[["mgs", target_rank]]
     df = df.groupby([target_rank]).count()
@@ -192,7 +164,6 @@ def taxonomic_dataframe_from_input(
     results = []
     taxonomic_choice = list(taxonomic_choice)
     if len(taxonomic_choice) == 0:
-        print("The taxonomic choice list is empty")
         print("The taxonomic choice list is empty")
         return
     for sample in bin_id_by_sample.keys():
@@ -648,12 +619,15 @@ def unit_test_1():
         index=["bin1", "spec88", "bin1030", "bin502", "bin3", "spec437","bin999","spec999"],
         columns=["mock1", "mock2", "mock3", "mock4"]
     )
+    # mock_abundance_df.to_csv('~/Downloads/abundance_file_unit_test.tsv',sep='\t',index_label='smplID')
     sample_mock = dict()
-    sample_mock["mock1"] = mock_cscope1
-    sample_mock["mock2"] = mock_cscope2
+    sample_mock["mock1"] = {}
+    sample_mock["mock1"]["cscope"] = mock_cscope1
+    sample_mock["mock2"] = {}
+    sample_mock["mock2"]["cscope"] = mock_cscope2
     normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
-    expected_results = sample_mock["mock1"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"].index)]["mock1"])
+    expected_results = sample_mock["mock1"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"]["cscope"].index)]["mock1"])
     print(expected_results.T)
-    # observed_results = generate_normalized_stoichiometric_matrix(sample_mock["mock1"], mock_abundance_df, "mock1")
-    # print(observed_results)
+    observed_results = relative_abundance_calc('~/Downloads/abundance_file_unit_test.tsv',sample_mock)
+    print(observed_results)
     return

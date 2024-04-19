@@ -17,7 +17,9 @@ class DataStorage:
     ):
         self.main_data = main_data_container
         self.sample_data = sample_data_container
+
         self.taxonomic_data = taxonomic_data_container
+        self.long_taxo_data = self.taxonomic_data_long_format()
 
         self.normalised_abundance_matrix = norm_abundance_data
         self.abundance_matrix = abundance_data
@@ -41,6 +43,9 @@ class DataStorage:
 
     def get_main_metadata(self, as_copy: bool = True) -> pd.DataFrame:
         return self.main_data["metadata"].copy() if as_copy else self.main_data["metadata"]
+
+    def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
+        return self.long_taxo_data.copy() if as_copy else self.long_taxo_data
 
     def get_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
         return self.taxonomic_data.copy() if as_copy else self.taxonomic_data
@@ -78,7 +83,10 @@ class DataStorage:
     def get_bin_list(self, mode: str = "cscope"):
         bin_list = {}
         for sample in self.sample_data.keys():
-            bin_list[sample] = self.sample_data[sample][mode].index.to_list()
+            if self.is_indexed(self.sample_data[sample][mode]):
+                bin_list[sample] = self.sample_data[sample][mode].index.to_list()
+            else:
+                bin_list[sample] = self.sample_data[sample][mode][self.column_identifier].to_list()
         return bin_list
 
     def get_factor_len(self):
@@ -93,6 +101,59 @@ class DataStorage:
         query = self.main_data["metadata"].loc[self.main_data["metadata"]["smplID"] == sample_id][factor]
         print("get_factor : ", sample_id, factor, "found : ", query)
         return query
+
+    def list_to_boolean_serie(self, model_list: list, with_quantity: bool = True):
+        results = {}
+        value = 1
+        for model in model_list:
+            if not model in results.keys():
+                results[model] = value
+            else:
+                if with_quantity:
+                    results[model] += value
+        return pd.Series(results)
+
+    def indev_taxonomy_matrix_build(self):
+        rank = "s"
+        id_col = "mgs"
+        all_series = {}
+        taxonomic_df = self.get_taxonomic_data()
+        binlist_by_id = self.get_bin_list()
+
+        for sample in binlist_by_id.keys():
+            res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
+            all_series[sample] = self.list_to_boolean_serie(res)
+
+        matrix = pd.DataFrame(all_series)
+        matrix.fillna(0, inplace=True)
+        matrix = matrix.T
+        matrix.index.name = "smplID"
+        matrix.reset_index(inplace=True)
+        # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
+        return matrix
+
+    def taxonomic_data_long_format(self):
+
+        df = self.indev_taxonomy_matrix_build()
+
+        if self.is_indexed(df):
+            df.reset_index()
+
+        df = df.melt("smplID", var_name="Taxa", value_name="Quantity")
+        brand_new_df = {}
+
+        for factor in self.get_metadata_label():
+            brand_new_df[factor] = self.add_factor_column(df["smplID"], factor)
+
+        df = df.assign(**brand_new_df)
+        df = df.astype(str)
+        df['Quantity'] = df['Quantity'].astype(float)
+        df['Nb_taxon'] = df["smplID"].apply(lambda row: self.test_try_1(row,df))
+        return df
+    
+    def test_try_1(self, id_value, df):
+        value = df.loc[(df['smplID'] == id_value) & (df['Quantity'] != 0)]["Taxa"].unique()
+        return len(value)
 
     def produce_long_abundance_dataframe(self, with_normalisation: bool = True):
         """Transform the wide format abundance dataframe into a long format.
