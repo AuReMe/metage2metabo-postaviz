@@ -19,6 +19,7 @@ import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
 from m2m_postaviz.data_struct import DataStorage
 import os
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
@@ -64,9 +65,8 @@ def main(args=None):
       taxonomy = arg_parser["taxonomy"]
       taxonomic_data = du.open_tsv(taxonomy)
       global_data, sample_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)
-
-    # du.performance_test("/home/lbrindel/cscope_metadata/", "/home/lbrindel/m2m-postaviz/tests/metadata_test.tsv")
-
+    
     Data = DataStorage(global_data, sample_data, taxonomic_data, norm_abundance_data, abundance_data)
+    # Data.performance_benchmark()
 
     sh.run_shiny(Data)

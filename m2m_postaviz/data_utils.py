@@ -24,6 +24,25 @@ def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFr
     return df_row
 
 
+def benchmark_decorator(func):
+
+    def wrapper(*args, **kwargs):
+        results = list()
+        n_repeats = 3
+        for i in range(n_repeats):
+            time_start = time.perf_counter()
+            result = func(*args, **kwargs)
+            time_end = time.perf_counter()
+            time_duration = time_end - time_start
+            results.append(time_duration)
+            print(f'>run {i+1} took {time_duration} seconds')
+        avg_duration = sum(results) / n_repeats
+        print(f'Took {avg_duration} seconds on average for {func.__name__} function.')
+        return result
+    
+    return wrapper
+
+
 def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create an 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
@@ -41,8 +60,7 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     smpl_norm_index = []
     smpl_abundance = []
     smpl_index = []
-    print(abundance_matrix)
-    # print(sample_data)
+    
     for sample in sample_data.keys():
 
         sample_matrix = sample_data[sample]["cscope"].copy()
@@ -454,7 +472,6 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     return row
 
 
-# @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata, abundance_path):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
@@ -545,25 +562,6 @@ def build_test_data(test_dir_path):
             sample_data[current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path, filename))
 
     return global_data, sample_data, abundance_table
-
-
-def performance_test(dir, meta):
-    start_time = time.perf_counter()
-
-    # pr = cProfile.Profile()
-    # pr.enable()
-
-    build_df(dir, meta)
-
-    end_time = time.perf_counter()
-
-    Total_time = end_time - start_time
-    print("TEST TIME: ", Total_time)
-    print("TEST TIME: ", Total_time)
-    # pr.disable()
-    # pr.print_stats(sort='time')
-
-    # cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
 
 
 def produce_test_data(global_data, sample_data, abundance_data):
