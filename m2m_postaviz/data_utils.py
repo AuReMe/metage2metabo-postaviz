@@ -43,8 +43,8 @@ def benchmark_decorator(func):
     return wrapper
 
 
-def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
-    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create an 2 abundance dataframe.
+def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
+    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
 
     Args:
@@ -54,10 +54,9 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     Returns:
         Tuple: (Normalised abundance dataframe, Abundance dataframe)
     """
-    abundance_matrix = open_tsv(abundance_file_path)
-
     smpl_norm_abundance = []
     smpl_norm_index = []
+
     smpl_abundance = []
     smpl_index = []
     
@@ -103,6 +102,16 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
 
 
 def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
+    """
+    Return a dataframe with a unique row containing the sum of all metabolite produced
+    by the different bin in a sample. In other word, transform a cpd production df by bin to a cpd production df by sample.
+    Args:
+        abundance_table (pd.DataFrame): Compound/Bin abundance table
+        sample_id (str): Name of the sample
+
+    Returns:
+        Dataframe: Dataframe
+    """
     # Prend la nouvelle matrice d'abondance du sample
     new_dataframe = {}
     # Flip avec métabolites en index et bin en column
@@ -522,7 +531,9 @@ def build_df(dir_path, metadata, abundance_path):
 
     global_data["main_dataframe"] = main_df
 
-    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_path, sample_data)
+    abundance_file = open_tsv(abundance_path)
+
+    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_file, sample_data)
 
     return global_data, sample_data, norm_abundance_data, abundance_data
 
@@ -578,14 +589,14 @@ def produce_test_data(global_data, sample_data, abundance_data):
     quit()
 
 
-def unit_test_1():
+def unit_test_abundance():
     mock_cscope1 = pd.DataFrame(
         data=[
             [1, 0, 0, 0, 1, 1, 0],
             [0, 0, 1, 0, 1, 1, 0],
             [1, 0, 0, 1, 1, 1, 1],
             [0, 1, 0, 0, 0, 0, 0],
-        ],
+        ],              
         index=["bin1", "bin3", "spec437", "bin1030"],
         columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
     )
@@ -601,31 +612,41 @@ def unit_test_1():
         columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
     )
     mock_cscope2.index.name = "smplID"
-    # print(mock_cscope)
-    # print(mock_cscope)
+
     mock_abundance_df = pd.DataFrame(
         data=[
-            [10, 0, 2, 5],
-            [0, 30, 12, 2],
+            [15, 25, 2, 5],
+            [1, 30, 12, 2],
             [8, 0, 0, 1],
-            [0, 1, 18, 0],
-            [10, 0, 2, 5],
-            [0, 30, 12, 2],
-            [8, 2, 6, 1],
+            [2, 1, 18, 0],
+            [8, 2, 2, 5],
+            [0, 10, 12, 2],
+            [7, 2, 6, 1],
             [0, 1, 18, 0],
         ],
         index=["bin1", "spec88", "bin1030", "bin502", "bin3", "spec437","bin999","spec999"],
         columns=["mock1", "mock2", "mock3", "mock4"]
     )
-    # mock_abundance_df.to_csv('~/Downloads/abundance_file_unit_test.tsv',sep='\t',index_label='smplID')
+
     sample_mock = dict()
     sample_mock["mock1"] = {}
     sample_mock["mock1"]["cscope"] = mock_cscope1
     sample_mock["mock2"] = {}
     sample_mock["mock2"]["cscope"] = mock_cscope2
+
     normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
     expected_results = sample_mock["mock1"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"]["cscope"].index)]["mock1"])
-    print(expected_results.T)
-    observed_results = relative_abundance_calc('~/Downloads/abundance_file_unit_test.tsv',sample_mock)
-    print(observed_results)
-    return
+    expected_results2 = sample_mock["mock2"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock2"]["cscope"].index)]["mock2"])
+
+    expected_results.rename("mock1", inplace=True)
+    expected_results2.rename("mock2", inplace=True)
+    expected_df = pd.DataFrame([expected_results,expected_results2])
+    # print(expected_df)
+    
+    observed_results = relative_abundance_calc(mock_abundance_df,sample_mock)
+    # print(observed_results[0])
+    # print("--------------")
+    # print(observed_results[1])
+
+    assert expected_df.equals(observed_results[0]), "Expected abundance dataframe from unit_test_abundance() and abundance dataframe from tested function are not equals."
+    return True

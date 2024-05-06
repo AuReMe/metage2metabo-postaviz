@@ -138,6 +138,7 @@ class DataStorage:
         # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
         return matrix
 
+    @benchmark_decorator
     def taxonomic_data_long_format(self):
         """
         Produce long format taxonomic dataframe for plot purpose.

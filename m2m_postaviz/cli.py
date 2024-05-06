@@ -40,7 +40,7 @@ def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.ut:
-      du.unit_test_1()
+      du.unit_test_abundance()
       quit()
     if arg_parser.test:
       if not os.path.isdir(os.path.join(TESTS_DIR, 'data_test/')):
