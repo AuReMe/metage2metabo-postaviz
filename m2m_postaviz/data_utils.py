@@ -8,34 +8,6 @@ import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 
 
-def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
-    results = {}
-    for model in model_list:
-        if model not in results.keys():
-            value = 1
-            results[model] = value
-        elif with_quantity:
-            results[model] += value
-    return pd.Series(results)
-
-
-def indev_taxonomy_matrix_build(binlist_by_id: dict, taxonomic_df: pd.DataFrame):
-    # temporary solution, should be species if available.
-    rank = "Genus"
-    id_col = "mgs"
-    all_series = {}
-    # for each sample get the row of the taxo_df.
-    for sample in binlist_by_id.keys():
-        res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
-        all_series[sample] = list_to_boolean_serie(res)
-    # Concatenation of the series into a dataframe.
-    matrix = pd.DataFrame(all_series)
-    matrix.fillna(0, inplace=True)
-    # matrix = matrix.T
-    matrix.reset_index(inplace=True)
-    return matrix
-
-
 def extract_tarfile(tar_file, outdir):
     file = tarfile.open(tar_file, "r:gz")
 
@@ -52,8 +24,27 @@ def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFr
     return df_row
 
 
-def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
-    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create an 2 abundance dataframe.
+def benchmark_decorator(func):
+
+    def wrapper(*args, **kwargs):
+        results = list()
+        n_repeats = 3
+        for i in range(n_repeats):
+            time_start = time.perf_counter()
+            result = func(*args, **kwargs)
+            time_end = time.perf_counter()
+            time_duration = time_end - time_start
+            results.append(time_duration)
+            print(f'>run {i+1} took {time_duration} seconds')
+        avg_duration = sum(results) / n_repeats
+        print(f'Took {avg_duration} seconds on average for {func.__name__} function.')
+        return result
+    
+    return wrapper
+
+
+def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
+    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
 
     Args:
@@ -63,13 +54,12 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
     Returns:
         Tuple: (Normalised abundance dataframe, Abundance dataframe)
     """
-    abundance_matrix = open_tsv(abundance_file_path)
-
     smpl_norm_abundance = []
     smpl_norm_index = []
+
     smpl_abundance = []
     smpl_index = []
-
+    
     for sample in sample_data.keys():
 
         sample_matrix = sample_data[sample]["cscope"].copy()
@@ -112,6 +102,16 @@ def relative_abundance_calc(abundance_file_path: str, sample_data: dict):
 
 
 def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
+    """
+    Return a dataframe with a unique row containing the sum of all metabolite produced
+    by the different bin in a sample. In other word, transform a cpd production df by bin to a cpd production df by sample.
+    Args:
+        abundance_table (pd.DataFrame): Compound/Bin abundance table
+        sample_id (str): Name of the sample
+
+    Returns:
+        Dataframe: Dataframe
+    """
     # Prend la nouvelle matrice d'abondance du sample
     new_dataframe = {}
     # Flip avec métabolites en index et bin en column
@@ -173,7 +173,6 @@ def taxonomy_groupby(
         if choice not in df[target_rank].unique():
             taxonomic_choice.remove(choice)
             print(choice, " Removed.")
-            print(choice, " Removed.")
 
     df = df[["mgs", target_rank]]
     df = df.groupby([target_rank]).count()
@@ -192,7 +191,6 @@ def taxonomic_dataframe_from_input(
     results = []
     taxonomic_choice = list(taxonomic_choice)
     if len(taxonomic_choice) == 0:
-        print("The taxonomic choice list is empty")
         print("The taxonomic choice list is empty")
         return
     for sample in bin_id_by_sample.keys():
@@ -483,7 +481,6 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     return row
 
 
-# @timeit(repeat=3,number=10)
 def build_df(dir_path, metadata, abundance_path):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
@@ -534,7 +531,9 @@ def build_df(dir_path, metadata, abundance_path):
 
     global_data["main_dataframe"] = main_df
 
-    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_path, sample_data)
+    abundance_file = open_tsv(abundance_path)
+
+    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_file, sample_data)
 
     return global_data, sample_data, norm_abundance_data, abundance_data
 
@@ -576,25 +575,6 @@ def build_test_data(test_dir_path):
     return global_data, sample_data, abundance_table
 
 
-def performance_test(dir, meta):
-    start_time = time.perf_counter()
-
-    # pr = cProfile.Profile()
-    # pr.enable()
-
-    build_df(dir, meta)
-
-    end_time = time.perf_counter()
-
-    Total_time = end_time - start_time
-    print("TEST TIME: ", Total_time)
-    print("TEST TIME: ", Total_time)
-    # pr.disable()
-    # pr.print_stats(sort='time')
-
-    # cProfile.runctx('build_df(dir,meta)', globals(), locals(), sort=1)
-
-
 def produce_test_data(global_data, sample_data, abundance_data):
     global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv", sep="\t", index=False)
     global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv", sep="\t", index=False)
@@ -609,14 +589,14 @@ def produce_test_data(global_data, sample_data, abundance_data):
     quit()
 
 
-def unit_test_1():
+def unit_test_abundance():
     mock_cscope1 = pd.DataFrame(
         data=[
             [1, 0, 0, 0, 1, 1, 0],
             [0, 0, 1, 0, 1, 1, 0],
             [1, 0, 0, 1, 1, 1, 1],
             [0, 1, 0, 0, 0, 0, 0],
-        ],
+        ],              
         index=["bin1", "bin3", "spec437", "bin1030"],
         columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
     )
@@ -632,28 +612,41 @@ def unit_test_1():
         columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
     )
     mock_cscope2.index.name = "smplID"
-    # print(mock_cscope)
-    # print(mock_cscope)
+
     mock_abundance_df = pd.DataFrame(
         data=[
-            [10, 0, 2, 5],
-            [0, 30, 12, 2],
+            [15, 25, 2, 5],
+            [1, 30, 12, 2],
             [8, 0, 0, 1],
-            [0, 1, 18, 0],
-            [10, 0, 2, 5],
-            [0, 30, 12, 2],
-            [8, 2, 6, 1],
+            [2, 1, 18, 0],
+            [8, 2, 2, 5],
+            [0, 10, 12, 2],
+            [7, 2, 6, 1],
             [0, 1, 18, 0],
         ],
         index=["bin1", "spec88", "bin1030", "bin502", "bin3", "spec437","bin999","spec999"],
         columns=["mock1", "mock2", "mock3", "mock4"]
     )
+
     sample_mock = dict()
-    sample_mock["mock1"] = mock_cscope1
-    sample_mock["mock2"] = mock_cscope2
+    sample_mock["mock1"] = {}
+    sample_mock["mock1"]["cscope"] = mock_cscope1
+    sample_mock["mock2"] = {}
+    sample_mock["mock2"]["cscope"] = mock_cscope2
+
     normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
-    expected_results = sample_mock["mock1"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"].index)]["mock1"])
-    print(expected_results.T)
-    # observed_results = generate_normalized_stoichiometric_matrix(sample_mock["mock1"], mock_abundance_df, "mock1")
-    # print(observed_results)
-    return
+    expected_results = sample_mock["mock1"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"]["cscope"].index)]["mock1"])
+    expected_results2 = sample_mock["mock2"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock2"]["cscope"].index)]["mock2"])
+
+    expected_results.rename("mock1", inplace=True)
+    expected_results2.rename("mock2", inplace=True)
+    expected_df = pd.DataFrame([expected_results,expected_results2])
+    # print(expected_df)
+    
+    observed_results = relative_abundance_calc(mock_abundance_df,sample_mock)
+    # print(observed_results[0])
+    # print("--------------")
+    # print(observed_results[1])
+
+    assert expected_df.equals(observed_results[0]), "Expected abundance dataframe from unit_test_abundance() and abundance dataframe from tested function are not equals."
+    return True

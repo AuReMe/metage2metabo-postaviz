@@ -22,7 +22,8 @@ def run_shiny(data: DataStorage):
 
     current_dataframe = data.main_data["metadata"]
     metadata = data.main_data["metadata"]
-    taxonomic_data = data.taxonomic_data
+    taxonomic_data = data.get_taxonomic_data()
+    long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()
     main_dataframe = data.main_data["main_dataframe"].copy()
     factor_list = data.list_of_factor
@@ -42,13 +43,16 @@ def run_shiny(data: DataStorage):
     abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"))
 
     taxonomy_boxplot = ui.card(
-        ui.row(
-            ui.input_select("Taxonomic_rank_input", "Choose a taxonomic rank", list(taxonomic_data.columns), selected="Genus"),
-            ui.input_selectize("Taxonomic_choice_input", "Multiple choice possible", [], multiple=True),
+        ui.layout_sidebar(
+            ui.sidebar(
+                ui.input_select("tax_inpx1", "Label for X axis", factor_list),
+                ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
+                ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
+                ui.input_checkbox("taxo_norm", "With normalised data")
         ),
-        output_widget("Taxonomic_boxplot"),
-    )
-    main_table = ui.card(ui.output_data_frame("dev_table"), ui.output_data_frame("main_table"))
+        output_widget("taxonomic_boxplot"),
+    ))
+    main_table = ui.card(ui.output_data_frame("dev_table"))#, ui.output_data_frame("main_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     main_panel_dataframe = ui.card(
@@ -79,8 +83,8 @@ def run_shiny(data: DataStorage):
                     pcoa_plot_dev_table,
                 ),
             ),
-            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot)),
-            ui.nav("Taxonomy", output_widget("taxonomy_overview"), taxonomy_boxplot),
+            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot),taxonomy_boxplot),
+            ui.nav("Taxonomy"),
             ui.nav(
                 "Main",
                 ui.layout_sidebar(
@@ -105,39 +109,55 @@ def run_shiny(data: DataStorage):
                     ui.output_text(id="stat_test_result"),
                 ),
             ),
-            ui.nav(
-                "Prototype",
-                ui.card(ui.output_data_frame("summary_table")),
-                ui.accordion(
-                    ui.accordion_panel(
-                        "Taxonomy panel",
-                        ui.layout_column_wrap(ui.output_data_frame("bin_summary"), ui.output_data_frame("bin_group"), width=1 / 2),
-                    ),
-                    open=False,
-                ),
-                ui.card(output_widget("summary_taxonomy")),
-                ui.card(ui.input_action_button("launch_test", "Run"), ui.output_text(id="test_result")),
-            ),
         )
     )
 
     def server(input, output, session):
-        @reactive.Effect()
-        @reactive.event(input.Taxonomic_rank_input)
-        def update_taxonomy_choice_list():
-            updated_list = del_list_duplicate(taxonomic_data[input.Taxonomic_rank_input()])
-            ui.update_select("Taxonomic_choice_input", choices=updated_list)
-            return
+        # @reactive.Effect()
+        # @reactive.event(input.Taxonomic_rank_input)
+        # def update_taxonomy_choice_list():
+        #     updated_list = del_list_duplicate(taxonomic_data[input.Taxonomic_rank_input()])
+        #     ui.update_select("Taxonomic_choice_input", choices=updated_list)
+        #     return
 
-        @render_widget()
-        def taxonomy_overview():
-            df = du.taxonomic_overview(list_of_bin, taxonomic_data, metadata)
-            ### IF NO INPUT -- DEFAULT
+        @render_widget
+        def taxonomic_boxplot():
+            df = long_taxo_df
+            x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
+            if len(y1) == 0:
+                y1 = df["Taxa"].unique()
+            if x1 == 'None':
+                return px.box(df, y='Nb_taxon')
+            if x2 == 'None':
+                # try:
+                #     df[x1] = df[x1].astype(float)
+                #     df = df.sort_values(x1)
+                #     df[x1] = df[x1].astype(str)
+                # except ValueError:
+                #     pass
+                fig = px.box(
+                    df,
+                    x=x1,
+                    y="Nb_taxon",
+                    color=x1,
+                )
+                return fig
+            else:
+                conditionx2 = df[x2].unique()
 
-            plot = px.box(df, y="nb_taxon")
+                fig = go.Figure()
 
-            # plot = px.box(df, x="Antibiotics", y="Count", color="Days")
-            return plot
+                for condition in conditionx2:
+                    fig.add_trace(
+                        go.Box(
+                            x=df.loc[df[x2] == condition][x1],
+                            y=df['Nb_taxon'],
+                            name=str(condition),
+                        )
+                    )
+
+                fig.update_layout(boxmode="group")
+                return fig
 
         @render_widget
         def Abundance_boxplot():
@@ -180,18 +200,6 @@ def run_shiny(data: DataStorage):
                     fig.update_layout(boxmode="group", hovermode="y")
                     return fig
 
-        @output
-        @render_widget
-        def Taxonomic_boxplot():
-            try:
-                df = du.taxonomic_dataframe_from_input(
-                    input.Taxonomic_rank_input(), list_of_bin, input.Taxonomic_choice_input(), taxonomic_data, metadata
-                )
-                plot = px.box(df, x="Antibiotics", y="Count", color="Antibiotics")
-                return plot
-            except:
-                return
-
         @reactive.Effect()
         @reactive.event(input.test_sample1)
         def process():
@@ -222,7 +230,7 @@ def run_shiny(data: DataStorage):
 
         @render.data_frame
         def dev_table():
-            return render.DataGrid(data.abundance_dataframe)
+            return render.DataGrid(data.get_long_taxonomic_data())
 
         @render.data_frame
         def main_table():
