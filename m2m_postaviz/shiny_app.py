@@ -113,12 +113,6 @@ def run_shiny(data: DataStorage):
     )
 
     def server(input, output, session):
-        # @reactive.Effect()
-        # @reactive.event(input.Taxonomic_rank_input)
-        # def update_taxonomy_choice_list():
-        #     updated_list = del_list_duplicate(taxonomic_data[input.Taxonomic_rank_input()])
-        #     ui.update_select("Taxonomic_choice_input", choices=updated_list)
-        #     return
 
         @render_widget
         def taxonomic_boxplot():
@@ -129,18 +123,13 @@ def run_shiny(data: DataStorage):
             if x1 == 'None':
                 return px.box(df, y='Nb_taxon')
             if x2 == 'None':
-                # try:
-                #     df[x1] = df[x1].astype(float)
-                #     df = df.sort_values(x1)
-                #     df[x1] = df[x1].astype(str)
-                # except ValueError:
-                #     pass
                 fig = px.box(
                     df,
                     x=x1,
                     y="Nb_taxon",
                     color=x1,
                 )
+                du.add_p_value_annotation(fig,[[0,1]])
                 return fig
             else:
                 conditionx2 = df[x2].unique()
@@ -169,6 +158,7 @@ def run_shiny(data: DataStorage):
             # df.drop(df.loc[df["Quantity"] == 0].index, inplace=True)
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
+
             x2 = input.box_inputx2()
             if len(y1) == 0:
                 y1 = df["Compound"].unique()
@@ -176,28 +166,54 @@ def run_shiny(data: DataStorage):
                 return px.box(df, y=df.loc[df["Quantity"] != 0 & df["Compound"].isin(y1)]["Quantity"])
             else:
                 if x2 == "None":
-                    return px.box(
-                        df,
-                        x=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)][x1],
-                        y=df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]["Quantity"],
+                    new_df = df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]
+                    fig = px.box(
+                        new_df,
+                        x=x1,
+                        y="Quantity",
+                        color=x1
                     )
+                    indices_list = []
+                    
+                    for i in range(len(df[x1].unique())):
+                        if i != 0:
+                            indices_list.append([0,i])
+                    if len(indices_list) <= 15:
+                        du.add_p_value_annotation(fig,indices_list)
+                    return fig
                 else:
-                    conditionx2 = df[x2]
-                    conditionx2 = conditionx2.unique()
+                    conditionx2 = df[x2].unique()
+                    conditionx1 = df[x1].unique()
 
                     fig = go.Figure()
 
-                    for condition in conditionx2:
-                        fig.add_trace(
-                            go.Box(
-                                x=df.loc[df[x2] == condition][x1],
-                                y=df.loc[(df[x2] == condition) & (df["Quantity"] != 0) & (df["Compound"].isin(y1))]["Quantity"],
-                                name=str(condition),
-                                # marker_color='green'
-                            )
-                        )
+                    # for index, x_layer1 in enumerate(conditionx1):
+                    #     df_lx1 = df.query("{0} == '{1}'".format(x1,x_layer1))
 
-                    fig.update_layout(boxmode="group", hovermode="y")
+                    #     for x_layer2 in conditionx2:
+                    #         df_lx2 = df_lx1.query("{0} == '{1}'".format(x2, x_layer2))
+                    #         fig.add_trace(go.Box(
+                    #             x=df_lx2[x1],
+                    #             y=df_lx2['Quantity'],
+                    #             name=str(x2+" "+x_layer2),
+                    #             alignmentgroup=False
+
+                    #         )
+                    #         )
+                    annotation_list = []
+                    for index in range(len(conditionx1)):
+                        if not index == 0:
+                            annotation_list.append([index-1,index])
+
+                    for condition2 in conditionx2:
+                        fig.add_trace(go.Box(
+                            x=df.loc[df[x2].isin(conditionx2)][x1],
+                            y=df['Quantity'],
+                            name=str(condition2),
+                        ))
+
+                    fig.update_layout(boxmode="group", hovermode="x",boxgroupgap=0.1)
+                    du.add_p_value_annotation(fig,annotation_list)
                     return fig
 
         @reactive.Effect()
