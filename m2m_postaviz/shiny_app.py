@@ -18,10 +18,9 @@ def del_list_duplicate(mylist: list):
 
 
 def run_shiny(data: DataStorage):
-    ### Declare PROCESSING VARIABLE
-
-    current_dataframe = data.main_data["metadata"]
-    metadata = data.main_data["metadata"]
+    ###
+    current_dataframe = data.get_main_metadata()
+    metadata = data.get_main_metadata()
     taxonomic_data = data.get_taxonomic_data()
     long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()
@@ -48,11 +47,12 @@ def run_shiny(data: DataStorage):
                 ui.input_select("tax_inpx1", "Label for X axis", factor_list),
                 ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
                 ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
-                ui.input_checkbox("taxo_norm", "With normalised data")
-        ),
-        output_widget("taxonomic_boxplot"),
-    ))
-    main_table = ui.card(ui.output_data_frame("dev_table"))#, ui.output_data_frame("main_table"))
+                ui.input_checkbox("taxo_norm", "With normalised data"),
+            ),
+            output_widget("taxonomic_boxplot"),
+        )
+    )
+    main_table = ui.card(ui.output_data_frame("dev_table"))  # , ui.output_data_frame("main_table"))
     summary_table = ui.card(ui.output_data_frame("summary_table"))
 
     main_panel_dataframe = ui.card(
@@ -83,7 +83,7 @@ def run_shiny(data: DataStorage):
                     pcoa_plot_dev_table,
                 ),
             ),
-            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot),taxonomy_boxplot),
+            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), taxonomy_boxplot),
             ui.nav("Taxonomy"),
             ui.nav(
                 "Main",
@@ -113,23 +113,22 @@ def run_shiny(data: DataStorage):
     )
 
     def server(input, output, session):
-
         @render_widget
         def taxonomic_boxplot():
             df = long_taxo_df
             x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
             if len(y1) == 0:
                 y1 = df["Taxa"].unique()
-            if x1 == 'None':
-                return px.box(df, y='Nb_taxon')
-            if x2 == 'None':
+            if x1 == "None":
+                return px.box(df, y="Nb_taxon")
+            if x2 == "None":
                 fig = px.box(
                     df,
                     x=x1,
                     y="Nb_taxon",
                     color=x1,
                 )
-                du.add_p_value_annotation(fig,[[0,1]])
+                du.add_p_value_annotation(fig, [[0, 1]])
                 return fig
             else:
                 conditionx2 = df[x2].unique()
@@ -140,7 +139,7 @@ def run_shiny(data: DataStorage):
                     fig.add_trace(
                         go.Box(
                             x=df.loc[df[x2] == condition][x1],
-                            y=df['Nb_taxon'],
+                            y=df["Nb_taxon"],
                             name=str(condition),
                         )
                     )
@@ -167,19 +166,14 @@ def run_shiny(data: DataStorage):
             else:
                 if x2 == "None":
                     new_df = df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]
-                    fig = px.box(
-                        new_df,
-                        x=x1,
-                        y="Quantity",
-                        color=x1
-                    )
+                    fig = px.box(new_df, x=x1, y="Quantity", color=x1)
                     indices_list = []
-                    
+
                     for i in range(len(df[x1].unique())):
                         if i != 0:
-                            indices_list.append([0,i])
+                            indices_list.append([0, i])
                     if len(indices_list) <= 15:
-                        du.add_p_value_annotation(fig,indices_list)
+                        du.add_p_value_annotation(fig, indices_list)
                     return fig
                 else:
                     conditionx2 = df[x2].unique()
@@ -187,33 +181,27 @@ def run_shiny(data: DataStorage):
 
                     fig = go.Figure()
 
-                    # for index, x_layer1 in enumerate(conditionx1):
-                    #     df_lx1 = df.query("{0} == '{1}'".format(x1,x_layer1))
-
-                    #     for x_layer2 in conditionx2:
-                    #         df_lx2 = df_lx1.query("{0} == '{1}'".format(x2, x_layer2))
-                    #         fig.add_trace(go.Box(
-                    #             x=df_lx2[x1],
-                    #             y=df_lx2['Quantity'],
-                    #             name=str(x2+" "+x_layer2),
-                    #             alignmentgroup=False
-
-                    #         )
-                    #         )
                     annotation_list = []
                     for index in range(len(conditionx1)):
                         if not index == 0:
-                            annotation_list.append([index-1,index])
+                            annotation_list.append([index - 1, index])
 
                     for condition2 in conditionx2:
-                        fig.add_trace(go.Box(
-                            x=df.loc[df[x2].isin(conditionx2)][x1],
-                            y=df['Quantity'],
-                            name=str(condition2),
-                        ))
+                        fig.add_trace(
+                            go.Box(
+                                x=df.loc[df[x2].isin(conditionx2)][x1],
+                                y=df["Quantity"],
+                                name=str(condition2),
+                            )
+                        )
 
-                    fig.update_layout(boxmode="group", hovermode="x",boxgroupgap=0.1)
-                    du.add_p_value_annotation(fig,annotation_list)
+                    fig.update_layout(
+                        boxmode="group",
+                        hovermode="x",
+                        boxgroupgap=0.1,
+                        title=(f"Estimated quantity of each metabolites produced by {x1} and {x2}"),
+                    )
+                    du.add_p_value_annotation(fig, annotation_list)
                     return fig
 
         @reactive.Effect()

@@ -1,10 +1,11 @@
+import cProfile
+
 import pandas as pd
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
-import timeit
-from m2m_postaviz.data_utils import benchmark_decorator
-import cProfile
+
+import m2m_postaviz.data_utils as du
 
 
 class DataStorage:
@@ -14,15 +15,18 @@ class DataStorage:
         self,
         main_data_container: dict,
         sample_data_container: dict,
-        taxonomic_data_container: pd.DataFrame,
-        norm_abundance_data: pd.DataFrame,
-        abundance_data: pd.DataFrame,
+        taxonomic_data_container: pd.DataFrame = None,
+        norm_abundance_data: pd.DataFrame = None,
+        abundance_data: pd.DataFrame = None,
     ):
         self.main_data = main_data_container
         self.sample_data = sample_data_container
 
-        self.taxonomic_data = taxonomic_data_container
-        self.long_taxo_data = self.taxonomic_data_long_format()
+        if taxonomic_data_container is not None:
+            self.taxonomic_data = taxonomic_data_container
+            self.long_taxo_data = du.taxonomic_data_long_format(
+                self.get_taxonomic_data(), self.get_bin_list(), self.get_metadata_label(), self.get_main_metadata()
+            )
 
         self.normalised_abundance_matrix = norm_abundance_data
         self.abundance_matrix = abundance_data
@@ -101,73 +105,12 @@ class DataStorage:
     def get_metadata_label(self):
         if self.is_indexed(self.main_data["metadata"]):
             return list(self.main_data["metadata"].columns)
-        return list(self.main_data["metadata"].columns)[1:]
+        return list(self.main_data["metadata"].columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
         query = self.main_data["metadata"].loc[self.main_data["metadata"]["smplID"] == sample_id][factor]
         print("get_factor : ", sample_id, factor, "found : ", query)
         return query
-
-    def list_to_boolean_serie(self, model_list: list, with_quantity: bool = True):
-        results = {}
-        value = 1
-        for model in model_list:
-            if not model in results.keys():
-                results[model] = value
-            else:
-                if with_quantity:
-                    results[model] += value
-        return pd.Series(results)
-
-    def taxonomy_matrix_build(self):
-        rank = "s"
-        id_col = "mgs"
-        all_series = {}
-        taxonomic_df = self.get_taxonomic_data()
-        binlist_by_id = self.get_bin_list()
-
-        for sample in binlist_by_id.keys():
-            res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
-            all_series[sample] = self.list_to_boolean_serie(res)
-
-        matrix = pd.DataFrame(all_series)
-        matrix.fillna(0, inplace=True)
-        matrix = matrix.T
-        matrix.index.name = "smplID"
-        matrix.reset_index(inplace=True)
-        # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
-        return matrix
-
-    def taxonomic_data_long_format(self):
-        """
-        Produce long format taxonomic dataframe for plot purpose.
-        Returns:
-            Datarame: Dataframe in long format
-        """
-
-        df = self.taxonomy_matrix_build()
-        # df_matrix = df.set_index('smplID')
-        # print(df_matrix.astype(int).agg('sum',axis=1))
-        # quit()
-        if self.is_indexed(df):
-            df.reset_index()
-
-        df = df.melt("smplID", var_name="Taxa", value_name="Quantity")
-        brand_new_df = {}
-
-        for factor in self.get_metadata_label():
-            brand_new_df[factor] = self.add_factor_column(df["smplID"], factor)
-
-        df = df.assign(**brand_new_df)
-        df = df.astype(str)
-        df["smplID"] = df["smplID"].astype('category')
-        df['Quantity'] = df['Quantity'].astype(float)
-        df['Nb_taxon'] = df["smplID"].apply(lambda row: self.search_long_format(row,df))
-        return df
-    
-    def search_long_format(self, id_value, df):
-        value = df.loc[(df['smplID'] == id_value) & (df['Quantity'] != 0)]["Taxa"].unique()
-        return len(value)
 
     def produce_long_abundance_dataframe(self, with_normalisation: bool = True):
         """Transform the wide format abundance dataframe into a long format.
@@ -186,19 +129,13 @@ class DataStorage:
             current_df = current_df.reset_index()
         current_df = current_df.melt("smplID", var_name="Compound", value_name="Quantity")
         all_new_columns = {}
-        for factor in self.get_metadata_label():
-            all_new_columns[factor] = self.add_factor_column(current_df["smplID"], factor)
+
+        metadata_label = self.get_metadata_label()
+        for factor in metadata_label:
+            all_new_columns[factor] = du.add_factor_column(self.get_main_metadata(), current_df["smplID"], factor)
 
         current_df = current_df.assign(**all_new_columns)
         return current_df
-
-    def add_factor_column(self, serie_id, factor_id):
-        metadata = self.get_main_metadata()
-        metadata.set_index("smplID", inplace=True, drop=True)
-        new_col = []
-        for value in serie_id:
-            new_col.append(str(metadata.at[value, factor_id]))
-        return new_col
 
     def factorize_metadata(self):
         for factor in self.get_metadata_label():

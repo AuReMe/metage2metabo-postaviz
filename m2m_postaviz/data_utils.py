@@ -3,11 +3,11 @@ import os
 import os.path
 import tarfile
 import time
-import numpy as np
-from scipy import stats
 
+import numpy as np
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
+from scipy import stats
 
 
 def extract_tarfile(tar_file, outdir):
@@ -27,7 +27,6 @@ def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFr
 
 
 def benchmark_decorator(func):
-
     def wrapper(*args, **kwargs):
         results = list()
         n_repeats = 3
@@ -37,11 +36,11 @@ def benchmark_decorator(func):
             time_end = time.perf_counter()
             time_duration = time_end - time_start
             results.append(time_duration)
-            print(f'>run {i+1} took {time_duration} seconds')
+            print(f">run {i+1} took {time_duration} seconds")
         avg_duration = sum(results) / n_repeats
-        print(f'Took {avg_duration} seconds on average for {func.__name__} function.')
+        print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
         return result
-    
+
     return wrapper
 
 
@@ -61,30 +60,28 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
 
     smpl_abundance = []
     smpl_index = []
-    
-    for sample in sample_data.keys():
 
+    for sample in sample_data.keys():
         sample_matrix = sample_data[sample]["cscope"].copy()
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
 
-        sample_matrix = sample_matrix.apply(lambda row: row.astype(float)*abundance_matrix.at[row.name,sample], axis=1)
+        sample_matrix = sample_matrix.apply(lambda row: row.astype(float) * abundance_matrix.at[row.name, sample], axis=1)
         sample_matrix = sum_squash_table(sample_matrix, sample)
 
         smpl_abundance.append(sample_matrix)
         smpl_index.append(str(sample))
 
     for sample in sample_data.keys():
-
-        abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(),axis=0)
+        abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
         sample_matrix = sample_data[sample]["cscope"].copy()
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
 
-        sample_matrix = sample_matrix.apply(lambda row: row.astype(float)*abundance_matrix_normalised.at[row.name,sample], axis=1)
+        sample_matrix = sample_matrix.apply(lambda row: row.astype(float) * abundance_matrix_normalised.at[row.name, sample], axis=1)
         sample_matrix = sum_squash_table(sample_matrix, sample)
 
         smpl_norm_abundance.append(sample_matrix)
@@ -591,79 +588,86 @@ def produce_test_data(global_data, sample_data, abundance_data):
     quit()
 
 
-def unit_test_abundance():
-    mock_cscope1 = pd.DataFrame(
-        data=[
-            [1, 0, 0, 0, 1, 1, 0],
-            [0, 0, 1, 0, 1, 1, 0],
-            [1, 0, 0, 1, 1, 1, 1],
-            [0, 1, 0, 0, 0, 0, 0],
-        ],              
-        index=["bin1", "bin3", "spec437", "bin1030"],
-        columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
-    )
-    mock_cscope1.index.name = "smplID"
-    mock_cscope2 = pd.DataFrame(
-        data=[
-            [1, 0, 0, 0, 1, 1, 0],
-            [0, 0, 1, 0, 1, 1, 0],
-            [1, 0, 0, 1, 1, 1, 1],
-            [0, 1, 0, 0, 0, 0, 0],
-        ],
-        index=["bin1", "spec88", "bin1030", "bin502"],
-        columns=["CPD1", "CPD2", "CPD3", "CPD4", "CPD5", "CPD6", "CPD7"]
-    )
-    mock_cscope2.index.name = "smplID"
-
-    mock_abundance_df = pd.DataFrame(
-        data=[
-            [15, 25, 2, 5],
-            [1, 30, 12, 2],
-            [8, 0, 0, 1],
-            [2, 1, 18, 0],
-            [8, 2, 2, 5],
-            [0, 10, 12, 2],
-            [7, 2, 6, 1],
-            [0, 1, 18, 0],
-        ],
-        index=["bin1", "spec88", "bin1030", "bin502", "bin3", "spec437","bin999","spec999"],
-        columns=["mock1", "mock2", "mock3", "mock4"]
-    )
-
-    sample_mock = dict()
-    sample_mock["mock1"] = {}
-    sample_mock["mock1"]["cscope"] = mock_cscope1
-    sample_mock["mock2"] = {}
-    sample_mock["mock2"]["cscope"] = mock_cscope2
-
-    normalised_mock_ab = mock_abundance_df.apply(lambda x: x / x.sum(), axis=0)
-    expected_results = sample_mock["mock1"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock1"]["cscope"].index)]["mock1"])
-    expected_results2 = sample_mock["mock2"]["cscope"].T.dot(normalised_mock_ab.loc[normalised_mock_ab.index.isin(sample_mock["mock2"]["cscope"].index)]["mock2"])
-
-    expected_results.rename("mock1", inplace=True)
-    expected_results2.rename("mock2", inplace=True)
-    expected_df = pd.DataFrame([expected_results,expected_results2])
-    # print(expected_df)
-    
-    observed_results = relative_abundance_calc(mock_abundance_df,sample_mock)
-    # print(observed_results[0])
-    # print("--------------")
-    # print(observed_results[1])
-
-    assert expected_df.equals(observed_results[0]), "Expected abundance dataframe from unit_test_abundance() and abundance dataframe from tested function are not equals."
-    return True
+def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
+    results = {}
+    value = 1
+    for model in model_list:
+        if model not in results.keys():
+            results[model] = value
+        else:
+            if with_quantity:
+                results[model] += value
+    return pd.Series(results)
 
 
+def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
+    rank = "s"
+    id_col = "mgs"
+    all_series = {}
 
-def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color='black')):
-    ''' Adds notations giving the p-value between two box plot data (t-test two-sided comparison)
-    
+    for sample in binlist_by_id.keys():
+        res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
+        all_series[sample] = list_to_boolean_serie(res)
+
+    matrix = pd.DataFrame(all_series)
+    matrix.fillna(0, inplace=True)
+    matrix = matrix.T
+    matrix.index.name = "smplID"
+    matrix.reset_index(inplace=True)
+    # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
+    return matrix
+
+
+def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, metadata_label: list, metadata: pd.DataFrame):
+    """
+    Produce long format taxonomic dataframe for plot purpose.
+    Returns:
+        Dataframe: Dataframe in long format
+    """
+
+    df = taxonomy_matrix_build(taxonomic_df, binlist_by_id)
+
+    if is_indexed_by_id(df):
+        df.reset_index()
+
+    df = df.melt("smplID", var_name="Taxa", value_name="Quantity")
+    brand_new_df = {}
+
+    # Assign all metadata a new columns in df.
+    for factor in metadata_label:
+        brand_new_df[factor] = add_factor_column(metadata, df["smplID"], factor)
+    df = df.assign(**brand_new_df)
+    df = df.astype(str)
+    df["smplID"] = df["smplID"].astype("category")
+    df["Quantity"] = df["Quantity"].astype(float)
+    df["Nb_taxon"] = df["smplID"].apply(lambda row: search_long_format(row, df))
+
+    return df
+
+
+def search_long_format(id_value, df):
+    value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
+    return len(value)
+
+
+def add_factor_column(metadata, serie_id, factor_id):
+    if not is_indexed_by_id(metadata):
+        metadata.set_index("smplID", inplace=True, drop=True)
+    new_col = []
+    for value in serie_id:
+        new_col.append(str(metadata.at[value, factor_id]))
+    return new_col
+
+
+def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
+    """Adds notations giving the p-value between two box plot data (t-test two-sided comparison)
+
     Parameters:
     ----------
     fig: figure
         plotly boxplot figure
     array_columns: np.array
-        array of which columns to compare 
+        array of which columns to compare
         e.g.: [[0,1], [1,2]] compares column 0 with 1 and 1 with 2
     subplot: None or int
         specifies if the figures has subplots and what subplot to add the notation to
@@ -674,29 +678,29 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
     -------
     fig: figure
         figure with the added notation
-    '''
+    """
     # Specify in what y_range to plot for each pair of columns
     y_range = np.zeros([len(array_columns), 2])
     for i in range(len(array_columns)):
-        y_range[i] = [1.01+i*_format['interline'], 1.02+i*_format['interline']]
+        y_range[i] = [1.01 + i * _format["interline"], 1.02 + i * _format["interline"]]
 
     # Get values from figure
     fig_dict = fig.to_dict()
     # Get indices if working with subplots
     if subplot:
         if subplot == 1:
-            subplot_str = ''
+            subplot_str = ""
         else:
-            subplot_str =str(subplot)
-            print('Subplot str is : ',subplot_str)
-        indices = [] #Change the box index to the indices of the data for that subplot
-        for index, data in enumerate(fig_dict['data']):
-            if data['xaxis'] == 'x' + subplot_str:
+            subplot_str = str(subplot)
+            print("Subplot str is : ", subplot_str)
+        indices = []  # Change the box index to the indices of the data for that subplot
+        for index, data in enumerate(fig_dict["data"]):
+            if data["xaxis"] == "x" + subplot_str:
                 indices = np.append(indices, index)
         indices = [int(i) for i in indices]
-        print((indices))
+        print(indices)
     else:
-        subplot_str = ''
+        subplot_str = ""
 
     # Print the p-values
     for index, column_pair in enumerate(array_columns):
@@ -713,48 +717,72 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
 
         # Get the p-value
         pvalue = stats.ttest_ind(
-            fig_dict['data'][data_pair[0]]['y'],
-            fig_dict['data'][data_pair[1]]['y'],
+            fig_dict["data"][data_pair[0]]["y"],
+            fig_dict["data"][data_pair[1]]["y"],
             equal_var=False,
         )[1]
         if pvalue >= 0.05:
-            symbol = 'ns'
-        elif pvalue >= 0.01: 
-            symbol = '*'
+            symbol = "ns"
+        elif pvalue >= 0.01:
+            symbol = "*"
         elif pvalue >= 0.001:
-            symbol = '**'
+            symbol = "**"
         else:
-            symbol = '***'
+            symbol = "***"
         # Vertical line
-        fig.add_shape(type="line",
-            xref="x"+subplot_str, yref="y"+subplot_str+" domain",
-            x0=column_pair[0], y0=y_range[index][0], 
-            x1=column_pair[0], y1=y_range[index][1],
-            line=dict(color=_format['color'], width=2,)
+        fig.add_shape(
+            type="line",
+            xref="x" + subplot_str,
+            yref="y" + subplot_str + " domain",
+            x0=column_pair[0],
+            y0=y_range[index][0],
+            x1=column_pair[0],
+            y1=y_range[index][1],
+            line=dict(
+                color=_format["color"],
+                width=2,
+            ),
         )
         # Horizontal line
-        fig.add_shape(type="line",
-            xref="x"+subplot_str, yref="y"+subplot_str+" domain",
-            x0=column_pair[0], y0=y_range[index][1], 
-            x1=column_pair[1], y1=y_range[index][1],
-            line=dict(color=_format['color'], width=2,)
+        fig.add_shape(
+            type="line",
+            xref="x" + subplot_str,
+            yref="y" + subplot_str + " domain",
+            x0=column_pair[0],
+            y0=y_range[index][1],
+            x1=column_pair[1],
+            y1=y_range[index][1],
+            line=dict(
+                color=_format["color"],
+                width=2,
+            ),
         )
         # Vertical line
-        fig.add_shape(type="line",
-            xref="x"+subplot_str, yref="y"+subplot_str+" domain",
-            x0=column_pair[1], y0=y_range[index][0], 
-            x1=column_pair[1], y1=y_range[index][1],
-            line=dict(color=_format['color'], width=2,)
+        fig.add_shape(
+            type="line",
+            xref="x" + subplot_str,
+            yref="y" + subplot_str + " domain",
+            x0=column_pair[1],
+            y0=y_range[index][0],
+            x1=column_pair[1],
+            y1=y_range[index][1],
+            line=dict(
+                color=_format["color"],
+                width=2,
+            ),
         )
         ## add text at the correct x, y coordinates
         ## for bars, there is a direct mapping from the bar number to 0, 1, 2...
-        fig.add_annotation(dict(font=dict(color=_format['color'],size=14),
-            x=(column_pair[0] + column_pair[1])/2,
-            y=y_range[index][1]*_format['text_height'],
-            showarrow=False,
-            text=symbol,
-            textangle=0,
-            xref="x"+subplot_str,
-            yref="y"+subplot_str+" domain"
-        ))
+        fig.add_annotation(
+            dict(
+                font=dict(color=_format["color"], size=14),
+                x=(column_pair[0] + column_pair[1]) / 2,
+                y=y_range[index][1] * _format["text_height"],
+                showarrow=False,
+                text=symbol,
+                textangle=0,
+                xref="x" + subplot_str,
+                yref="y" + subplot_str + " domain",
+            )
+        )
     return fig
