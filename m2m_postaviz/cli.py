@@ -16,10 +16,11 @@ Why does this file exist, and why not put this in __main__?
 """
 import argparse
 import os
+import pkg_resources
 
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
-import m2m_postaviz.unit_test as ut
+# import tests.unit_test as ut
 from m2m_postaviz.data_struct import DataStorage
 
 parser = argparse.ArgumentParser()
@@ -41,7 +42,7 @@ def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.ut:
-        ut.unit_test_abundance()
+        # ut.test_abundance()
         quit()
     if arg_parser.test:
         if not os.path.isdir(os.path.join(TESTS_DIR, "data_test/")):

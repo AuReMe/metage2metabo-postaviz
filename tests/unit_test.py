@@ -1,9 +1,10 @@
 import pandas as pd
 
-import m2m_postaviz.data_utils as du
+from m2m_postaviz import data_utils
 
 
-def unit_test_abundance():
+
+def test_abundance():
     mock_cscope1 = pd.DataFrame(
         data=[
             [1, 0, 0, 0, 1, 1, 0],
@@ -61,7 +62,7 @@ def unit_test_abundance():
     expected_df = pd.DataFrame([expected_results, expected_results2])
     # print(expected_df)
 
-    norm_observed_results, non_norm_observed_results = du.relative_abundance_calc(mock_abundance_df, sample_mock)
+    norm_observed_results, non_norm_observed_results = data_utils.relative_abundance_calc(mock_abundance_df, sample_mock)
     # print(observed_results[0])
     # print("--------------")
     # print(observed_results[1])
@@ -74,3 +75,7 @@ def unit_test_abundance():
 
 def unit_test_taxonomy():
     assert True
+
+
+if __name__=="__main__":
+    test_abundance()

@@ -206,8 +206,8 @@ def get_individual_production_size(sample: str, metadataframe: dict):
     return len(metadataframe[sample]["iscope"].columns)
 
 
-def get_total_production_size(sample: str, metadataframe: dict):
-    return len(metadataframe[sample]["cscope"].columns)
+def get_total_production_size(sample: str, samples_data: dict):
+    return len(samples_data[sample]["cscope"].columns)
 
 
 def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
@@ -456,7 +456,7 @@ def retrieve_all_sample_data(path):
     for sample in os.listdir(path):
         if os.path.isdir(os.path.join(path, sample)):
             data_by_sample[sample] = {}
-            # data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
             data_by_sample[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
             # data_by_sample[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
             # data_by_sample[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
@@ -659,6 +659,34 @@ def add_factor_column(metadata, serie_id, factor_id):
     return new_col
 
 
+def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, smpl_data: dict, metadata_label: list):
+    sample_prod = main_dataframe["smplID"]
+    cscope_prod_list = []
+    iscope_prod_list = []
+    metadata_dict = {}
+
+    final_dataframe = pd.DataFrame(sample_prod)
+    # Makes total cpd production column
+    for sample in sample_prod:
+        cscope_prod_list.append(get_total_production_size(sample, smpl_data))
+        iscope_prod_list.append(get_individual_production_size(sample, smpl_data))
+
+    # Makes all metadata columns
+    for factor in metadata_label:
+        metadata_dict[factor] = add_factor_column(metadata, sample_prod, factor)
+
+    final_dataframe["Cscope_cpd_prod"] = cscope_prod_list
+    final_dataframe["Iscope_cpd_prod"] = iscope_prod_list
+
+    final_dataframe = final_dataframe.assign(**metadata_dict)
+    final_dataframe = final_dataframe.astype(str)
+    final_dataframe["smplID"] = final_dataframe["smplID"].astype("category")
+    final_dataframe["Cscope_cpd_prod"] = final_dataframe["Cscope_cpd_prod"].astype(int)
+    final_dataframe["Iscope_cpd_prod"] = final_dataframe["Iscope_cpd_prod"].astype(int)
+    
+    return final_dataframe
+
+
 def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
     """Adds notations giving the p-value between two box plot data (t-test two-sided comparison)
 
@@ -716,10 +744,10 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
         # print('1:', fig_dict['data'][data_pair[1]]['name'], fig_dict['data'][data_pair[1]]['xaxis'])
 
         # Get the p-value
-        pvalue = stats.ttest_ind(
+        pvalue = stats.kruskal(
             fig_dict["data"][data_pair[0]]["y"],
             fig_dict["data"][data_pair[1]]["y"],
-            equal_var=False,
+            # equal_var=False,
         )[1]
         if pvalue >= 0.05:
             symbol = "ns"
