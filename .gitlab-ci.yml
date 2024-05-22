@@ -15,7 +15,7 @@ stages:
 test:
   stage: test
   script:
-    - tox -e py38-nocov,py311-nocov
+    - tox -e py38,py311
   artifacts:
     reports:
       junit: toxtests.xml
@@ -26,7 +26,7 @@ coverage test:
     - tox -e py311-cover,report
   artifacts:
     paths:
-      - ./htmlcov/
+      - htmlcov/
     reports:
       junit: toxcovtests.xml
 
