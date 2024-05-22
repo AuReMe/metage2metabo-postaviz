@@ -71,11 +71,3 @@ def test_abundance():
         norm_observed_results
     ), "Expected abundance dataframe from unit_test_abundance() and abundance dataframe from tested function are not equals."
     assert expected_df.iloc[1, 1] == norm_observed_results.iloc[1, 1], "dataframe.iloc on [1,1] coordinate did not match."
-
-
-def unit_test_taxonomy():
-    assert True
-
-
-if __name__=="__main__":
-    test_abundance()

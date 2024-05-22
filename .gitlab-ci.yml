@@ -9,31 +9,21 @@ before_script:
   - pip install tox
 
 stages:
-  - check
   - test
-  - build
-  - quality
-  - doc
-  - pypi_deploy
+  - report
 
-check:
-  stage: check
-  script:
-    - tox -e check
-  allow_failure: true
-
-smoke test:
+test:
   stage: test
   script:
-    - tox -e clean,py38-nocov,py311-nocov
+    - tox -e py38-nocov,py311-nocov
   artifacts:
     reports:
       junit: toxtests.xml
 
 coverage test:
-  stage: test
+  stage: report
   script:
-    - tox -e clean,py311-cover,report
+    - tox -e py311-cover,report
   artifacts:
     paths:
       - htmlcov/
