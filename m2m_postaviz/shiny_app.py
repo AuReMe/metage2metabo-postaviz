@@ -85,7 +85,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Abundance", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), taxonomy_boxplot,producer_boxplot),
+            ui.nav("Exploration", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), taxonomy_boxplot,producer_boxplot),
             ui.nav(
                 "Dev mod",
                 main_table,
