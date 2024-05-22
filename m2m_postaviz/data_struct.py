@@ -42,8 +42,22 @@ class DataStorage:
         self.list_of_factor = list(self.main_data["metadata"].columns)
         self.factorize_metadata()
 
+        self.producer_long_dataframe = du.producer_long_format(self.get_main_dataframe(), self.get_main_metadata(), self.get_all_sample_data(), self.get_metadata_label())
+
+
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
+
+    def get_producer_long_dataframe(self, as_copy: bool = True):
+        return self.producer_long_dataframe.copy() if as_copy else self.producer_long_dataframe
+
+    def get_cpd_list(self):
+        query = self.get_main_dataframe().columns.tolist()
+        query.remove('smplID')
+        return query
+
+    def get_all_sample_data(self, mode: str = "cscope", as_copy: bool = True):
+        return self.sample_data.copy() if as_copy else self.sample_data
 
     def get_sample_data(self, smpl_id, mode: str = "cscope", as_copy: bool = True):
         return self.sample_data[smpl_id][mode].copy()
