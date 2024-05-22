@@ -1,0 +1,43 @@
+image: python:latest
+
+default:
+  tags:
+    - small
+
+before_script:
+  - python -V
+  - pip install tox
+
+stages:
+  - check
+  - test
+  - build
+  - quality
+  - doc
+  - pypi_deploy
+
+check:
+  stage: check
+  script:
+    - tox -e check
+  allow_failure: true
+
+smoke test:
+  stage: test
+  script:
+    - tox -e clean,py38-nocov,py311-nocov
+  artifacts:
+    reports:
+      junit: toxtests.xml
+
+coverage test:
+  stage: test
+  script:
+    - tox -e clean,py311-cover,report
+  artifacts:
+    paths:
+      - htmlcov/
+    reports:
+      junit: toxtests.xml
+
+
