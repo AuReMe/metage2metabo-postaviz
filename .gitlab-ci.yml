@@ -17,6 +17,6 @@ test:
     - tox -e py39
   artifacts:
       paths:
-      - $CI_PROJECT_DIR
+      - $CI_PROJECT_DIR/toxtests.xml
       expire_in: 1 week 
 
