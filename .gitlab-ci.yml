@@ -10,24 +10,13 @@ before_script:
 
 stages:
   - test
-  - report
 
 test:
   stage: test
   script:
     - tox -e py39
   artifacts:
-    reports:
-      junit: toxtests.xml
-
-coverage test:
-  stage: report
-  script:
-    - tox -e report
-  artifacts:
-    paths:
-      - htmlcov/
-    reports:
-      junit: toxcovtests.xml
-
+      paths:
+      - $CI_PROJECT_DIR
+      expire_in: 1 week 
 
