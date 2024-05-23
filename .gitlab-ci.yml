@@ -15,7 +15,7 @@ stages:
 test:
   stage: test
   script:
-    - tox -e py12
+    - tox -e py39
   artifacts:
     reports:
       junit: toxtests.xml
