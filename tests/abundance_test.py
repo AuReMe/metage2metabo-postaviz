@@ -60,22 +60,10 @@ def test_abundance():
     expected_results.rename("mock1", inplace=True)
     expected_results2.rename("mock2", inplace=True)
     expected_df = pd.DataFrame([expected_results, expected_results2])
-    # print(expected_df)
 
     norm_observed_results, non_norm_observed_results = data_utils.relative_abundance_calc(mock_abundance_df, sample_mock)
-    # print(observed_results[0])
-    # print("--------------")
-    # print(observed_results[1])
-    # print(expected_df.iloc[1,1], "should be the same as :",norm_observed_results.iloc[1,1])
+
     assert expected_df.equals(
         norm_observed_results
     ), "Expected abundance dataframe from unit_test_abundance() and abundance dataframe from tested function are not equals."
     assert expected_df.iloc[1, 1] == norm_observed_results.iloc[1, 1], "dataframe.iloc on [1,1] coordinate did not match."
-
-
-def unit_test_taxonomy():
-    assert True
-
-
-if __name__=="__main__":
-    test_abundance()

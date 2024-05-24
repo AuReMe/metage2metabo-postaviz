@@ -1,0 +1,19 @@
+image: python:3.9
+
+default:
+  tags:
+    - small
+
+before_script:
+  - python -V
+  - pip install tox
+
+stages:
+  - test
+
+test:
+  stage: test
+  script:
+    - tox -e py39
+
+
