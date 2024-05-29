@@ -17,7 +17,6 @@ class DataStorage:
         sample_data_container: dict,
         taxonomic_data_container: pd.DataFrame = None,
         norm_abundance_data: pd.DataFrame = None,
-        abundance_data: pd.DataFrame = None,
     ):
         self.main_data = main_data_container
         self.sample_data = sample_data_container
@@ -29,14 +28,11 @@ class DataStorage:
             )
 
         self.normalised_abundance_matrix = norm_abundance_data
-        self.abundance_matrix = abundance_data
 
-        self.abundance_dataframe: pd.DataFrame = self.main_data["metadata"].merge(self.abundance_matrix.reset_index(), how="outer")
         self.normalised_abundance_dataframe: pd.DataFrame = self.main_data["metadata"].merge(
             self.normalised_abundance_matrix.reset_index(), how="outer"
         )
 
-        self.melted_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe(with_normalisation=False)
         self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
         self.list_of_factor = list(self.main_data["metadata"].columns)
@@ -80,12 +76,6 @@ class DataStorage:
     def get_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.normalised_abundance_dataframe.copy() if as_copy else self.normalised_abundance_dataframe
 
-    def get_ab_matrix(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.abundance_matrix.copy() if as_copy else self.abundance_matrix
-
-    def get_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.abundance_dataframe.copy() if as_copy else self.abundance_dataframe
-
     def get_melted_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
 
@@ -126,7 +116,7 @@ class DataStorage:
         print("get_factor : ", sample_id, factor, "found : ", query)
         return query
 
-    def produce_long_abundance_dataframe(self, with_normalisation: bool = True):
+    def produce_long_abundance_dataframe(self):
         """Transform the wide format abundance dataframe into a long format.
         Usefull for anyplot.
         Args:
@@ -135,10 +125,9 @@ class DataStorage:
         Returns:
             pd.dataframe: Long format abundance dataframe.
         """
-        if with_normalisation:
-            current_df = self.get_norm_ab_matrix()
-        else:
-            current_df = self.get_ab_matrix()
+
+        current_df = self.get_norm_ab_matrix()
+
         if self.is_indexed(current_df):
             current_df = current_df.reset_index()
         current_df = current_df.melt("smplID", var_name="Compound", value_name="Quantity")
@@ -149,6 +138,7 @@ class DataStorage:
             all_new_columns[factor] = du.add_factor_column(self.get_main_metadata(), current_df["smplID"], factor)
 
         current_df = current_df.assign(**all_new_columns)
+        current_df = current_df.loc[current_df["Quantity"] != 0]
         return current_df
 
     def factorize_metadata(self):

@@ -58,23 +58,10 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     smpl_norm_abundance = []
     smpl_norm_index = []
 
-    smpl_abundance = []
-    smpl_index = []
+    abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
+
 
     for sample in sample_data.keys():
-        sample_matrix = sample_data[sample]["cscope"].copy()
-
-        if not is_indexed_by_id(sample_matrix):
-            sample_matrix.set_index("smplID", inplace=True)
-
-        sample_matrix = sample_matrix.apply(lambda row: row.astype(float) * abundance_matrix.at[row.name, sample], axis=1)
-        sample_matrix = sum_squash_table(sample_matrix, sample)
-
-        smpl_abundance.append(sample_matrix)
-        smpl_index.append(str(sample))
-
-    for sample in sample_data.keys():
-        abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
         sample_matrix = sample_data[sample]["cscope"].copy()
 
@@ -92,12 +79,7 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     normalized_abundance.insert(0, "smplID", smpl_norm_index)
     normalized_abundance.set_index("smplID", inplace=True, drop=True)
 
-    vanilla_abundance = pd.concat(smpl_abundance)
-    vanilla_abundance.fillna(0, inplace=True)
-    vanilla_abundance.insert(0, "smplID", smpl_index)
-    vanilla_abundance.set_index("smplID", inplace=True, drop=True)
-
-    return normalized_abundance, vanilla_abundance
+    return normalized_abundance
 
 
 def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
@@ -116,7 +98,7 @@ def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
     # Flip avec métabolites en index et bin en column
     abundance_table = abundance_table.T
     for index, row in abundance_table.iterrows():
-        # Pour chaque métabolites, calcul le total crée par l'ensemble des bin de l'échantillon
+        # Pour chaque métabolites, multiplie le total crée par l'ensemble des bin de l'échantillon
         new_dataframe[index] = row.values.sum()
     return pd.DataFrame(new_dataframe, index=[sample_id])
 
@@ -532,9 +514,9 @@ def build_df(dir_path, metadata, abundance_path):
 
     abundance_file = open_tsv(abundance_path)
 
-    norm_abundance_data, abundance_data = relative_abundance_calc(abundance_file, sample_data)
+    norm_abundance_data = relative_abundance_calc(abundance_file, sample_data)
 
-    return global_data, sample_data, norm_abundance_data, abundance_data
+    return global_data, sample_data, norm_abundance_data
 
 
 def build_test_data(test_dir_path):
@@ -814,3 +796,33 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
             )
         )
     return fig
+
+def stat_on_plot(data: dict, layer: int):
+    """Apply Kruskal Wallis test on each pair of a dataframe.
+
+    Args:
+        data (dict): Dictionnary of each pair to test.
+        layer (int): Number of layer to the dict. 2 is a double dict.
+
+    Returns:
+        Dataframe: Dataframe of all test.
+    """
+    res = pd.DataFrame(columns=["pair_1","pair_2","test_value","p_value"])
+    if layer == 1:
+        for pair_1 in data.keys():
+            for pair_2 in data.keys():
+                if pair_1 == pair_2:
+                    continue
+                test_value, p_value = stats.kruskal(data[pair_1],data[pair_2])
+                new_row = {"pair_1": pair_1, "pair_2":pair_2, "test_value": test_value, "p_value": p_value}
+                res.loc[len(res)] = new_row
+
+    if layer == 2:
+        for current_layer in data.keys():
+            for pair_1 in data[current_layer].keys():
+                for pair_2 in data[current_layer].keys():
+                    if pair_1 != pair_2:
+                        test_value, p_value = stats.kruskal(data[current_layer][pair_1],data[current_layer][pair_2])
+                        new_row = {"pair_1": f"{current_layer} and {pair_1}", "pair_2": f"{current_layer} and {pair_2}", "test_value": test_value, "p_value": p_value}
+                        res.loc[len(res)] = new_row
+    return res

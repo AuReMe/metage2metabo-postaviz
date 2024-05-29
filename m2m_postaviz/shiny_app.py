@@ -39,11 +39,12 @@ def run_shiny(data: DataStorage):
     abundance_input = ui.row(
         ui.input_select("box_inputx1", "Label for X axis", factor_list),
         ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
-        ui.input_selectize("box_inputy1", "Compound for Y axis", data.abundance_matrix.columns.tolist(), multiple=True),
+        ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
         ui.input_checkbox("ab_norm", "With normalised data")
         # ui.input_action_button("abundance_boxplot_button","Launch")
     )
-    abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"))
+    abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"),
+                                ui.output_data_frame("Abundance_sig_df"))
     ### TAXONOMY BOXPLOT CARD W/I SHINYWIDGET WITH PLOTLY ONLY. (NO HEIGHT OR WIDTH CHANGES POSSIBLE)
     taxonomy_boxplot = ui.card(
         ui.layout_sidebar(
@@ -164,35 +165,61 @@ def run_shiny(data: DataStorage):
                 fig.update_layout(boxmode="group")
                 return fig
 
+        @render.data_frame
+        def Abundance_sig_df():
+            # Get input
+            with_normalised_data = input.ab_norm()
+            df = data.get_melted_norm_ab_dataframe()
+
+            y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
+            if len(y1) == 0:
+                return df
+
+            # No input selected
+            if x1 == "None":
+                return df.loc[df["Compound"].isin(y1)]
+            # At least first axis selected 
+            else:
+                if x2 == "None":
+                    tested_data = {}
+                    for layer_1 in df[x1].unique():
+                        tested_data[layer_1] = df.loc[df[x1] == layer_1]['Quantity']
+                    return du.stat_on_plot(tested_data, 1)
+                # Both axis have been selected
+                else:
+                    tested_data = {}
+                    for layer_1 in df[x1].unique():
+                        tested_data[layer_1] = {}
+                        for layer_2 in df[x2].unique():
+                            tested_data[layer_1][layer_2] = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)]['Quantity']
+                    return du.stat_on_plot(tested_data, 2)
+
+
         @render_widget
         def Abundance_boxplot():
             # Which type of dataframe
-            with_normalised_data = input.ab_norm()
-            if with_normalised_data:
-                df = data.get_melted_norm_ab_dataframe()
-            else:
-                df = data.get_melted_ab_dataframe()
+            with_abundance_data = input.ab_norm()
+            df = data.get_melted_norm_ab_dataframe()
+
             # import button input from shiny
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
             x2 = input.box_inputx2()
             # If none selected, all compound selected (default)
             if len(y1) == 0:
-                y1 = df["Compound"].unique()
+                return
             if x1 == "None":
-                return px.box(df, y=df.loc[df["Quantity"] != 0 & df["Compound"].isin(y1)]["Quantity"],title="Estimated amount of metabolites produced by all sample.")
+                return px.box(df, y=df.loc[df["Compound"].isin(y1)]["Quantity"],title=f"Estimated amount of {*y1,} produced by all sample.")
             else:
                 if x2 == "None":
-                    # Remove 0 quantity (cpd not produced at all)
-                    new_df = df.loc[(df["Compound"].isin(y1)) & (df["Quantity"] != 0)]
-                    fig = px.box(new_df, x=x1, y="Quantity", color=x1, title=f"Estimated amount of metabolites produced by {x1}.",)
+                    new_df = df.loc[df["Compound"].isin(y1)]
+                    fig = px.box(new_df, x=x1, y="Quantity", color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
                     indices_list = []
 
                     for i in range(len(df[x1].unique())):
                         if i != 0:
                             indices_list.append([0, i])
-                    if len(indices_list) <= 15:
-                        du.add_p_value_annotation(fig, indices_list)
+
                     return fig
                 else:
                     conditionx2 = df[x2].unique()
@@ -206,21 +233,31 @@ def run_shiny(data: DataStorage):
                             annotation_list.append([index - 1, index])
 
                     for condition2 in conditionx2:
+                        # if only one value, barplot instead of boxplot.
+                        # print(len(df.loc[(df[x1]==conditionx1[0]) & (df[x2] == condition2)]))
+                        # print(len(y1))
+                        # if len(y1) and len(df.loc[(df[x1]==conditionx1[0]) & (df[x2] == condition2)]) == 1:
+                        #     fig.add_trace(
+                        #     go.Bar(
+                        #         x=df.loc[df[x2] == condition2][x1],
+                        #         y=df.loc[df["Compound"].isin(y1)]["Quantity"],
+                        #         name=str(condition2),
+                        #     )
+                        # )
+                        # else:
                         fig.add_trace(
                             go.Box(
-                                x=df.loc[df[x2].isin(conditionx2)][x1],
-                                y=df["Quantity"],
+                                x=df.loc[df[x2] == condition2][x1],
+                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)]["Quantity"],
                                 name=str(condition2),
                             )
                         )
-
-                    fig.update_layout(
-                        boxmode="group",
-                        hovermode="x",
-                        boxgroupgap=0.1,
-                        title=(f"Estimated quantity of metabolites produced by {x1} and {x2}"),
-                    )
-                    du.add_p_value_annotation(fig, annotation_list)
+                        fig.update_layout(
+                            boxmode="group",
+                            hovermode="x",
+                            boxgroupgap=0.1,
+                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
+                        )
                     return fig
 
         @render_widget
