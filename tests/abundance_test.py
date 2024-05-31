@@ -61,7 +61,7 @@ def test_abundance():
     expected_results2.rename("mock2", inplace=True)
     expected_df = pd.DataFrame([expected_results, expected_results2])
 
-    norm_observed_results, non_norm_observed_results = data_utils.relative_abundance_calc(mock_abundance_df, sample_mock)
+    norm_observed_results = data_utils.relative_abundance_calc(mock_abundance_df, sample_mock)
 
     assert expected_df.equals(
         norm_observed_results
