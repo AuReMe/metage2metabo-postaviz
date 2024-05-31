@@ -806,7 +806,7 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
     return fig
 
 def stat_on_plot(data: dict, layer: int):
-    """Apply Kruskal Wallis test on each pair of a dataframe.
+    """Apply Mann-Whitney test on each pair of a dataframe.
 
     Args:
         data (dict): Dictionnary of each pair to test.
@@ -817,23 +817,60 @@ def stat_on_plot(data: dict, layer: int):
     """
     
     if layer == 1:
-        res = pd.DataFrame(columns=["pair_1","pair_2","test_value","p_value"])
+        res = pd.DataFrame(columns=["pair 1","pair 2","test value","p value","Preview","Test"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
                 if pair_1 != pair_2:
-                    if not pair_2 in res["pair_1"].tolist():
-                        test_value, p_value = stats.kruskal(data[pair_1],data[pair_2])
-                        new_row = {"pair_1": pair_1, "pair_2":pair_2, "test_value": test_value, "p_value": p_value}
-                        res.loc[len(res)] = new_row
+                    if not pair_2 in res["pair 1"].tolist():
+                        if len(data[pair_1]) != 0 and len(data[pair_2]) != 0:
+                            if len(data[pair_1]) == len(data[pair_2]):
+                                test_value, p_value = stats.wilcoxon(data[pair_1],data[pair_2])
+                                test_type = "Wilcoxon"
+                            else:
+                                test_value, p_value = stats.mannwhitneyu(data[pair_1],data[pair_2])
+                                test_type = "Mann-Whitney"
+                            if p_value >= 0.05:
+                                symbol = "ns"
+                            elif p_value >= 0.01:
+                                symbol = "*"
+                            elif p_value >= 0.001:
+                                symbol = "**"
+                            else:
+                                symbol = "***"
+                            new_row = {"pair 1": pair_1, "pair 2":pair_2, "test value": test_value, "p value": p_value,"Preview": symbol,"Test": test_type}
+                            res.loc[len(res)] = new_row
 
     if layer == 2:
-        res = pd.DataFrame(columns=["2nd axis","pair_1","pair_2","test_value","p_value"])
+        res = pd.DataFrame(columns=["Axis","pair 1","pair 2","test value","p value","Preview","Test"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
                 for pair_2 in data[current_layer].keys():
+                    # Don't test same pair
                     if pair_1 != pair_2:
-                        if len(res.loc[(res["pair_1"] == pair_2) & (res["2nd axis"] == current_layer)] ) == 0:
-                            test_value, p_value = stats.kruskal(data[current_layer][pair_1],data[current_layer][pair_2])
-                            new_row = {"2nd axis":current_layer,"pair_1": pair_1, "pair_2": pair_2, "test_value": test_value, "p_value": p_value}
-                            res.loc[len(res)] = new_row
+                        # Don't test pair already tested.
+                        if len(data[current_layer][pair_1]) != 0 and len(data[current_layer][pair_2]) != 0:
+                            if len(res.loc[(res["pair 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
+                                if len(data[current_layer][pair_1]) == len(data[current_layer][pair_2]):
+                                    test_value, p_value = stats.wilcoxon(data[current_layer][pair_1],data[current_layer][pair_2])
+                                    test_type = "Wilcoxon"
+                                else:
+                                    test_value, p_value = stats.mannwhitneyu(data[current_layer][pair_1],data[current_layer][pair_2])
+                                    test_type = "Mann-Whitney"
+                                if p_value >= 0.05:
+                                    symbol = "ns"
+                                elif p_value >= 0.01:
+                                    symbol = "*"
+                                elif p_value >= 0.001:
+                                    symbol = "**"
+                                else:
+                                    symbol = "***"
+                                new_row = {"Axis":current_layer,
+                                        "pair 1": pair_1,
+                                            "pair 2": pair_2,
+                                            "test value": test_value,
+                                            "p value": p_value,
+                                            "Preview": symbol,
+                                            "Test": test_type
+                                            }
+                                res.loc[len(res)] = new_row
     return res
