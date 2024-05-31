@@ -406,7 +406,8 @@ def sbml_to_classic(list_of_metabolites):
     uncoded = []
     for coded in list_of_metabolites:
         id, id_type, compart = cfci(coded)
-        uncoded.append(id)
+        new_value = str(id)+"["+str(compart)+"]"
+        uncoded.append(new_value)
     return uncoded
 
 
@@ -640,33 +641,40 @@ def add_factor_column(metadata, serie_id, factor_id):
         new_col.append(str(metadata.at[value, factor_id]))
     return new_col
 
+def get_number_of_producers(sample_data: dict, sample_id: str, compound: str):
+    df = sample_data[sample_id]["cscope"]
+    if compound in df.columns:
+        try:
+            return len(df.loc[df[compound] == 1]["smplID"])
+        except Exception as e:
+            print(e, sample_id)
+            print(df[compound])
+    return 0
+
+def printall(*args):
+    for arg in args:
+        print(arg)
 
 def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, smpl_data: dict, metadata_label: list):
-    sample_prod = main_dataframe["smplID"]
-    cscope_prod_list = []
-    iscope_prod_list = []
+    
+    main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
+    main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
+    nb_producer = []
+    
+    for index, row in main_dataframe.iterrows():
+        nb_producer.append(get_number_of_producers(smpl_data,row["smplID"],row["Compound"]))
+
+    main_dataframe["Nb_producers"] = nb_producer
     metadata_dict = {}
-
-    final_dataframe = pd.DataFrame(sample_prod)
-    # Makes total cpd production column
-    for sample in sample_prod:
-        cscope_prod_list.append(get_total_production_size(sample, smpl_data))
-        iscope_prod_list.append(get_individual_production_size(sample, smpl_data))
-
     # Makes all metadata columns
     for factor in metadata_label:
-        metadata_dict[factor] = add_factor_column(metadata, sample_prod, factor)
+        metadata_dict[factor] = add_factor_column(metadata, main_dataframe["smplID"], factor)
 
-    final_dataframe["Cscope_cpd_prod"] = cscope_prod_list
-    final_dataframe["Iscope_cpd_prod"] = iscope_prod_list
 
-    final_dataframe = final_dataframe.assign(**metadata_dict)
-    final_dataframe = final_dataframe.astype(str)
-    final_dataframe["smplID"] = final_dataframe["smplID"].astype("category")
-    final_dataframe["Cscope_cpd_prod"] = final_dataframe["Cscope_cpd_prod"].astype(int)
-    final_dataframe["Iscope_cpd_prod"] = final_dataframe["Iscope_cpd_prod"].astype(int)
+    main_dataframe = main_dataframe.assign(**metadata_dict)
+    main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
     
-    return final_dataframe
+    return main_dataframe
 
 
 def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
@@ -805,24 +813,27 @@ def stat_on_plot(data: dict, layer: int):
         layer (int): Number of layer to the dict. 2 is a double dict.
 
     Returns:
-        Dataframe: Dataframe of all test.
+        Dataframe: Dataframe of test's results.
     """
-    res = pd.DataFrame(columns=["pair_1","pair_2","test_value","p_value"])
+    
     if layer == 1:
+        res = pd.DataFrame(columns=["pair_1","pair_2","test_value","p_value"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
-                if pair_1 == pair_2:
-                    continue
-                test_value, p_value = stats.kruskal(data[pair_1],data[pair_2])
-                new_row = {"pair_1": pair_1, "pair_2":pair_2, "test_value": test_value, "p_value": p_value}
-                res.loc[len(res)] = new_row
+                if pair_1 != pair_2:
+                    if not pair_2 in res["pair_1"].tolist():
+                        test_value, p_value = stats.kruskal(data[pair_1],data[pair_2])
+                        new_row = {"pair_1": pair_1, "pair_2":pair_2, "test_value": test_value, "p_value": p_value}
+                        res.loc[len(res)] = new_row
 
     if layer == 2:
+        res = pd.DataFrame(columns=["2nd axis","pair_1","pair_2","test_value","p_value"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
                 for pair_2 in data[current_layer].keys():
                     if pair_1 != pair_2:
-                        test_value, p_value = stats.kruskal(data[current_layer][pair_1],data[current_layer][pair_2])
-                        new_row = {"pair_1": f"{current_layer} and {pair_1}", "pair_2": f"{current_layer} and {pair_2}", "test_value": test_value, "p_value": p_value}
-                        res.loc[len(res)] = new_row
+                        if len(res.loc[(res["pair_1"] == pair_2) & (res["2nd axis"] == current_layer)] ) == 0:
+                            test_value, p_value = stats.kruskal(data[current_layer][pair_1],data[current_layer][pair_2])
+                            new_row = {"2nd axis":current_layer,"pair_1": pair_1, "pair_2": pair_2, "test_value": test_value, "p_value": p_value}
+                            res.loc[len(res)] = new_row
     return res

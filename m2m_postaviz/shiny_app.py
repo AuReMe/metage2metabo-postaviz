@@ -199,8 +199,12 @@ def run_shiny(data: DataStorage):
         def Abundance_boxplot():
             # Which type of dataframe
             with_abundance_data = input.ab_norm()
-            df = data.get_melted_norm_ab_dataframe()
-
+            if with_abundance_data:
+                df = data.get_melted_norm_ab_dataframe()
+                variable_of_interest = "Quantity"
+            else:
+                df = producer_data
+                variable_of_interest = "Nb_producers"
             # import button input from shiny
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
@@ -209,11 +213,11 @@ def run_shiny(data: DataStorage):
             if len(y1) == 0:
                 return
             if x1 == "None":
-                return px.box(df, y=df.loc[df["Compound"].isin(y1)]["Quantity"],title=f"Estimated amount of {*y1,} produced by all sample.")
+                return px.box(df, y=df.loc[df["Compound"].isin(y1)][variable_of_interest],title=f"Estimated amount of {*y1,} produced by all sample.")
             else:
                 if x2 == "None":
                     new_df = df.loc[df["Compound"].isin(y1)]
-                    fig = px.box(new_df, x=x1, y="Quantity", color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
+                    fig = px.box(new_df, x=x1, y=variable_of_interest, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
                     indices_list = []
 
                     for i in range(len(df[x1].unique())):
@@ -240,7 +244,7 @@ def run_shiny(data: DataStorage):
                         #     fig.add_trace(
                         #     go.Bar(
                         #         x=df.loc[df[x2] == condition2][x1],
-                        #         y=df.loc[df["Compound"].isin(y1)]["Quantity"],
+                        #         y=df.loc[df["Compound"].isin(y1)][variable_of_interest],
                         #         name=str(condition2),
                         #     )
                         # )
@@ -248,7 +252,7 @@ def run_shiny(data: DataStorage):
                         fig.add_trace(
                             go.Box(
                                 x=df.loc[df[x2] == condition2][x1],
-                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)]["Quantity"],
+                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][variable_of_interest],
                                 name=str(condition2),
                             )
                         )
@@ -263,6 +267,7 @@ def run_shiny(data: DataStorage):
         @render_widget
         def producer_boxplot():
             df = producer_data
+            print(df)
             input1, input2, cpd_choice = input.prod_i1(), input.prod_i2(), input.prod_i3()
             with_iscope = input.with_iscope()
             if len(cpd_choice) == 0:
