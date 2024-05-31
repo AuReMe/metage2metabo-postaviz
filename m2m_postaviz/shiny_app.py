@@ -183,7 +183,7 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = df.loc[df[x1] == layer_1]['Quantity']
+                        tested_data[layer_1] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))]['Quantity']
                     return du.stat_on_plot(tested_data, 1)
                 # Both axis have been selected
                 else:
@@ -191,7 +191,10 @@ def run_shiny(data: DataStorage):
                     for layer_1 in df[x1].unique():
                         tested_data[layer_1] = {}
                         for layer_2 in df[x2].unique():
-                            tested_data[layer_1][layer_2] = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)]['Quantity']
+                            selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2) & (df["Compound"].isin(y1))]['Quantity']
+                            if len(selected_data) != 0:
+                                identifier = str(layer_2)+" (n="+str(len(selected_data))+")"
+                                tested_data[layer_1][identifier] = selected_data
                     return du.stat_on_plot(tested_data, 2)
 
 
@@ -218,11 +221,6 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     new_df = df.loc[df["Compound"].isin(y1)]
                     fig = px.box(new_df, x=x1, y=variable_of_interest, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
-                    indices_list = []
-
-                    for i in range(len(df[x1].unique())):
-                        if i != 0:
-                            indices_list.append([0, i])
 
                     return fig
                 else:
@@ -237,18 +235,7 @@ def run_shiny(data: DataStorage):
                             annotation_list.append([index - 1, index])
 
                     for condition2 in conditionx2:
-                        # if only one value, barplot instead of boxplot.
-                        # print(len(df.loc[(df[x1]==conditionx1[0]) & (df[x2] == condition2)]))
-                        # print(len(y1))
-                        # if len(y1) and len(df.loc[(df[x1]==conditionx1[0]) & (df[x2] == condition2)]) == 1:
-                        #     fig.add_trace(
-                        #     go.Bar(
-                        #         x=df.loc[df[x2] == condition2][x1],
-                        #         y=df.loc[df["Compound"].isin(y1)][variable_of_interest],
-                        #         name=str(condition2),
-                        #     )
-                        # )
-                        # else:
+
                         fig.add_trace(
                             go.Box(
                                 x=df.loc[df[x2] == condition2][x1],
