@@ -48,7 +48,7 @@ def main(args=None):
             print("No data_test/ directory found.")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
         data_test_dir = os.path.join(TESTS_DIR, "data_test/")
-        global_data, sample_data, abundance_data = du.build_test_data(data_test_dir)
+        global_data, sample_data, norm_abundance_data = du.build_test_data(data_test_dir)
         taxonomic_data = du.open_tsv(TESTS_DIR + "taxonomic_database.tsv")
 
     elif arg_parser.dev:
@@ -65,7 +65,7 @@ def main(args=None):
         metadata = arg_parser["metadata"]
         taxonomy = arg_parser["taxonomy"]
         taxonomic_data = du.open_tsv(taxonomy)
-        global_data, sample_data, abundance_data = du.build_df(dir_path, metadata, abundance_path)
+        global_data, sample_data, norm_abundance_data = du.build_df(dir_path, metadata, abundance_path)
 
     Data = DataStorage(global_data, sample_data, taxonomic_data, norm_abundance_data)
     # Data.performance_benchmark()
