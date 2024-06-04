@@ -20,6 +20,7 @@ def del_list_duplicate(mylist: list):
 def run_shiny(data: DataStorage):
     ###
     producer_data = data.get_producer_long_dataframe()
+    cpd_prod_by_sample = data.get_compound_production_by_sample()
     taxonomic_data = data.get_taxonomic_data()
     long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()
@@ -41,7 +42,6 @@ def run_shiny(data: DataStorage):
         ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
         ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
         ui.input_checkbox("ab_norm", "With normalised data")
-        # ui.input_action_button("abundance_boxplot_button","Launch")
     )
     abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"),
                                 ui.output_data_frame("Abundance_sig_df"))
@@ -61,10 +61,8 @@ def run_shiny(data: DataStorage):
     producer_boxplot = ui.card(
         ui.layout_sidebar(
             ui.sidebar(
-                ui.input_select("prod_i1", "First X axis", factor_list),
-                ui.input_select("prod_i2", "Second X axis", factor_list),
-                ui.input_selectize("prod_i3", "Choose compounds", list_of_cpd, multiple=True),
-                ui.input_checkbox("with_iscope", "Show iscope data."),
+                ui.input_selectize("prod_i3", "Choose compounds", list_of_cpd, multiple=False, selected=list_of_cpd[0]),
+                ui.input_checkbox("prod_norm", "Normalised data"),
             ),
             output_widget("producer_boxplot"),
         )
@@ -86,7 +84,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), taxonomy_boxplot,producer_boxplot),
+            ui.nav("Exploration", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), producer_boxplot,taxonomy_boxplot),
             ui.nav(
                 "Dev mod",
                 main_table,
@@ -204,10 +202,10 @@ def run_shiny(data: DataStorage):
             with_abundance_data = input.ab_norm()
             if with_abundance_data:
                 df = data.get_melted_norm_ab_dataframe()
-                variable_of_interest = "Quantity"
+                column_value = "Quantity"
             else:
                 df = producer_data
-                variable_of_interest = "Nb_producers"
+                column_value = "Nb_producers"
             # import button input from shiny
             y1 = input.box_inputy1()
             x1 = input.box_inputx1()
@@ -216,11 +214,11 @@ def run_shiny(data: DataStorage):
             if len(y1) == 0:
                 return
             if x1 == "None":
-                return px.box(df, y=df.loc[df["Compound"].isin(y1)][variable_of_interest],title=f"Estimated amount of {*y1,} produced by all sample.")
+                return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value],title=f"Estimated amount of {*y1,} produced by all sample.")
             else:
                 if x2 == "None":
                     new_df = df.loc[df["Compound"].isin(y1)]
-                    fig = px.box(new_df, x=x1, y=variable_of_interest, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
+                    fig = px.box(new_df, x=x1, y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
 
                     return fig
                 else:
@@ -239,7 +237,7 @@ def run_shiny(data: DataStorage):
                         fig.add_trace(
                             go.Box(
                                 x=df.loc[df[x2] == condition2][x1],
-                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][variable_of_interest],
+                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
                                 name=str(condition2),
                             )
                         )
@@ -253,100 +251,18 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def producer_boxplot():
-            df = producer_data
-            print(df)
-            input1, input2, cpd_choice = input.prod_i1(), input.prod_i2(), input.prod_i3()
-            with_iscope = input.with_iscope()
-            if len(cpd_choice) == 0:
-                cpd_choice = list_of_cpd
-            fig = go.Figure()
-            if input1 == "None":
-                fig.add_trace(go.Box(
-                    # x=df["smplID"],
-                    y=df["Cscope_cpd_prod"],
-                    name="Cscope production",
-                    marker_color="#ffc82c",
-                    )
-                )
-                if with_iscope:
-                    fig.add_trace(go.Box(
-                        # x=df["smplID"],
-                        y=df["Iscope_cpd_prod"],
-                        name="Iscope production",
-                        marker_color="#173a64",
-                        )
-                    )
-                fig.update_layout(barmode="group",bargroupgap=0,bargap=0.5,title="Compound production by community and individual.")
-                return fig
+            with_normalised_data = input.prod_norm()
+            if with_normalised_data:
+                df = data.get_norm_ab_matrix()
             else:
-                lenght_of_grid = len(df[input1].unique())
-                if input2 == "None":
-                    
-                    fig = go.Figure()
-                    fig.add_trace(go.Box(
-                        x=df[input1],
-                        y=df["Cscope_cpd_prod"],
-                        name="Cscope production",
-                        marker_color="#ffc82c",
-                        )
-                    )
-                    if with_iscope:
-                        fig.add_trace(go.Box(
-                            x=df[input1],
-                            y=df["Iscope_cpd_prod"],
-                            name="Iscope production",
-                            marker_color="#173a64",
-                            )
-                        )
-                    fig.update_layout(boxmode="group",
-                                      boxgroupgap=0,boxgap=0.5,
-                                      title=f"Compound production by {input1}."
-                                      ,xaxis_title=input1
-                                      )
-                    return fig
-                else:
-                    fig = go.Figure()
-                    # tmp_df = df.loc[df[input2].isin()]
-                    for condition in df[input2].unique():
-
-                        fig.add_trace(go.Box(
-                            x=df[input1],
-                            y=df.loc[df[input2] == condition]["Cscope_cpd_prod"],
-                            name=f"Cscope production for {input2} {condition}",
-                            # marker_color="#ffc82c",
-                            )
-                        )
-                        if with_iscope:
-                            fig.add_trace(go.Box(
-                                x=df[input1],
-                                y=df.loc[df[input2] == condition]["Iscope_cpd_prod"],
-                                name=f"Iscope production for {input2} {condition}",
-                                opacity=0.5,
-                                marker_color="#173a64",
-                                )
-                            )
-                    fig.update_layout(boxmode="group",boxgroupgap=0,boxgap=0.5,title=f"Compound production by {input1} and {input2}.",xaxis_title=input1,grid={"columns": lenght_of_grid})
-                    return fig
-
-
+                df = cpd_prod_by_sample
             
-
-        @reactive.Effect()
-        @reactive.event(input.test_sample1)
-        def process():
-            current_factor_choice = del_list_duplicate(current_dataframe[input.test_sample1()])
-            ui.update_select("test_sample2", choices=current_factor_choice)
-            return
-
-        @reactive.Effect()
-        @reactive.event(input.factor_choice)
-        def process():
-            if input.factor_choice() == "None":
+            # print(df)
+            cpd_choice = input.prod_i3()
+            if len(cpd_choice) == 0:
                 return
-            current_factor_choice = del_list_duplicate(current_dataframe[input.factor_choice()])
-            # current_factor_choice.insert(0,"None")
-            ui.update_select("factor_choice2", choices=current_factor_choice)
-            return
+            
+            return px.bar(df,x=df.index,y=df[cpd_choice],title=f"Estimated production for compound: {cpd_choice}.")
 
         @render_widget
         def pcoa_plot():
@@ -399,50 +315,6 @@ def run_shiny(data: DataStorage):
                     current_dataframe[input.current_data_choice1()] == input.current_data_choice2()
                 ]
                 return render.DataGrid(dataframe_with_filter, row_selection_mode="single")
-
-        @output
-        @render_widget
-        def summary_taxonomy():
-            # sample = current_dataframe.iloc[input.summary_table_selected_rows()[0],0]
-            # sample_taxonomy = sm.taxonomic_processing(list_of_bin[sample],taxonomic_data)
-            # fig = px.bar(sample_taxonomy["Genus"],x=sample_taxonomy["Genus"].index,y="Genus",title="Genus repartition in sample")
-            # return fig
-            fig = px.box(current_dataframe, x="Name", y="Numbers of models", color="Antibiotics")
-            return fig
-
-        @output
-        @render.data_frame
-        def bin_summary():
-            if len(input.summary_table_selected_rows()) != 0:
-                return render.DataGrid(
-                    taxonomic_data.loc[
-                        taxonomic_data["mgs"].isin(list_of_bin[current_dataframe.iloc[input.summary_table_selected_rows()[0], 0]])
-                    ]
-                )
-            else:
-                return current_dataframe
-
-        @output
-        @render.data_frame
-        def bin_group():
-            df = taxonomic_data.loc[
-                taxonomic_data["mgs"].isin(list_of_bin[current_dataframe.iloc[input.summary_table_selected_rows()[0], 0]])
-            ]
-            df = df[["mgs", "Genus"]]
-            df = df.groupby(["Genus"]).count()
-            df = df.reset_index()
-            df.columns = ["Genus", "Count"]
-            return df
-
-        @output
-        @render.text
-        def test_result():
-            df = current_dataframe
-            group1 = df[df["Antibiotics"] == "YES"]
-            group2 = df[df["Antibiotics"] == "NO"]
-            res = stats.wilcoxon(group1["Numbers of models"], group2["Numbers of models"])
-            inshape_res = ("Résultat du test de wilcoxon :", res)
-            return inshape_res
 
     app = App(app_ui, server)
     run_app(app=app, launch_browser=False, reload_dirs="./")

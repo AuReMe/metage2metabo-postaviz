@@ -19,7 +19,6 @@ import os
 
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
-# import tests.unit_test as ut
 from m2m_postaviz.data_struct import DataStorage
 
 parser = argparse.ArgumentParser()
@@ -40,9 +39,6 @@ data_table_filepath = os.path.join(TESTS_DIR, "table_test_postaviz.tar.gz")
 def main(args=None):
     arg_parser = parser.parse_args()
 
-    if arg_parser.ut:
-        # ut.test_abundance()
-        quit()
     if arg_parser.test:
         if not os.path.isdir(os.path.join(TESTS_DIR, "data_test/")):
             print("No data_test/ directory found.")

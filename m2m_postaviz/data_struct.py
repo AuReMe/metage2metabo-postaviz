@@ -39,10 +39,13 @@ class DataStorage:
         self.factorize_metadata()
 
         self.producer_long_dataframe = du.producer_long_format(self.get_main_dataframe(), self.get_main_metadata(), self.get_all_sample_data(), self.get_metadata_label())
-
+        self.compound_production_by_sample = du.production_by_sample(self.get_main_dataframe(), self.get_all_sample_data())
 
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
+
+    def get_compound_production_by_sample(self, as_copy: bool = True):
+        return self.compound_production_by_sample.copy() if as_copy else self.compound_production_by_sample
 
     def get_producer_long_dataframe(self, as_copy: bool = True):
         return self.producer_long_dataframe.copy() if as_copy else self.producer_long_dataframe
