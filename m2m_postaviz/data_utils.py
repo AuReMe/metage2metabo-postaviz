@@ -632,6 +632,25 @@ def search_long_format(id_value, df):
     value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
     return len(value)
 
+def get_cpd_quantity(sample_data: dict, sample_id: str):
+    results = {}
+    for cpd in sample_data[sample_id]["cscope"].columns[1:]:
+        results[cpd] = sample_data[sample_id]["cscope"][cpd].sum()
+    return pd.Series(results, name=sample_id)
+
+def production_by_sample(main_df: pd.DataFrame, sample_data: dict):
+    prod_df = []
+    if not is_indexed_by_id(main_df):
+        main_df.set_index("smplID",inplace=True,drop=True)
+
+    for sample in main_df.index:
+        prod_df.append(get_cpd_quantity(sample_data, sample))
+    
+    final_df = pd.concat(prod_df, axis=1)
+    final_df = final_df.fillna(0)
+    final_df = final_df.T    
+
+    return final_df
 
 def add_factor_column(metadata, serie_id, factor_id):
     if not is_indexed_by_id(metadata):
