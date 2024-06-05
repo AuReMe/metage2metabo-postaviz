@@ -38,7 +38,9 @@ class DataStorage:
         self.list_of_factor = list(self.main_data["metadata"].columns)
         self.factorize_metadata()
 
-        self.producer_long_dataframe = du.producer_long_format(self.get_main_dataframe(), self.get_main_metadata(), self.get_all_sample_data(), self.get_metadata_label())
+        self.producer_long_dataframe = du.producer_long_format(
+            self.get_main_dataframe(), self.get_main_metadata(), self.get_all_sample_data(), self.get_metadata_label()
+        )
         self.compound_production_by_sample = du.production_by_sample(self.get_main_dataframe(), self.get_all_sample_data())
 
     def performance_benchmark(self):
@@ -52,7 +54,7 @@ class DataStorage:
 
     def get_cpd_list(self):
         query = self.get_main_dataframe().columns.tolist()
-        query.remove('smplID')
+        query.remove("smplID")
         return query
 
     def get_all_sample_data(self, mode: str = "cscope", as_copy: bool = True):

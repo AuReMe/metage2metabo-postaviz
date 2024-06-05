@@ -1,8 +1,6 @@
 import plotly.express as px
 import plotly.graph_objects as go
-import scipy.stats as stats
 from shiny import App
-from shiny import reactive
 from shiny import render
 from shiny import run_app
 from shiny import ui
@@ -41,10 +39,9 @@ def run_shiny(data: DataStorage):
         ui.input_select("box_inputx1", "Label for X axis", factor_list),
         ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
         ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
-        ui.input_checkbox("ab_norm", "With normalised data")
+        ui.input_checkbox("ab_norm", "With normalised data"),
     )
-    abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"),
-                                ui.output_data_frame("Abundance_sig_df"))
+    abundance_boxplot = ui.card(output_widget("Abundance_boxplot", height="100%", width="100%"), ui.output_data_frame("Abundance_sig_df"))
     ### TAXONOMY BOXPLOT CARD W/I SHINYWIDGET WITH PLOTLY ONLY. (NO HEIGHT OR WIDTH CHANGES POSSIBLE)
     taxonomy_boxplot = ui.card(
         ui.layout_sidebar(
@@ -84,7 +81,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), producer_boxplot,taxonomy_boxplot),
+            ui.nav("Exploration", ui.layout_sidebar(ui.sidebar(abundance_input), abundance_boxplot), producer_boxplot, taxonomy_boxplot),
             ui.nav(
                 "Dev mod",
                 main_table,
@@ -176,12 +173,12 @@ def run_shiny(data: DataStorage):
             # No input selected
             if x1 == "None":
                 return df.loc[df["Compound"].isin(y1)]
-            # At least first axis selected 
+            # At least first axis selected
             else:
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))]['Quantity']
+                        tested_data[layer_1] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))]["Quantity"]
                     return du.stat_on_plot(tested_data, 1)
                 # Both axis have been selected
                 else:
@@ -189,12 +186,11 @@ def run_shiny(data: DataStorage):
                     for layer_1 in df[x1].unique():
                         tested_data[layer_1] = {}
                         for layer_2 in df[x2].unique():
-                            selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2) & (df["Compound"].isin(y1))]['Quantity']
+                            selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2) & (df["Compound"].isin(y1))]["Quantity"]
                             if len(selected_data) != 0:
-                                identifier = str(layer_2)+" (n="+str(len(selected_data))+")"
+                                identifier = str(layer_2) + " (n=" + str(len(selected_data)) + ")"
                                 tested_data[layer_1][identifier] = selected_data
                     return du.stat_on_plot(tested_data, 2)
-
 
         @render_widget
         def Abundance_boxplot():
@@ -214,11 +210,19 @@ def run_shiny(data: DataStorage):
             if len(y1) == 0:
                 return
             if x1 == "None":
-                return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value],title=f"Estimated amount of {*y1,} produced by all sample.")
+                return px.box(
+                    df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample."
+                )
             else:
                 if x2 == "None":
                     new_df = df.loc[df["Compound"].isin(y1)]
-                    fig = px.box(new_df, x=x1, y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.",)
+                    fig = px.box(
+                        new_df,
+                        x=x1,
+                        y=column_value,
+                        color=x1,
+                        title=f"Estimated amount of {*y1,} produced by {x1}.",
+                    )
 
                     return fig
                 else:
@@ -233,7 +237,6 @@ def run_shiny(data: DataStorage):
                             annotation_list.append([index - 1, index])
 
                     for condition2 in conditionx2:
-
                         fig.add_trace(
                             go.Box(
                                 x=df.loc[df[x2] == condition2][x1],
@@ -256,13 +259,13 @@ def run_shiny(data: DataStorage):
                 df = data.get_norm_ab_matrix()
             else:
                 df = cpd_prod_by_sample
-            
+
             # print(df)
             cpd_choice = input.prod_i3()
             if len(cpd_choice) == 0:
                 return
-            
-            return px.bar(df,x=df.index,y=df[cpd_choice],title=f"Estimated production for compound: {cpd_choice}.")
+
+            return px.bar(df, x=df.index, y=df[cpd_choice], title=f"Estimated production for compound: {cpd_choice}.")
 
         @render_widget
         def pcoa_plot():
