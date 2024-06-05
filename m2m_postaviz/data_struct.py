@@ -11,15 +11,11 @@ import m2m_postaviz.data_utils as du
 class DataStorage:
     column_identifier = "smplID"
 
-    def __init__(
-        self,
-        main_data_container: dict,
-        sample_data_container: dict,
-        taxonomic_data_container: pd.DataFrame = None,
-        norm_abundance_data: pd.DataFrame = None,
-    ):
-        self.main_data = main_data_container
-        self.sample_data = sample_data_container
+    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, norm_abundance_data: pd.DataFrame = None,):
+
+        self.main_data = data_container["main_dataframe"]
+        self.sample_data = data_container["sample_data"]
+        self.metadata = data_container["metadata"]
 
         if taxonomic_data_container is not None:
             self.taxonomic_data = taxonomic_data_container
@@ -29,13 +25,13 @@ class DataStorage:
 
         self.normalised_abundance_matrix = norm_abundance_data
 
-        self.normalised_abundance_dataframe: pd.DataFrame = self.main_data["metadata"].merge(
+        self.normalised_abundance_dataframe: pd.DataFrame = self.metadata.merge(
             self.normalised_abundance_matrix.reset_index(), how="outer"
         )
 
         self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
-        self.list_of_factor = list(self.main_data["metadata"].columns)
+        self.list_of_factor = list(self.metadata.columns)
         self.factorize_metadata()
 
         self.producer_long_dataframe = du.producer_long_format(
@@ -54,7 +50,8 @@ class DataStorage:
 
     def get_cpd_list(self):
         query = self.get_main_dataframe().columns.tolist()
-        query.remove("smplID")
+        if "smplID" in query:
+            query.remove("smplID")
         return query
 
     def get_all_sample_data(self, mode: str = "cscope", as_copy: bool = True):
@@ -64,10 +61,10 @@ class DataStorage:
         return self.sample_data[smpl_id][mode].copy()
 
     def get_main_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.main_data["main_dataframe"].copy() if as_copy else self.main_data["main_dataframe"]
+        return self.main_data.copy() if as_copy else self.main_data
 
     def get_main_metadata(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.main_data["metadata"].copy() if as_copy else self.main_data["metadata"]
+        return self.metadata.copy() if as_copy else self.metadata
 
     def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
         return self.long_taxo_data.copy() if as_copy else self.long_taxo_data
@@ -109,15 +106,15 @@ class DataStorage:
         return bin_list
 
     def get_factor_len(self):
-        return len(self.main_data["metadata"].columns)
+        return len(self.metadata.columns)
 
     def get_metadata_label(self):
-        if self.is_indexed(self.main_data["metadata"]):
-            return list(self.main_data["metadata"].columns)
-        return list(self.main_data["metadata"].columns[1:])
+        if self.is_indexed(self.metadata):
+            return list(self.metadata.columns)
+        return list(self.metadata.columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
-        query = self.main_data["metadata"].loc[self.main_data["metadata"]["smplID"] == sample_id][factor]
+        query = self.metadata.loc[self.metadata["smplID"] == sample_id][factor]
         print("get_factor : ", sample_id, factor, "found : ", query)
         return query
 
@@ -148,7 +145,7 @@ class DataStorage:
 
     def factorize_metadata(self):
         for factor in self.get_metadata_label():
-            self.main_data["metadata"][factor] = self.main_data["metadata"][factor].astype("category")
+            self.metadata[factor] = self.metadata[factor].astype("category")
 
     def weird_way_to_do_it(self, id_value: str, metadata_col: str, metadata: pd.DataFrame):
         if self.is_indexed(metadata):

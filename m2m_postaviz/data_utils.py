@@ -9,6 +9,33 @@ import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 
+def is_valid_dir(dirpath):
+    """Return True if directory exists or not
+    
+    Args:
+        dirpath (str): path of directory
+    Returns:
+        bool: True if dir exists, False otherwise
+    """
+    if os.path.isdir(dirpath) == True:
+        return True
+    else:
+        return False
+
+
+def is_valid_file(filepath):
+    """Return True if filepath exists
+    Args:
+        filepath (str): path to file
+    Returns:
+        bool: True if path exists, False otherwise
+    """
+    try:
+        open(filepath, 'r').close()
+        return True
+    except OSError:
+        return False
+
 
 def extract_tarfile(tar_file, outdir):
     file = tarfile.open(tar_file, "r:gz")
@@ -43,7 +70,7 @@ def benchmark_decorator(func):
 
     return wrapper
 
-
+@benchmark_decorator
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
@@ -336,7 +363,7 @@ def open_json(file_path):
     return file_data
 
 
-def open_tsv(file_name: str, rename_columns: bool = False, first_col: str = "smplID"):
+def open_tsv(file_name: str, convert_cpd_id: bool = False, rename_columns: bool = False, first_col: str = "smplID"):
     """Open tsv file as a pandas dataframe.
 
     Args:
@@ -350,15 +377,17 @@ def open_tsv(file_name: str, rename_columns: bool = False, first_col: str = "smp
     data = pd.read_csv(file_name, sep="\t")
     if rename_columns:
         data.columns.values[0] = first_col
-        data.columns.values[1:] = sbml_to_classic(data.columns.values[1:])
+    if convert_cpd_id:
+        data.set_index(first_col,inplace=True,drop=True)
+        data.columns = sbml_to_classic(data.columns.values)
     return data
 
 
 def get_scopes(file_name, path):
     for root, dirs, files in os.walk(path):
         if file_name in files:
-            iscope_dataframe = open_tsv(os.path.join(root, file_name), rename_columns=True)
-            return iscope_dataframe
+            scope_matrix = open_tsv(os.path.join(root, file_name), convert_cpd_id=True, rename_columns=True)
+            return scope_matrix
 
 
 def convert_to_dict(list_of_produced_cpd):
@@ -402,9 +431,9 @@ def convert_to_dataframe(all_file):
     return all_dataframe
 
 
-def sbml_to_classic(list_of_metabolites):
+def sbml_to_classic(compounds_list):
     uncoded = []
-    for coded in list_of_metabolites:
+    for coded in compounds_list:
         id, id_type, compart = cfci(coded)
         new_value = str(id)+"["+str(compart)+"]"
         uncoded.append(new_value)
@@ -430,20 +459,20 @@ def retrieve_all_sample_data(path):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
     Args:
-        path (str): Directory path given in CLI.
+        path (str): Directory path
 
     Returns:
         dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
-    data_by_sample = {}
+    all_sample_data = {}
     for sample in os.listdir(path):
         if os.path.isdir(os.path.join(path, sample)):
-            data_by_sample[sample] = {}
-            data_by_sample[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
-            data_by_sample[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
-            # data_by_sample[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-            # data_by_sample[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-    return data_by_sample
+            all_sample_data[sample] = {}
+            all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
+            # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
+            # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+    return all_sample_data
 
 
 def merge_metadata_with_df(main_dataframe, metadata):
@@ -462,6 +491,22 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     row *= abundance_value
     return row
 
+def build_main_dataframe(sample_data: dict):
+    all_series = []
+    for sample in sample_data.keys():
+        current_sample_df = sample_data[sample]["cscope"]
+        serie_index = current_sample_df.columns.values
+        serie_data = []
+        for i in range(len(serie_index)):
+            serie_data.append(1)
+        all_series.append(pd.Series(data=serie_data,index=serie_index,name=sample))
+
+    results = pd.concat(all_series, axis=1).T
+    results.fillna(0,inplace=True)
+    results = results.astype(int)
+    results.index.name = "smplID"
+    
+    return results
 
 def build_df(dir_path, metadata, abundance_path):
     """
@@ -476,48 +521,21 @@ def build_df(dir_path, metadata, abundance_path):
         sample_data: dict
         abundance_data: pandas dataframe
     """
-    data_by_sample = {}
-    sample_data = retrieve_all_sample_data(dir_path)
+    all_data = {}
 
-    ### Multi-Threading for building data, slower than vanilla (for NOW).
+    all_data["sample_data"] = retrieve_all_sample_data(dir_path)
 
-    # all_task = []
-    # data_by_sample = {}
-    # for sample_directory in os.listdir(dir_path):
-    #     if os.path.isdir(os.path.join(dir_path, sample_directory)):
-    #         task = threading.Thread(target=retrieve_sample_data,args=(os.path.join(dir_path, sample_directory), sample_directory, data_by_sample))
-    #         task.start()
-    #         all_task.append(task)
+    main_df = build_main_dataframe(all_data["sample_data"])
 
-    # for task in all_task:
-    #     task.join()
+    all_data["metadata"] = open_tsv(metadata)
 
-    ### Main dataframe and metadata dataframe. ###
-
-    global_data = {}
-    dir_files = get_files("comm_scopes.json", dir_path)
-    file_list = []
-    dir_list = []
-    for file, dir in dir_files:
-        file_list.append(file)
-        dir_list.append(dir)
-
-    all_df = convert_to_dataframe(file_list)
-
-    main_df = pd.concat(all_df, join="outer", ignore_index=True)
-    main_df = main_df.fillna(0)
-    main_df = main_df.astype(int)
-    main_df.insert(0, "smplID", dir_list)
-
-    global_data["metadata"] = open_tsv(metadata)
-
-    global_data["main_dataframe"] = main_df
+    all_data["main_dataframe"] = main_df
 
     abundance_file = open_tsv(abundance_path)
 
-    norm_abundance_data = relative_abundance_calc(abundance_file, sample_data)
+    norm_abundance_data = relative_abundance_calc(abundance_file, all_data["sample_data"])
 
-    return global_data, sample_data, norm_abundance_data
+    return all_data, norm_abundance_data
 
 
 def build_test_data(test_dir_path):
@@ -662,26 +680,32 @@ def add_factor_column(metadata, serie_id, factor_id):
 
 def get_number_of_producers(sample_data: dict, sample_id: str, compound: str):
     df = sample_data[sample_id]["cscope"]
+    if is_indexed_by_id(df):
+        df = df.reset_index()
     if compound in df.columns:
         try:
             return len(df.loc[df[compound] == 1]["smplID"])
         except Exception as e:
+            print(df.iloc[4,4])
             print(e, sample_id)
-            print(df[compound])
+            print(compound)
+            print(df.loc[df[compound] == 1])
+            quit()
     return 0
 
 def printall(*args):
     for arg in args:
         print(arg)
 
-def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, smpl_data: dict, metadata_label: list):
-    
+@benchmark_decorator
+def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, sample_data: dict, metadata_label: list):
+    main_dataframe.reset_index(inplace=True)
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
     main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
     nb_producer = []
     
     for index, row in main_dataframe.iterrows():
-        nb_producer.append(get_number_of_producers(smpl_data,row["smplID"],row["Compound"]))
+        nb_producer.append(get_number_of_producers(sample_data,row["smplID"],row["Compound"]))
 
     main_dataframe["Nb_producers"] = nb_producer
     metadata_dict = {}
