@@ -18,7 +18,7 @@ def del_list_duplicate(mylist: list):
 def run_shiny(data: DataStorage):
     ###
     producer_data = data.get_producer_long_dataframe()
-    cpd_prod_by_sample = data.get_compound_production_by_sample()
+    cpd_prod_by_sample = data.get_total_cpd_production_by_sample()
     taxonomic_data = data.get_taxonomic_data()
     long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()

@@ -70,7 +70,7 @@ def benchmark_decorator(func):
 
     return wrapper
 
-@benchmark_decorator
+
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
     1 with normalised bin quantity with x / x.sum(), the other without any transformation.
@@ -468,7 +468,7 @@ def retrieve_all_sample_data(path):
     for sample in os.listdir(path):
         if os.path.isdir(os.path.join(path, sample)):
             all_sample_data[sample] = {}
-            all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
             all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
             # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
             # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
@@ -490,6 +490,17 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     abundance_value = abundance_matrix.at[row.name, sample_id]
     row *= abundance_value
     return row
+
+
+def cscope_producers(sample_data: dict):
+    cpd_producers = {}
+    for sample in sample_data.keys():
+        df = sample_data[sample]["cscope"]
+        cpd_producers[sample] = {}
+        for cpd in df.columns:
+            cpd_vector = df[cpd].sum()
+            cpd_producers[sample][cpd] = cpd_vector
+    return cpd_producers
 
 def build_main_dataframe(sample_data: dict):
     all_series = []
@@ -525,11 +536,18 @@ def build_df(dir_path, metadata, abundance_path):
 
     all_data["sample_data"] = retrieve_all_sample_data(dir_path)
 
+    cpd_producers = cscope_producers(all_data["sample_data"])
+
+        
     main_df = build_main_dataframe(all_data["sample_data"])
 
     all_data["metadata"] = open_tsv(metadata)
 
     all_data["main_dataframe"] = main_df
+
+    producer_long_dataframe = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
+    
+    all_data["producers_long_format"] = producer_long_dataframe
 
     abundance_file = open_tsv(abundance_path)
 
@@ -656,7 +674,7 @@ def get_cpd_quantity(sample_data: dict, sample_id: str):
         results[cpd] = sample_data[sample_id]["cscope"][cpd].sum()
     return pd.Series(results, name=sample_id)
 
-def production_by_sample(main_df: pd.DataFrame, sample_data: dict):
+def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     prod_df = []
     if not is_indexed_by_id(main_df):
         main_df.set_index("smplID",inplace=True,drop=True)
@@ -678,41 +696,23 @@ def add_factor_column(metadata, serie_id, factor_id):
         new_col.append(str(metadata.at[value, factor_id]))
     return new_col
 
-def get_number_of_producers(sample_data: dict, sample_id: str, compound: str):
-    df = sample_data[sample_id]["cscope"]
-    if is_indexed_by_id(df):
-        df = df.reset_index()
-    if compound in df.columns:
-        try:
-            return len(df.loc[df[compound] == 1]["smplID"])
-        except Exception as e:
-            print(df.iloc[4,4])
-            print(e, sample_id)
-            print(compound)
-            print(df.loc[df[compound] == 1])
-            quit()
-    return 0
 
 def printall(*args):
     for arg in args:
         print(arg)
 
-@benchmark_decorator
-def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, sample_data: dict, metadata_label: list):
-    main_dataframe.reset_index(inplace=True)
+
+def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
+    main_dataframe = main_dataframe.reset_index()
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
     main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
-    nb_producer = []
-    
-    for index, row in main_dataframe.iterrows():
-        nb_producer.append(get_number_of_producers(sample_data,row["smplID"],row["Compound"]))
 
-    main_dataframe["Nb_producers"] = nb_producer
+    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers[row["smplID"]][row["Compound"]],axis=1) 
+
     metadata_dict = {}
     # Makes all metadata columns
     for factor in metadata_label:
         metadata_dict[factor] = add_factor_column(metadata, main_dataframe["smplID"], factor)
-
 
     main_dataframe = main_dataframe.assign(**metadata_dict)
     main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")

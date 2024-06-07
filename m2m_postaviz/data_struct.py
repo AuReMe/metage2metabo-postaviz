@@ -16,6 +16,7 @@ class DataStorage:
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
         self.metadata = data_container["metadata"]
+        self.cpd_producers_long = data_container["producers_long_format"]
 
         if taxonomic_data_container is not None:
             self.taxonomic_data = taxonomic_data_container
@@ -25,28 +26,26 @@ class DataStorage:
 
         self.normalised_abundance_matrix = norm_abundance_data
 
-        self.normalised_abundance_dataframe: pd.DataFrame = self.metadata.merge(
-            self.normalised_abundance_matrix.reset_index(), how="outer"
-        )
+        # self.normalised_abundance_dataframe: pd.DataFrame = self.get_main_metadata().merge(
+        #     self.normalised_abundance_matrix.reset_index(), how="outer"
+        # )
 
         self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
         self.list_of_factor = list(self.metadata.columns)
         self.factorize_metadata()
 
-        self.producer_long_dataframe = du.producer_long_format(
-            self.get_main_dataframe(), self.get_main_metadata(), self.get_all_sample_data(), self.get_metadata_label()
-        )
-        self.compound_production_by_sample = du.production_by_sample(self.get_main_dataframe(), self.get_all_sample_data())
+        
+        self.compound_production_by_sample = du.total_production_by_sample(self.get_main_dataframe(), self.get_all_sample_data())
 
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
 
-    def get_compound_production_by_sample(self, as_copy: bool = True):
+    def get_total_cpd_production_by_sample(self, as_copy: bool = True):
         return self.compound_production_by_sample.copy() if as_copy else self.compound_production_by_sample
 
     def get_producer_long_dataframe(self, as_copy: bool = True):
-        return self.producer_long_dataframe.copy() if as_copy else self.producer_long_dataframe
+        return self.cpd_producers_long.copy() if as_copy else self.cpd_producers_long
 
     def get_cpd_list(self):
         query = self.get_main_dataframe().columns.tolist()
