@@ -202,11 +202,10 @@ def run_shiny(data: DataStorage):
             else:
                 df = producer_data
                 column_value = "Nb_producers"
+                
             # import button input from shiny
-            y1 = input.box_inputy1()
-            x1 = input.box_inputx1()
-            x2 = input.box_inputx2()
-            # If none selected, all compound selected (default)
+            y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
+
             if len(y1) == 0:
                 return
             if x1 == "None":
@@ -223,7 +222,6 @@ def run_shiny(data: DataStorage):
                         color=x1,
                         title=f"Estimated amount of {*y1,} produced by {x1}.",
                     )
-
                     return fig
                 else:
                     conditionx2 = df[x2].unique()
@@ -231,25 +229,46 @@ def run_shiny(data: DataStorage):
 
                     fig = go.Figure()
 
-                    annotation_list = []
-                    for index in range(len(conditionx1)):
-                        if not index == 0:
-                            annotation_list.append([index - 1, index])
+                    has_unique_value = True
+
+                    # If one of the case has multiple y values --> boxplot
+                    for layer1 in conditionx1:
+                        for layer2 in conditionx2:
+                            if not len(df.loc[(df[x2] == layer2) & (df[x1] == layer1) & (df["Compound"].isin(y1))][column_value]) <= 1:
+                                has_unique_value = False
 
                     for condition2 in conditionx2:
-                        fig.add_trace(
-                            go.Box(
+                        if has_unique_value:
+                            fig.add_trace(
+                            go.Bar(
                                 x=df.loc[df[x2] == condition2][x1],
                                 y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
                                 name=str(condition2),
                             )
-                        )
-                        fig.update_layout(
-                            boxmode="group",
-                            hovermode="x",
-                            boxgroupgap=0.1,
-                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
-                        )
+                            )
+
+                        else:
+                            fig.add_trace(
+                                go.Box(
+                                    x=df.loc[df[x2] == condition2][x1],
+                                    y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
+                                    name=str(condition2),
+                                )
+                            )
+                        if has_unique_value:
+                            fig.update_layout(
+                                barmode="group",
+                                hovermode="x",
+                                bargroupgap=0.2,
+                                title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
+                            )
+                        else:
+                            fig.update_layout(
+                                boxmode="group",
+                                hovermode="x",
+                                boxgroupgap=0.1,
+                                title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
+                            )
                     return fig
 
         @render_widget
