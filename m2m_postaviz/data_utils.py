@@ -37,6 +37,16 @@ def is_valid_file(filepath):
         return False
 
 
+def get_bin_list(sample_data, mode: str = "cscope"):
+    bin_list = {}
+    for sample in sample_data.keys():
+        if is_indexed_by_id(sample_data[sample][mode]):
+            bin_list[sample] = sample_data[sample][mode].index.to_list()
+        else:
+            bin_list[sample] = sample_data[sample][mode]["smplID"].to_list()
+    return bin_list
+
+
 def extract_tarfile(tar_file, outdir):
     file = tarfile.open(tar_file, "r:gz")
 
@@ -519,7 +529,7 @@ def build_main_dataframe(sample_data: dict):
     
     return results
 
-def build_df(dir_path, metadata, abundance_path):
+def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -545,15 +555,20 @@ def build_df(dir_path, metadata, abundance_path):
 
     all_data["main_dataframe"] = main_df
 
-    producer_long_dataframe = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
+    all_data["producers_long_format"] = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
     
-    all_data["producers_long_format"] = producer_long_dataframe
 
-    abundance_file = open_tsv(abundance_path)
+    if abundance_path is not None:
+        abundance_file = open_tsv(abundance_path)
+        norm_abundance_data = relative_abundance_calc(abundance_file, all_data["sample_data"])
 
-    norm_abundance_data = relative_abundance_calc(abundance_file, all_data["sample_data"])
+    if taxonomic_path is not None:
+        raw_taxonomic_data = open_tsv(taxonomic_path)
+        long_taxonomic_data = taxonomic_data_long_format(
+                raw_taxonomic_data, get_bin_list(all_data["sample_data"]), all_data["metadata"].columns[1:],all_data["metadata"]
+            )
 
-    return all_data, norm_abundance_data
+    return all_data, norm_abundance_data, long_taxonomic_data
 
 
 def build_test_data(test_dir_path):
@@ -684,7 +699,7 @@ def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     
     final_df = pd.concat(prod_df, axis=1)
     final_df = final_df.fillna(0)
-    final_df = final_df.T    
+    final_df = final_df.T
 
     return final_df
 

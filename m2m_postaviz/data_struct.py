@@ -9,9 +9,10 @@ import m2m_postaviz.data_utils as du
 
 
 class DataStorage:
-    column_identifier = "smplID"
-
-    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, norm_abundance_data: pd.DataFrame = None,):
+    ID_VAR = "smplID"
+    HAS_TAXONOMIC_DATA : bool = False
+    HAS_ABUNDANCE_DATA : bool = False
+    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None,):
 
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
@@ -20,12 +21,11 @@ class DataStorage:
 
         if taxonomic_data_container is not None:
             self.taxonomic_data = taxonomic_data_container
-            self.long_taxo_data = du.taxonomic_data_long_format(
-                self.get_taxonomic_data(), self.get_bin_list(), self.get_metadata_label(), self.get_main_metadata()
-            )
+            self.HAS_TAXONOMIC_DATA = True
 
-        self.normalised_abundance_matrix = norm_abundance_data
-
+        if abundance_data is not None:
+            self.normalised_abundance_matrix = abundance_data
+            self.HAS_ABUNDANCE_DATA = True
         # self.normalised_abundance_dataframe: pd.DataFrame = self.get_main_metadata().merge(
         #     self.normalised_abundance_matrix.reset_index(), how="outer"
         # )
@@ -84,7 +84,7 @@ class DataStorage:
         return self.melted_abundance_dataframe.copy() if as_copy else self.melted_abundance_dataframe
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
-        return True if df.index.name == self.column_identifier else False
+        return True if df.index.name == self.ID_VAR else False
 
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
@@ -101,7 +101,7 @@ class DataStorage:
             if self.is_indexed(self.sample_data[sample][mode]):
                 bin_list[sample] = self.sample_data[sample][mode].index.to_list()
             else:
-                bin_list[sample] = self.sample_data[sample][mode][self.column_identifier].to_list()
+                bin_list[sample] = self.sample_data[sample][mode][self.ID_VAR].to_list()
         return bin_list
 
     def get_factor_len(self):
