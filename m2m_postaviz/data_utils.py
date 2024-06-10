@@ -677,7 +677,7 @@ def get_cpd_quantity(sample_data: dict, sample_id: str):
 def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     prod_df = []
     if not is_indexed_by_id(main_df):
-        main_df.set_index("smplID",inplace=True,drop=True)
+        main_df = main_df.set_index("smplID",drop=True)
 
     for sample in main_df.index:
         prod_df.append(get_cpd_quantity(sample_data, sample))
