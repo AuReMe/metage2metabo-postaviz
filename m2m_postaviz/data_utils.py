@@ -705,7 +705,7 @@ def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
 
 def add_factor_column(metadata, serie_id, factor_id):
     if not is_indexed_by_id(metadata):
-        metadata.set_index("smplID", inplace=True, drop=True)
+        metadata = metadata.set_index("smplID", drop=True)
     new_col = []
     for value in serie_id:
         new_col.append(str(metadata.at[value, factor_id]))
