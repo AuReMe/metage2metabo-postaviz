@@ -196,7 +196,7 @@ def run_shiny(data: DataStorage):
         def Abundance_boxplot():
             # Which type of dataframe
             with_abundance_data = input.ab_norm()
-            if with_abundance_data:
+            if with_abundance_data and data.HAS_ABUNDANCE_DATA:
                 df = data.get_melted_norm_ab_dataframe()
                 column_value = "Quantity"
             else:
