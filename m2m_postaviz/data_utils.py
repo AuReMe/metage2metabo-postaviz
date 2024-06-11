@@ -529,7 +529,7 @@ def build_main_dataframe(sample_data: dict):
     
     return results
 
-def build_df(dir_path, metadata, abundance_path, taxonomic_path):
+def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -699,7 +699,7 @@ def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     
     final_df = pd.concat(prod_df, axis=1)
     final_df = final_df.fillna(0)
-    final_df = final_df.T    
+    final_df = final_df.T
 
     return final_df
 

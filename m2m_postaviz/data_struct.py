@@ -9,7 +9,7 @@ import m2m_postaviz.data_utils as du
 
 
 class DataStorage:
-    column_identifier = "smplID"
+    ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
     def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None,):
@@ -81,7 +81,7 @@ class DataStorage:
         return self.melted_abundance_dataframe.copy() if as_copy else self.melted_abundance_dataframe
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
-        return True if df.index.name == self.column_identifier else False
+        return True if df.index.name == self.ID_VAR else False
 
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
@@ -98,7 +98,7 @@ class DataStorage:
             if self.is_indexed(self.sample_data[sample][mode]):
                 bin_list[sample] = self.sample_data[sample][mode].index.to_list()
             else:
-                bin_list[sample] = self.sample_data[sample][mode][self.column_identifier].to_list()
+                bin_list[sample] = self.sample_data[sample][mode][self.ID_VAR].to_list()
         return bin_list
 
     def get_factor_len(self):
