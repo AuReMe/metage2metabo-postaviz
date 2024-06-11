@@ -159,7 +159,9 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value]
+                        tested_data[layer_1] = {}
+                        tested_data[layer_1]["data"] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value]
+                        tested_data[layer_1]["n_data"] = len(df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value])
                     return du.stat_on_plot(tested_data, 1)
                 # Both axis have been selected
                 else:
@@ -169,8 +171,9 @@ def run_shiny(data: DataStorage):
                         for layer_2 in df[x2].unique():
                             selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2) & (df["Compound"].isin(y1))][column_value]
                             if len(selected_data) != 0:
-                                identifier = str(layer_2) + " (n=" + str(len(selected_data)) + ")"
-                                tested_data[layer_1][identifier] = selected_data
+                                tested_data[layer_1][layer_2] = {}
+                                tested_data[layer_1][layer_2]["data"] = selected_data
+                                tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
                     return du.stat_on_plot(tested_data, 2)
 
         @render_widget

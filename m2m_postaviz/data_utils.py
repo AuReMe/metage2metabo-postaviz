@@ -875,17 +875,20 @@ def stat_on_plot(data: dict, layer: int):
     """
     
     if layer == 1:
-        res = pd.DataFrame(columns=["pair 1","pair 2","test value","p value","Preview","Test"])
+        res = pd.DataFrame(columns=["group 1","n1","group 2","n2","test value","p value","Significance","Test"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
                 if pair_1 != pair_2:
-                    if not pair_2 in res["pair 1"].tolist():
-                        if len(data[pair_1]) != 0 and len(data[pair_2]) != 0:
-                            if len(data[pair_1]) == len(data[pair_2]):
-                                test_value, p_value = stats.wilcoxon(data[pair_1],data[pair_2])
+                    if not pair_2 in res["group 1"].tolist():
+                        pair1_data = data[pair_1]["data"]
+                        pair2_data = data[pair_2]["data"]
+                        n1, n2 = data[pair_1]["n_data"], data[pair_2]["n_data"]
+                        if len(pair1_data) != 0 and len(pair2_data) != 0:
+                            if len(pair1_data) == len(pair2_data):
+                                test_value, p_value = stats.wilcoxon(pair1_data,pair2_data)
                                 test_type = "Wilcoxon"
                             else:
-                                test_value, p_value = stats.mannwhitneyu(data[pair_1],data[pair_2])
+                                test_value, p_value = stats.mannwhitneyu(pair1_data,pair2_data)
                                 test_type = "Mann-Whitney"
                             if p_value >= 0.05:
                                 symbol = "ns"
@@ -895,24 +898,27 @@ def stat_on_plot(data: dict, layer: int):
                                 symbol = "**"
                             else:
                                 symbol = "***"
-                            new_row = {"pair 1": pair_1, "pair 2":pair_2, "test value": test_value, "p value": p_value,"Preview": symbol,"Test": test_type}
+                            new_row = {"group 1": pair_1,"n1": n1, "group 2":pair_2,"n2": n2, "test value": test_value, "p value": p_value,"Significance": symbol,"Test": test_type}
                             res.loc[len(res)] = new_row
 
     if layer == 2:
-        res = pd.DataFrame(columns=["Axis","pair 1","pair 2","test value","p value","Preview","Test"])
+        res = pd.DataFrame(columns=["Axis","group 1","n1","group 2","n2","test value","p value","Significance","Test"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
                 for pair_2 in data[current_layer].keys():
                     # Don't test same pair
                     if pair_1 != pair_2:
                         # Don't test pair already tested.
-                        if len(data[current_layer][pair_1]) != 0 and len(data[current_layer][pair_2]) != 0:
-                            if len(res.loc[(res["pair 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
-                                if len(data[current_layer][pair_1]) == len(data[current_layer][pair_2]):
-                                    test_value, p_value = stats.wilcoxon(data[current_layer][pair_1],data[current_layer][pair_2])
+                        pair1_data = data[current_layer][pair_1]["data"]
+                        pair2_data = data[current_layer][pair_2]["data"]
+                        n1, n2 = data[current_layer][pair_1]["n_data"], data[current_layer][pair_2]["n_data"]
+                        if len(pair1_data) != 0 and len(pair2_data) != 0:
+                            if len(res.loc[(res["group 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
+                                if len(pair1_data) == len(pair2_data):
+                                    test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                     test_type = "Wilcoxon"
                                 else:
-                                    test_value, p_value = stats.mannwhitneyu(data[current_layer][pair_1],data[current_layer][pair_2])
+                                    test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                     test_type = "Mann-Whitney"
                                 if p_value >= 0.05:
                                     symbol = "ns"
@@ -923,11 +929,13 @@ def stat_on_plot(data: dict, layer: int):
                                 else:
                                     symbol = "***"
                                 new_row = {"Axis":current_layer,
-                                        "pair 1": pair_1,
-                                            "pair 2": pair_2,
+                                            "group 1": pair_1,
+                                            "n1": n1,
+                                            "group 2": pair_2,
+                                            "n2": n2,
                                             "test value": test_value,
                                             "p value": p_value,
-                                            "Preview": symbol,
+                                            "Significance": symbol,
                                             "Test": test_type
                                             }
                                 res.loc[len(res)] = new_row
