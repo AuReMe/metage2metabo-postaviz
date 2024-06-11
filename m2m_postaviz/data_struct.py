@@ -20,15 +20,12 @@ class DataStorage:
         self.cpd_producers_long = data_container["producers_long_format"]
 
         if taxonomic_data_container is not None:
-            self.taxonomic_data = taxonomic_data_container
+            self.long_taxonomic_data = taxonomic_data_container
             self.HAS_TAXONOMIC_DATA = True
 
         if abundance_data is not None:
             self.normalised_abundance_matrix = abundance_data
             self.HAS_ABUNDANCE_DATA = True
-        # self.normalised_abundance_dataframe: pd.DataFrame = self.get_main_metadata().merge(
-        #     self.normalised_abundance_matrix.reset_index(), how="outer"
-        # )
 
         self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
@@ -66,10 +63,10 @@ class DataStorage:
         return self.metadata.copy() if as_copy else self.metadata
 
     def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.long_taxo_data.copy() if as_copy else self.long_taxo_data
+        return self.long_taxonomic_data.copy() if as_copy else self.long_taxonomic_data
 
-    def get_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.taxonomic_data.copy() if as_copy else self.taxonomic_data
+    # def get_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
+    #     return self.taxonomic_data.copy() if as_copy else self.taxonomic_data
 
     def get_norm_ab_matrix(self, as_copy: bool = True) -> pd.DataFrame:
         return self.normalised_abundance_matrix.copy() if as_copy else self.normalised_abundance_matrix

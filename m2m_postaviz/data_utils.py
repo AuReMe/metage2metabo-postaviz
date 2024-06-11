@@ -548,7 +548,6 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
 
     cpd_producers = cscope_producers(all_data["sample_data"])
 
-        
     main_df = build_main_dataframe(all_data["sample_data"])
 
     all_data["metadata"] = open_tsv(metadata)
@@ -556,11 +555,10 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     all_data["main_dataframe"] = main_df
 
     all_data["producers_long_format"] = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
-    
 
     if abundance_path is not None:
-        abundance_file = open_tsv(abundance_path)
-        norm_abundance_data = relative_abundance_calc(abundance_file, all_data["sample_data"])
+        raw_abundance_file = open_tsv(abundance_path)
+        norm_abundance_data = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
 
     if taxonomic_path is not None:
         raw_taxonomic_data = open_tsv(taxonomic_path)
@@ -569,6 +567,8 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
             )
 
     return all_data, norm_abundance_data, long_taxonomic_data
+
+
 
 
 def build_test_data(test_dir_path):
@@ -692,7 +692,7 @@ def get_cpd_quantity(sample_data: dict, sample_id: str):
 def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     prod_df = []
     if not is_indexed_by_id(main_df):
-        main_df.set_index("smplID",inplace=True,drop=True)
+        main_df = main_df.set_index("smplID",drop=True)
 
     for sample in main_df.index:
         prod_df.append(get_cpd_quantity(sample_data, sample))

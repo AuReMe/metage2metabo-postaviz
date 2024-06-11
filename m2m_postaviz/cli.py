@@ -25,6 +25,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
+parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
+
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
 parser.add_argument("-ut", help="Run postaviz unit test for dev only", action="store_true")
@@ -58,8 +60,9 @@ def main(args=None):
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata = arg_parser["metadata"]
-        taxonomy = arg_parser["taxonomy"]
-        global_data, norm_abundance_data, long_taxonomic_data = du.build_df(dir_path, metadata, abundance_path)
+        taxonomy_path = arg_parser["taxonomy"]
+        abundance_path = arg_parser["abundance"]
+        global_data, norm_abundance_data, long_taxonomic_data = du.build_df(dir_path, metadata, abundance_path, taxonomy_path)
 
     Data = DataStorage(global_data, long_taxonomic_data, norm_abundance_data)
     # Data.performance_benchmark()
