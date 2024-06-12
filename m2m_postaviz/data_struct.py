@@ -12,12 +12,14 @@ class DataStorage:
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
-    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None,):
+    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None):
 
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
         self.metadata = data_container["metadata"]
         self.cpd_producers_long = data_container["producers_long_format"]
+        self.total_production_dataframe = total_production_dataframe
+
 
         if taxonomic_data_container is not None:
             self.long_taxonomic_data = taxonomic_data_container
@@ -33,13 +35,16 @@ class DataStorage:
         self.factorize_metadata()
 
         
-        self.compound_production_by_sample = du.total_production_by_sample(self.get_main_dataframe(), self.get_all_sample_data())
+        self.compound_production_by_sample_and_compound = du.total_production_by_sample_and_compound(self.get_main_dataframe(), self.get_all_sample_data())
 
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
 
-    def get_total_cpd_production_by_sample(self, as_copy: bool = True):
-        return self.compound_production_by_sample.copy() if as_copy else self.compound_production_by_sample
+    def get_total_production_by_sample(self, as_copy: bool = True):
+        return self.total_production_dataframe.copy() if as_copy else self.total_production_dataframe
+
+    def get_total_cpd_production_by_sample_and_compound(self, as_copy: bool = True):
+        return self.compound_production_by_sample_and_compound.copy() if as_copy else self.compound_production_by_sample_and_compound
 
     def get_producer_long_dataframe(self, as_copy: bool = True):
         return self.cpd_producers_long.copy() if as_copy else self.cpd_producers_long
