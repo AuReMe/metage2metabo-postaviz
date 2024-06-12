@@ -888,11 +888,11 @@ def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interl
     return fig
 
 def stat_on_plot(data: dict, layer: int):
-    """Apply Mann-Whitney test on each pair of a dataframe.
+    """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
 
     Args:
         data (dict): Dictionnary of each pair to test.
-        layer (int): Number of layer to the dict. 2 is a double dict.
+        layer (int): Number of layer to the dict. 2 for nested dict.
 
     Returns:
         Dataframe: Dataframe of test's results.
@@ -926,6 +926,7 @@ def stat_on_plot(data: dict, layer: int):
                             res.loc[len(res)] = new_row
 
     if layer == 2:
+        error_log = []
         res = pd.DataFrame(columns=["Axis","group 1","n1","group 2","n2","test value","p value","Significance","Test"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
@@ -939,11 +940,20 @@ def stat_on_plot(data: dict, layer: int):
                         if len(pair1_data) != 0 and len(pair2_data) != 0:
                             if len(res.loc[(res["group 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
                                 if len(pair1_data) == len(pair2_data):
-                                    test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
-                                    test_type = "Wilcoxon"
+                                    try:
+                                        test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
+                                        test_type = "Wilcoxon"
+                                    except:
+                                        error_log.append([current_layer,pair_1,pair1_data],[current_layer,pair_2,pair2_data])
+                                        continue
                                 else:
-                                    test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
-                                    test_type = "Mann-Whitney"
+                                    try:
+                                        test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
+                                        test_type = "Mann-Whitney"
+                                    except:
+                                        error_log.append([current_layer,pair_1,pair1_data],[current_layer,pair_2,pair2_data])
+                                        continue
+
                                 if p_value >= 0.05:
                                     symbol = "ns"
                                 elif p_value >= 0.01:
