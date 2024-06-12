@@ -54,7 +54,7 @@ def main(args=None):
         metadata = TESTS_DIR + "refined_palleja_metadata.tsv"
         abundance_path = "~/Downloads/matrix_palleja.tsv"
         taxonomic_path = "~/Downloads/gtdbtk.summary_split.tsv"
-        global_data, norm_abundance_data, long_taxonomic_data = du.build_df(dir_path, metadata, abundance_path, taxonomic_path)
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path)
 
     else:
         arg_parser = vars(parser.parse_args())
@@ -62,9 +62,9 @@ def main(args=None):
         metadata = arg_parser["metadata"]
         taxonomy_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
-        global_data, norm_abundance_data, long_taxonomic_data = du.build_df(dir_path, metadata, abundance_path, taxonomy_path)
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomy_path)
 
-    Data = DataStorage(global_data, long_taxonomic_data, norm_abundance_data)
+    Data = DataStorage(global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe)
     # Data.performance_benchmark()
 
     sh.run_shiny(Data)

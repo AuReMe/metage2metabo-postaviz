@@ -6,6 +6,7 @@ from shiny import run_app
 from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
+import warnings
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -17,11 +18,13 @@ def del_list_duplicate(mylist: list):
 
 def run_shiny(data: DataStorage):
     ###
+    warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
     producer_data = data.get_producer_long_dataframe()
-    cpd_prod_by_sample = data.get_total_cpd_production_by_sample()
+    cpd_prod_by_sample = data.get_total_cpd_production_by_sample_and_compound()
     long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()
     list_of_cpd = data.get_cpd_list()
+    total_production = data.get_total_production_by_sample()
 
     metadata = data.get_main_metadata()
     main_dataframe = data.get_main_dataframe()
@@ -57,7 +60,8 @@ def run_shiny(data: DataStorage):
     producer_boxplot = ui.card(
         ui.layout_sidebar(
             ui.sidebar(
-                ui.input_selectize("prod_i3", "Choose compounds", list_of_cpd, multiple=False, selected=list_of_cpd[0]),
+                ui.input_select("prod_inputx1", "Label for X axis", factor_list),
+                ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Normalised data"),
             ),
             output_widget("producer_boxplot"),
@@ -259,16 +263,57 @@ def run_shiny(data: DataStorage):
         def producer_boxplot():
             with_normalised_data = input.prod_norm()
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                df = data.get_norm_ab_matrix()
+                flat_or_weighted_production = "Total_abundance_weighted"
             else:
-                df = cpd_prod_by_sample
+                flat_or_weighted_production = "Total_production"
 
-            # print(df)
-            cpd_choice = input.prod_i3()
-            if len(cpd_choice) == 0:
-                return
+            df = total_production
 
-            return px.bar(df, x=df.index, y=df[cpd_choice], title=f"Estimated production for compound: {cpd_choice}.")
+            inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
+        
+            if inputx1 == "None":
+                return px.bar(df, x="smplID", y=flat_or_weighted_production, title=f"Total production.")
+            elif inputx2 == "None":
+                if df.shape[0] == len(df[inputx1].unique()):
+                    return px.bar(df, x=inputx1 , y=flat_or_weighted_production, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                else:
+                    return px.box(df, x=inputx1 , y=flat_or_weighted_production, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+            else:
+                fig = go.Figure()
+
+                if df.shape[0] == len(df[inputx1].unique()):
+                    has_unique_value = True
+                else:
+                    has_unique_value = False
+
+                for x2 in df[inputx2].unique():
+                    if has_unique_value:
+                        fig.add_trace(
+                        go.Bar(x=df.loc[df[inputx2] == x2][inputx1],
+                                y=df.loc[df[inputx2] == x2][flat_or_weighted_production],
+                                name=str(x2),)
+                        )
+                    else:
+                        fig.add_trace(
+                        go.Box(x=df.loc[df[inputx2] == x2][inputx1],
+                                y=df.loc[df[inputx2] == x2][flat_or_weighted_production],
+                                name=str(x2),)
+                        )
+                    if has_unique_value:
+                        fig.update_layout(
+                                barmode="group",
+                                hovermode="x",
+                                bargroupgap=0.2,
+                                title=(f"Total compound production filtered by {inputx1} and {inputx2}"),
+                            )
+                    else:
+                        fig.update_layout(
+                                boxmode="group",
+                                hovermode="x",
+                                boxgroupgap=0.1,
+                                title=(f"Total compound production filtered by {inputx1} and {inputx2}"),
+                            )
+                return fig
 
         @render_widget
         def pcoa_plot():

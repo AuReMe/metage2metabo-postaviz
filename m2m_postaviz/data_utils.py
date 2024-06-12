@@ -104,17 +104,20 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
-
-        sample_matrix = sample_matrix.apply(lambda row: row.astype(float) * abundance_matrix_normalised.at[row.name, sample], axis=1)
-        sample_matrix = sum_squash_table(sample_matrix, sample)
+        
+        sample_matrix = sample_matrix.apply(lambda row: row * abundance_matrix_normalised.at[row.name, sample], axis=1)
+        # print(sample_matrix)
+        # print(type(sample_matrix))
+        sample_matrix = sample_matrix.apply(lambda col: col.to_numpy().sum(), axis=0)
+        sample_matrix.name = sample
 
         smpl_norm_abundance.append(sample_matrix)
         smpl_norm_index.append(str(sample))
 
-    normalized_abundance = pd.concat(smpl_norm_abundance)
+    normalized_abundance = pd.concat(smpl_norm_abundance,axis=1)
     normalized_abundance.fillna(0, inplace=True)
-    normalized_abundance.insert(0, "smplID", smpl_norm_index)
-    normalized_abundance.set_index("smplID", inplace=True, drop=True)
+    normalized_abundance = normalized_abundance.T
+    normalized_abundance.index.name = "smplID"
 
     return normalized_abundance
 
@@ -131,13 +134,9 @@ def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
         Dataframe: Dataframe
     """
     # Prend la nouvelle matrice d'abondance du sample
-    new_dataframe = {}
-    # Flip avec métabolites en index et bin en column
-    abundance_table = abundance_table.T
-    for index, row in abundance_table.iterrows():
-        # Pour chaque métabolites, multiplie le total crée par l'ensemble des bin de l'échantillon
-        new_dataframe[index] = row.values.sum()
-    return pd.DataFrame(new_dataframe, index=[sample_id])
+    results = abundance_table.apply(lambda col: col.sum(), axis=0)
+    results.name = sample_id
+    return results
 
 
 def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope", with_count: bool = True):
@@ -566,7 +565,9 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
                 raw_taxonomic_data, get_bin_list(all_data["sample_data"]), all_data["metadata"].columns[1:],all_data["metadata"]
             )
 
-    return all_data, norm_abundance_data, long_taxonomic_data
+    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], norm_abundance_data)
+
+    return all_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe
 
 
 
@@ -689,7 +690,7 @@ def get_cpd_quantity(sample_data: dict, sample_id: str):
         results[cpd] = sample_data[sample_id]["cscope"][cpd].sum()
     return pd.Series(results, name=sample_id)
 
-def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
+def total_production_by_sample_and_compound(main_df: pd.DataFrame, sample_data: dict):
     prod_df = []
     if not is_indexed_by_id(main_df):
         main_df = main_df.set_index("smplID",drop=True)
@@ -700,7 +701,6 @@ def total_production_by_sample(main_df: pd.DataFrame, sample_data: dict):
     final_df = pd.concat(prod_df, axis=1)
     final_df = final_df.fillna(0)
     final_df = final_df.T
-
     return final_df
 
 def add_factor_column(metadata, serie_id, factor_id):
@@ -711,6 +711,30 @@ def add_factor_column(metadata, serie_id, factor_id):
         new_col.append(str(metadata.at[value, factor_id]))
     return new_col
 
+def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
+    boolean_production_df = main_dataframe
+    if not is_indexed_by_id(boolean_production_df):
+        boolean_production_df.set_index("smplID",inplace=True,drop=True)
+    boolean_production_df["Total_production"] = boolean_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
+    results = pd.DataFrame(boolean_production_df["Total_production"])
+
+    if abundance_matrix is not None:
+        abundance_production_df = abundance_matrix
+        if not is_indexed_by_id(boolean_production_df):
+            abundance_production_df.set_index("smplID",inplace=True,drop=True)
+        abundance_production_df["Total_abundance_weighted"] = abundance_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
+        abundance_production_df = abundance_production_df["Total_abundance_weighted"]
+
+        results = pd.concat([results,abundance_production_df], axis=1)
+    metadata_dict = {}
+    # Makes all metadata columns
+    for factor in metadata_dataframe.columns[1:]:
+        metadata_dict[factor] = add_factor_column(metadata_dataframe, boolean_production_df.index, factor)
+
+    results = results.assign(**metadata_dict)
+    results.reset_index(inplace=True)
+    results["smplID"] = results["smplID"].astype("category")
+    return results
 
 def printall(*args):
     for arg in args:
@@ -722,7 +746,7 @@ def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, c
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
     main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
 
-    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers[row["smplID"]][row["Compound"]],axis=1) 
+    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers[row["smplID"]][row["Compound"]],axis=1)
 
     metadata_dict = {}
     # Makes all metadata columns
