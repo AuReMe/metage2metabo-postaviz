@@ -581,32 +581,36 @@ def build_test_data(test_dir_path):
     Returns:
         dict, dict, pd.dataframe: 2 dict, 1 pandas dataframe
     """
-    global_data = {}
-    sample_data = {}
+    all_data = {}
+    all_data["sample_data"] = {}
     for file in os.listdir(test_dir_path):
         filename = os.fsdecode(file)
         if not filename.endswith(".tsv"):
             continue
         if not filename.startswith("sample"):
             if filename == "main_table.tsv":
-                global_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path, filename))
+                all_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path, filename))
             if filename == "metadata_table.tsv":
-                global_data["metadata"] = open_tsv(os.path.join(test_dir_path, filename))
+                all_data["metadata"] = open_tsv(os.path.join(test_dir_path, filename))
             if filename == "abundance_table.tsv":
                 abundance_table = open_tsv(os.path.join(test_dir_path, filename))
         else:
             current_file = os.path.splitext(filename)[0]
             current_file = current_file.split("_")
-            sample_data[current_file[2]] = {}
+            all_data["sample_data"][current_file[2]] = {}
 
     for sample_file in os.listdir(test_dir_path):
         filename = os.fsdecode(sample_file)
         if filename.startswith("sample"):
             current_file = os.path.splitext(filename)[0]
             current_file = current_file.split("_")
-            sample_data[current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path, filename))
+            all_data["sample_data"][current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path, filename))
 
-    return global_data, sample_data, abundance_table
+
+    norm_abundance_data = relative_abundance_calc(abundance_table, all_data["sample_data"])
+    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], norm_abundance_data)
+
+    return all_data, norm_abundance_data, None,total_production_dataframe
 
 
 def produce_test_data(global_data, sample_data, abundance_data):
@@ -740,7 +744,6 @@ def printall(*args):
     for arg in args:
         print(arg)
 
-
 def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
     main_dataframe = main_dataframe.reset_index()
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
@@ -757,7 +760,6 @@ def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, c
     main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
     
     return main_dataframe
-
 
 def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
     """Adds notations giving the p-value between two box plot data (t-test two-sided comparison)
@@ -899,7 +901,8 @@ def stat_on_plot(data: dict, layer: int):
     """
     
     if layer == 1:
-        res = pd.DataFrame(columns=["group 1","n1","group 2","n2","test value","p value","Significance","Test"])
+        error_log = []
+        res = pd.DataFrame(columns=["group 1","n1","group 2","n2","test value","p_value","Significance","Test"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
                 if pair_1 != pair_2:
@@ -909,11 +912,19 @@ def stat_on_plot(data: dict, layer: int):
                         n1, n2 = data[pair_1]["n_data"], data[pair_2]["n_data"]
                         if len(pair1_data) != 0 and len(pair2_data) != 0:
                             if len(pair1_data) == len(pair2_data):
-                                test_value, p_value = stats.wilcoxon(pair1_data,pair2_data)
-                                test_type = "Wilcoxon"
+                                try:
+                                    test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
+                                    test_type = "Wilcoxon"
+                                except:
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data])
+                                    continue
                             else:
-                                test_value, p_value = stats.mannwhitneyu(pair1_data,pair2_data)
-                                test_type = "Mann-Whitney"
+                                try:
+                                    test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
+                                    test_type = "Mann-Whitney"
+                                except:
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data])
+                                    continue
                             if p_value >= 0.05:
                                 symbol = "ns"
                             elif p_value >= 0.01:
@@ -922,36 +933,38 @@ def stat_on_plot(data: dict, layer: int):
                                 symbol = "**"
                             else:
                                 symbol = "***"
-                            new_row = {"group 1": pair_1,"n1": n1, "group 2":pair_2,"n2": n2, "test value": test_value, "p value": p_value,"Significance": symbol,"Test": test_type}
+                            new_row = {"group 1": pair_1,"n1": n1, "group 2":pair_2,"n2": n2, "test value": test_value, "p_value": p_value,"Significance": symbol,"Test": test_type}
                             res.loc[len(res)] = new_row
 
     if layer == 2:
         error_log = []
-        res = pd.DataFrame(columns=["Axis","group 1","n1","group 2","n2","test value","p value","Significance","Test"])
+        res = pd.DataFrame(columns=["Axis","group 1","n1","group 2","n2","test value","p_value","Significance","Test"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
                 for pair_2 in data[current_layer].keys():
                     # Don't test same pair
                     if pair_1 != pair_2:
-                        # Don't test pair already tested.
                         pair1_data = data[current_layer][pair_1]["data"]
                         pair2_data = data[current_layer][pair_2]["data"]
                         n1, n2 = data[current_layer][pair_1]["n_data"], data[current_layer][pair_2]["n_data"]
+                        # Don't test if no value
                         if len(pair1_data) != 0 and len(pair2_data) != 0:
+                            # Don't test pair already tested.
                             if len(res.loc[(res["group 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
+                                # If len of both pair is same value then Wilcoxon, else Mann Whitney
                                 if len(pair1_data) == len(pair2_data):
                                     try:
                                         test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                         test_type = "Wilcoxon"
                                     except:
-                                        error_log.append([current_layer,pair_1,pair1_data],[current_layer,pair_2,pair2_data])
+                                        error_log.append([current_layer,pair_1,pair1_data,current_layer,pair_2,pair2_data])
                                         continue
                                 else:
                                     try:
                                         test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                         test_type = "Mann-Whitney"
                                     except:
-                                        error_log.append([current_layer,pair_1,pair1_data],[current_layer,pair_2,pair2_data])
+                                        error_log.append([current_layer,pair_1,pair1_data,current_layer,pair_2,pair2_data])
                                         continue
 
                                 if p_value >= 0.05:
@@ -968,9 +981,11 @@ def stat_on_plot(data: dict, layer: int):
                                             "group 2": pair_2,
                                             "n2": n2,
                                             "test value": test_value,
-                                            "p value": p_value,
+                                            "p_value": p_value,
                                             "Significance": symbol,
                                             "Test": test_type
                                             }
                                 res.loc[len(res)] = new_row
+    print("At least: ",len(error_log)," errors occured.")
+    print(error_log)
     return res

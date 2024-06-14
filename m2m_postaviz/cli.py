@@ -29,7 +29,6 @@ parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
 
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
-parser.add_argument("-ut", help="Run postaviz unit test for dev only", action="store_true")
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SRC_DIR))
@@ -46,8 +45,8 @@ def main(args=None):
             print("No data_test/ directory found.")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
         data_test_dir = os.path.join(TESTS_DIR, "data_test/")
-        global_data, sample_data, norm_abundance_data = du.build_test_data(data_test_dir)
-        taxonomic_data = du.open_tsv(TESTS_DIR + "taxonomic_database.tsv")
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_test_data(data_test_dir)
+        # taxonomic_data = du.open_tsv(TESTS_DIR + "taxonomic_database.tsv")
 
     elif arg_parser.dev:
         dir_path = "/home/lbrindel/output/palleja/"
