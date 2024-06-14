@@ -13,7 +13,10 @@ requires-python = ">= 3.8"
 dependencies = [
   'pandas',
   'scipy',
-  'padmet'
+  'padmet',
+  'plotly',
+  'shiny',
+  'shinywidgets'
 ]
 
 [project.scripts]
