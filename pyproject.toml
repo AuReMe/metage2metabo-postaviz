@@ -11,9 +11,12 @@ description = "Post-analysis and visualization of metage2metabo's results"
 license = {text = "LGPL-3.0-or-later"}
 requires-python = ">= 3.8"
 dependencies = [
-  'pandas',
-  'scipy',
-  'padmet'
+  pandas>=1.5.3
+  scipy>=1.10.1
+  padmet>=5.0.1
+  plotly>=5.18.0
+  shiny>=0.6.0
+  shinywidgets>=0.2.3
 ]
 
 [project.scripts]

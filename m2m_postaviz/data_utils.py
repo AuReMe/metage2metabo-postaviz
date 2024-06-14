@@ -399,15 +399,6 @@ def get_scopes(file_name, path):
             return scope_matrix
 
 
-def convert_to_dict(list_of_produced_cpd):
-    decoded_cpd_list = sbml_to_classic(list_of_produced_cpd)
-    data = {}
-    for i in decoded_cpd_list:
-        value = [1]
-        data[i] = value
-    return data
-
-
 def is_indexed_by_id(df: pd.DataFrame):
     if df.index.name == "smplID":
         return True
@@ -430,14 +421,6 @@ def get_columns_index(df: pd.DataFrame, key_list):
     for k in key_list:
         index_list.append(df.columns.get_loc(k))
     return index_list
-
-
-def convert_to_dataframe(all_file):
-    all_dataframe = []
-    for file in all_file:
-        current_file = open_json(file)["com_scope"]
-        all_dataframe.append(pd.DataFrame.from_dict(convert_to_dict(current_file)))
-    return all_dataframe
 
 
 def sbml_to_classic(compounds_list):
@@ -570,63 +553,6 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     return all_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe
 
 
-
-
-def build_test_data(test_dir_path):
-    """Load, open and return the test data to be used by the DataStorage object.
-
-    Args:
-        test_dir_path (_type_): Path to the archive
-
-    Returns:
-        dict, dict, pd.dataframe: 2 dict, 1 pandas dataframe
-    """
-    all_data = {}
-    all_data["sample_data"] = {}
-    for file in os.listdir(test_dir_path):
-        filename = os.fsdecode(file)
-        if not filename.endswith(".tsv"):
-            continue
-        if not filename.startswith("sample"):
-            if filename == "main_table.tsv":
-                all_data["main_dataframe"] = open_tsv(os.path.join(test_dir_path, filename))
-            if filename == "metadata_table.tsv":
-                all_data["metadata"] = open_tsv(os.path.join(test_dir_path, filename))
-            if filename == "abundance_table.tsv":
-                abundance_table = open_tsv(os.path.join(test_dir_path, filename))
-        else:
-            current_file = os.path.splitext(filename)[0]
-            current_file = current_file.split("_")
-            all_data["sample_data"][current_file[2]] = {}
-
-    for sample_file in os.listdir(test_dir_path):
-        filename = os.fsdecode(sample_file)
-        if filename.startswith("sample"):
-            current_file = os.path.splitext(filename)[0]
-            current_file = current_file.split("_")
-            all_data["sample_data"][current_file[2]][current_file[1]] = open_tsv(os.path.join(test_dir_path, filename))
-
-
-    norm_abundance_data = relative_abundance_calc(abundance_table, all_data["sample_data"])
-    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], norm_abundance_data)
-
-    return all_data, norm_abundance_data, None,total_production_dataframe
-
-
-def produce_test_data(global_data, sample_data, abundance_data):
-    global_data["main_dataframe"].to_csv("/home/lbrindel/output/postaviz/data_test/main_table.tsv", sep="\t", index=False)
-    global_data["metadata"].to_csv("/home/lbrindel/output/postaviz/data_test/metadata_table.tsv", sep="\t", index=False)
-    abundance_data.to_csv("/home/lbrindel/output/postaviz/data_test/abundance_table.tsv", sep="\t", index=False)
-    for sample in sample_data.keys():
-        sample_data[sample]["cscope"].to_csv(
-            "/home/lbrindel/output/postaviz/data_test/sample_cscope_" + sample + ".tsv", sep="\t", index=False
-        )
-        sample_data[sample]["iscope"].to_csv(
-            "/home/lbrindel/output/postaviz/data_test/sample_iscope_" + sample + ".tsv", sep="\t", index=False
-        )
-    quit()
-
-
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     results = {}
     value = 1
@@ -637,7 +563,6 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
             if with_quantity:
                 results[model] += value
     return pd.Series(results)
-
 
 def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
     rank = "s"
@@ -655,7 +580,6 @@ def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
     matrix.reset_index(inplace=True)
     # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
     return matrix
-
 
 def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, metadata_label: list, metadata: pd.DataFrame):
     """
@@ -682,7 +606,6 @@ def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, 
     df["Nb_taxon"] = df["smplID"].apply(lambda row: search_long_format(row, df))
 
     return df
-
 
 def search_long_format(id_value, df):
     value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
