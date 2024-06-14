@@ -14,6 +14,11 @@ stages:
 test:
   stage: test
   script:
-    - tox -e py39
+    - tox -e clean,py39,report
+  artifacts:
+    paths:
+      - htmlcov/
+    reports:
+      junit: toxtests.xml
 
 
