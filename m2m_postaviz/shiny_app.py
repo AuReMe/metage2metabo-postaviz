@@ -207,7 +207,7 @@ def run_shiny(data: DataStorage):
                     tested_data = {}
                     for layer_1 in df[x1].unique():
                         tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = df.loc[df[x1] == layer_1][column_value]
+                        tested_data[layer_1]["data"] = df.loc[df[x1] == layer_1,column_value].values
                         tested_data[layer_1]["n_data"] = len(df.loc[df[x1] == layer_1][column_value])
                     return du.stat_on_plot(tested_data, 1)
                 # Both axis have been selected
@@ -221,8 +221,6 @@ def run_shiny(data: DataStorage):
                                 tested_data[layer_1][layer_2] = {}
                                 tested_data[layer_1][layer_2]["data"] = selected_data.values
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-                    if x1 == "Patient" and x2 == "Days":
-                        print(tested_data)
                     return du.stat_on_plot(tested_data, 2)
                 
         @render_widget
@@ -326,13 +324,13 @@ def run_shiny(data: DataStorage):
             else:
                 fig = go.Figure()
 
-                has_unique_value = False
+                has_unique_value = True
 
                 # If one of the case has one y values --> barplot else --> boxplot
                 for layer1 in df[inputx1].unique():
                     for layer2 in df[inputx2].unique():   
-                        if not len(df.loc[(df[inputx2] == layer2) & (df[inputx1] == layer1)][column_value]) == 1:
-                            has_unique_value = True
+                        if len(df.loc[(df[inputx2] == layer2) & (df[inputx1] == layer1)][column_value]) > 1:
+                            has_unique_value = False
 
                 for x2 in df[inputx2].unique():
                     if has_unique_value:
