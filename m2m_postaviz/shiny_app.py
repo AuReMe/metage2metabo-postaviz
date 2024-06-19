@@ -4,6 +4,7 @@ from shiny import App
 from shiny import render
 from shiny import run_app
 from shiny import ui
+from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
@@ -66,15 +67,22 @@ def run_shiny(data: DataStorage):
             ui.sidebar(
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
-                ui.input_checkbox("prod_norm", "Normalised data"),
+                ui.input_checkbox("prod_norm", "Abundance data"),
             ),
             output_widget("producer_boxplot"),
             ui.output_data_frame("production_test_dataframe")
         )
     )
 
-    main_table = ui.card(ui.output_data_frame("dev_table"))  # , ui.output_data_frame("main_table"))
-    summary_table = ui.card(ui.output_data_frame("summary_table"))
+    metadata_table = ui.card(
+        ui.row(
+                ui.input_select("metadata_factor", "Current column: ", metadata_label, selected=metadata_label[0]),
+                ui.input_select("metadata_dtype", "dtype: ", ["category", "str", "int", "float"]),
+                ui.input_action_button("dtype_change", "Update")
+               ),
+        ui.output_text_verbatim("update_metadata_log", True),
+        ui.output_data_frame("metadata_table")
+        )
 
     main_panel_dataframe = ui.card(
         ui.row(
@@ -91,8 +99,8 @@ def run_shiny(data: DataStorage):
         ui.navset_tab(
             ui.nav("Exploration", producer_boxplot, abundance_boxplot, taxonomy_boxplot),
             ui.nav(
-                "Dev mod",
-                main_table,
+                "Metadata",
+                metadata_table,
                 # dev_table
             ),
             ui.nav(
@@ -377,8 +385,26 @@ def run_shiny(data: DataStorage):
             return render.DataGrid(data.get_long_taxonomic_data())
 
         @render.data_frame
-        def main_table():
-            return render.DataGrid(data.abundance_matrix)
+        def metadata_table():
+            df = data.get_main_metadata()
+            # df = du.get_df_dtype(df)
+            # print(df)
+            return df
+        
+        @render.text()
+        @reactive.event(input.dtype_change)
+        def update_metadata_log():
+            text = "No changes applied."
+            factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
+            df = data.get_main_metadata()
+            try:
+                df[factor_choice] = df[factor_choice].astype(dtype_choice)
+                text = f"Column {factor_choice} changed to {dtype_choice}."
+                data.set_main_metadata(df)
+            except ValueError as e:
+                text = f"Cannot perform changes, {e}" 
+            return text
+        
 
     app = App(app_ui, server)
     run_app(app=app, launch_browser=False, reload_dirs="./")
