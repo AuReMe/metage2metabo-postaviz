@@ -20,7 +20,6 @@ class DataStorage:
         self.cpd_producers_long = data_container["producers_long_format"]
         self.total_production_dataframe = total_production_dataframe
 
-
         if taxonomic_data_container is not None:
             self.long_taxonomic_data = taxonomic_data_container
             self.HAS_TAXONOMIC_DATA = True
@@ -66,6 +65,9 @@ class DataStorage:
 
     def get_main_metadata(self, as_copy: bool = True) -> pd.DataFrame:
         return self.metadata.copy() if as_copy else self.metadata
+
+    def set_main_metadata(self, new_metadata):
+        self.metadata = new_metadata
 
     def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
         return self.long_taxonomic_data.copy() if as_copy else self.long_taxonomic_data
@@ -171,6 +173,9 @@ class DataStorage:
         # Need the matrix version for distance calculation.
         if not self.is_indexed(main_df):
             main_df.set_index("smplID", inplace=True)
+
+        if self.is_indexed(df):
+            df.reset_index(inplace=True)
 
         # Add metadata columns with the accurate value in temporary dataframe.
         for col in metadata.columns:

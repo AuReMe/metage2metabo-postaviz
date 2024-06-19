@@ -825,11 +825,11 @@ def stat_on_plot(data: dict, layer: int):
     
     if layer == 1:
         error_log = []
-        res = pd.DataFrame(columns=["group 1","n1","group 2","n2","test value","p_value","Significance","Test"])
+        res = pd.DataFrame(columns=["group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
                 if pair_1 != pair_2:
-                    if not pair_2 in res["group 1"].tolist():
+                    if not pair_2 in res["group_1"].tolist():
                         pair1_data = data[pair_1]["data"]
                         pair2_data = data[pair_2]["data"]
                         n1, n2 = data[pair_1]["n_data"], data[pair_2]["n_data"]
@@ -856,12 +856,12 @@ def stat_on_plot(data: dict, layer: int):
                                 symbol = "**"
                             else:
                                 symbol = "***"
-                            new_row = {"group 1": pair_1,"n1": n1, "group 2":pair_2,"n2": n2, "test value": test_value, "p_value": p_value,"Significance": symbol,"Test": test_type}
+                            new_row = {"group_1": pair_1,"n1": n1, "group_2":pair_2,"n2": n2, "test_value": test_value, "p_value": p_value,"Significance": symbol,"Test": test_type}
                             res.loc[len(res)] = new_row
 
     if layer == 2:
         error_log = []
-        res = pd.DataFrame(columns=["Axis","group 1","n1","group 2","n2","test value","p_value","Significance","Test"])
+        res = pd.DataFrame(columns=["Axis","group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
         for current_layer in data.keys():
             for pair_1 in data[current_layer].keys():
                 for pair_2 in data[current_layer].keys():
@@ -873,7 +873,7 @@ def stat_on_plot(data: dict, layer: int):
                         # Don't test if no value
                         if len(pair1_data) != 0 and len(pair2_data) != 0:
                             # Don't test pair already tested.
-                            if len(res.loc[(res["group 1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
+                            if len(res.loc[(res["group_1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
                                 # If len of both pair is same value then Wilcoxon, else Mann Whitney
                                 if len(pair1_data) == len(pair2_data):
                                     try:
@@ -899,11 +899,11 @@ def stat_on_plot(data: dict, layer: int):
                                 else:
                                     symbol = "***"
                                 new_row = {"Axis":current_layer,
-                                            "group 1": pair_1,
+                                            "group_1": pair_1,
                                             "n1": n1,
-                                            "group 2": pair_2,
+                                            "group_2": pair_2,
                                             "n2": n2,
-                                            "test value": test_value,
+                                            "test_value": test_value,
                                             "p_value": p_value,
                                             "Significance": symbol,
                                             "Test": test_type
@@ -911,4 +911,13 @@ def stat_on_plot(data: dict, layer: int):
                                 res.loc[len(res)] = new_row
     print("At least: ",len(error_log)," errors occured.")
     print(error_log)
+    return res
+
+def get_df_dtype(df: pd.DataFrame):
+    res = {}
+    for col in df.columns:
+        res[col] = df[col].dtype
+    print(res)
+    res = pd.DataFrame(res)
+    print(res)
     return res
