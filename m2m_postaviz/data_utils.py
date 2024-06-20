@@ -913,11 +913,24 @@ def stat_on_plot(data: dict, layer: int):
     print(error_log)
     return res
 
-def get_df_dtype(df: pd.DataFrame):
-    res = {}
-    for col in df.columns:
-        res[col] = df[col].dtype
-    print(res)
-    res = pd.DataFrame(res)
-    print(res)
-    return res
+def save_dataframe(df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
+    path_to_save = os.path.join(os.path.expanduser('~'), 'Downloads')
+    final_file_path = path_to_save + "/" + file_name + "." + extension
+    if os.path.isfile(final_file_path):
+        final_file_path = check_and_rename(final_file_path)
+
+    df_to_save.to_csv(final_file_path)
+    print(f"Saved in {final_file_path}")
+    return
+    
+def check_and_rename(file_path: str, add: int = 0) -> str:
+    original_file_path = file_path
+    print(original_file_path)
+    if add != 0:
+        file_name, extension = os.path.splitext(file_path)
+        file_name = file_name + "_" + str(add)
+        file_path = file_name + extension
+    if not os.path.isfile(file_path):
+        return file_path
+    else:
+        return check_and_rename(original_file_path, add + 1)

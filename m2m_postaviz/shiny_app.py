@@ -36,6 +36,8 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_metadata_label()
 
+    all_dataframe = {}
+
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
     abundance_boxplot =   ui.card(
@@ -68,6 +70,7 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
+                ui.input_action_button("save_producer_test", "Save dataframe")
             ),
             output_widget("producer_boxplot"),
             ui.output_data_frame("production_test_dataframe")
@@ -201,11 +204,8 @@ def run_shiny(data: DataStorage):
                 column_value = "Total_abundance_weighted"
             else:
                 column_value = "Total_production"
-
             df = total_production
-
             x1, x2 = input.prod_inputx1(), input.prod_inputx2()
-
             # No input selected
             if x1 == "None":
                 return 
@@ -217,7 +217,9 @@ def run_shiny(data: DataStorage):
                         tested_data[layer_1] = {}
                         tested_data[layer_1]["data"] = df.loc[df[x1] == layer_1,column_value].values
                         tested_data[layer_1]["n_data"] = len(df.loc[df[x1] == layer_1][column_value])
-                    return du.stat_on_plot(tested_data, 1)
+                    res = du.stat_on_plot(tested_data, 1)
+                    all_dataframe["producer_test_df"] = res
+                    return res
                 # Both axis have been selected
                 else:
                     tested_data = {}
@@ -229,8 +231,19 @@ def run_shiny(data: DataStorage):
                                 tested_data[layer_1][layer_2] = {}
                                 tested_data[layer_1][layer_2]["data"] = selected_data.values
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-                    return du.stat_on_plot(tested_data, 2)
+                    res = du.stat_on_plot(tested_data, 2)
+                    all_dataframe["producer_test_df"] = res
+                    return res
                 
+        @reactive.Effect
+        @reactive.event(input.save_producer_test)
+        def save_file():
+            if bool(all_dataframe):
+                if all_dataframe["producer_test_df"] is not None:
+                    res = production_test_dataframe()
+                    du.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
+            return
+
         @render_widget
         def Abundance_boxplot():
             # Which type of dataframe
