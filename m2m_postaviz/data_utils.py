@@ -3,6 +3,7 @@ import os
 import os.path
 import tarfile
 import time
+import sys
 
 import numpy as np
 import pandas as pd
@@ -524,6 +525,12 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         sample_data: dict
         abundance_data: pandas dataframe
     """
+    if not is_valid_dir(dir_path):
+        sys.exit(1)
+    
+    if not is_valid_file(metadata):
+        sys.exit(1)
+
     all_data = {}
 
     all_data["sample_data"] = retrieve_all_sample_data(dir_path)
