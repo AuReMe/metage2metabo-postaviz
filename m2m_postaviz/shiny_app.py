@@ -36,7 +36,7 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_metadata_label()
 
-    all_dataframe = {}
+    all_dataframe = {"producer_test_df": None, "producer_plot_df": None, "abundance_test_df": None, "abundance_plot_df": None}
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -47,7 +47,8 @@ def run_shiny(data: DataStorage):
                     ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
                     ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
                     ui.input_checkbox("ab_norm", "With normalised data"),
-                    ui.input_action_button("save_abundance_test", "Save dataframe"),
+                    ui.input_action_button("save_abundance_plot", "Save plot dataframe"),
+                    ui.input_action_button("save_abundance_test", "Save test dataframe"),
             ),
         output_widget("Abundance_boxplot"), 
         ui.output_data_frame("abundance_test_dataframe")
@@ -71,7 +72,8 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
-                ui.input_action_button("save_producer_test", "Save dataframe")
+                ui.input_action_button("save_producer_plot", "Save plot dataframe"),
+                ui.input_action_button("save_producer_test", "Save test dataframe")
             ),
             output_widget("producer_boxplot"),
             ui.output_data_frame("production_test_dataframe")
@@ -170,11 +172,11 @@ def run_shiny(data: DataStorage):
 
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
             if len(y1) == 0:
-                return df
+                return
 
             # No input selected
             if x1 == "None":
-                return df.loc[df["Compound"].isin(y1)]
+                return 
             # At least first axis selected
             else:
                 if x2 == "None":
@@ -244,7 +246,7 @@ def run_shiny(data: DataStorage):
         @reactive.event(input.save_producer_test)
         def save_file():
             if bool(all_dataframe):
-                if all_dataframe["producer_test_df"] is not None:
+                if not all_dataframe["producer_test_df"] is None:
                     res = production_test_dataframe()
                     du.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
             return
@@ -256,6 +258,24 @@ def run_shiny(data: DataStorage):
                 if all_dataframe["abundance_test_df"] is not None:
                     res = production_test_dataframe()
                     du.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
+            return
+        
+        @reactive.Effect
+        @reactive.event(input.save_abundance_plot)
+        def save_file():
+            if bool(all_dataframe):
+                if all_dataframe["abundance_plot_df"] is not None:
+                    res = production_test_dataframe()
+                    du.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
+            return
+        
+        @reactive.Effect
+        @reactive.event(input.save_producer_plot)
+        def save_file():
+            if bool(all_dataframe):
+                if all_dataframe["producer_plot_df"] is not None:
+                    res = production_test_dataframe()
+                    du.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
             return
 
         @render_widget
@@ -269,15 +289,14 @@ def run_shiny(data: DataStorage):
                 df = producer_data
                 column_value = "Nb_producers"
                 
+            all_dataframe["abundance_plot_df"] = df
             # import button input from shiny
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
 
             if len(y1) == 0:
                 return
             if x1 == "None":
-                return px.box(
-                    df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample."
-                )
+                return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample.")
             else:
                 if x2 == "None":
                     new_df = df.loc[df["Compound"].isin(y1)]
@@ -346,6 +365,7 @@ def run_shiny(data: DataStorage):
                 column_value = "Total_production"
 
             df = total_production
+            all_dataframe["producer_plot_df"] = df
 
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
         
@@ -414,8 +434,6 @@ def run_shiny(data: DataStorage):
         @render.data_frame
         def metadata_table():
             df = data.get_main_metadata()
-            # df = du.get_df_dtype(df)
-            # print(df)
             return df
         
         @render.text()
