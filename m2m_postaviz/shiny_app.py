@@ -47,6 +47,7 @@ def run_shiny(data: DataStorage):
                     ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
                     ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
                     ui.input_checkbox("ab_norm", "With normalised data"),
+                    ui.input_action_button("save_abundance_test", "Save dataframe"),
             ),
         output_widget("Abundance_boxplot"), 
         ui.output_data_frame("abundance_test_dataframe")
@@ -182,7 +183,9 @@ def run_shiny(data: DataStorage):
                         tested_data[layer_1] = {}
                         tested_data[layer_1]["data"] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value]
                         tested_data[layer_1]["n_data"] = len(df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value])
-                    return du.stat_on_plot(tested_data, 1)
+                    res = du.stat_on_plot(tested_data, 1)
+                    all_dataframe["abundance_test_df"] = res
+                    return res
                 # Both axis have been selected
                 else:
                     tested_data = {}
@@ -194,7 +197,9 @@ def run_shiny(data: DataStorage):
                                 tested_data[layer_1][layer_2] = {}
                                 tested_data[layer_1][layer_2]["data"] = selected_data
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-                    return du.stat_on_plot(tested_data, 2)
+                    res = du.stat_on_plot(tested_data, 2)
+                    all_dataframe["abundance_test_df"] = res
+                    return res
 
         @render.data_frame()
         def production_test_dataframe():
@@ -234,7 +239,7 @@ def run_shiny(data: DataStorage):
                     res = du.stat_on_plot(tested_data, 2)
                     all_dataframe["producer_test_df"] = res
                     return res
-                
+        
         @reactive.Effect
         @reactive.event(input.save_producer_test)
         def save_file():
@@ -242,6 +247,15 @@ def run_shiny(data: DataStorage):
                 if all_dataframe["producer_test_df"] is not None:
                     res = production_test_dataframe()
                     du.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
+            return
+        
+        @reactive.Effect
+        @reactive.event(input.save_abundance_test)
+        def save_file():
+            if bool(all_dataframe):
+                if all_dataframe["abundance_test_df"] is not None:
+                    res = production_test_dataframe()
+                    du.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
             return
 
         @render_widget
