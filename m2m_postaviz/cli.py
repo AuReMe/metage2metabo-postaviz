@@ -42,7 +42,7 @@ def main(args=None):
 
     if arg_parser.test:
         if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
-            print("No data_test/ directory found.")
+            print("No data_test/ directory found. \nExtract test data tarfile...")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
         data_test_dir = os.path.join(TESTS_DIR, "palleja/")
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")

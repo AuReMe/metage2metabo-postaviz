@@ -3,6 +3,7 @@ import os
 import os.path
 import tarfile
 import time
+import sys
 
 import numpy as np
 import pandas as pd
@@ -524,6 +525,12 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         sample_data: dict
         abundance_data: pandas dataframe
     """
+    if not is_valid_dir(dir_path):
+        sys.exit(1)
+    
+    if not is_valid_file(metadata):
+        sys.exit(1)
+
     all_data = {}
 
     all_data["sample_data"] = retrieve_all_sample_data(dir_path)
@@ -540,7 +547,9 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
 
     if abundance_path is not None:
         raw_abundance_file = open_tsv(abundance_path)
-        norm_abundance_data = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
+        normalised_abundance_dataframe = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
+    else:
+        normalised_abundance_dataframe = None
 
     if taxonomic_path is not None:
         raw_taxonomic_data = open_tsv(taxonomic_path)
@@ -548,9 +557,9 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
                 raw_taxonomic_data, get_bin_list(all_data["sample_data"]), all_data["metadata"].columns[1:],all_data["metadata"]
             )
 
-    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], norm_abundance_data)
+    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
 
-    return all_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe
+    return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe
 
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):

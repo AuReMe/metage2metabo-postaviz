@@ -72,9 +72,6 @@ class DataStorage:
     def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
         return self.long_taxonomic_data.copy() if as_copy else self.long_taxonomic_data
 
-    # def get_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
-    #     return self.taxonomic_data.copy() if as_copy else self.taxonomic_data
-
     def get_norm_ab_matrix(self, as_copy: bool = True) -> pd.DataFrame:
         return self.normalised_abundance_matrix.copy() if as_copy else self.normalised_abundance_matrix
 
@@ -84,9 +81,6 @@ class DataStorage:
     def get_melted_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
 
-    def get_melted_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.melted_abundance_dataframe.copy() if as_copy else self.melted_abundance_dataframe
-
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == self.ID_VAR else False
 
@@ -95,9 +89,6 @@ class DataStorage:
 
     def get_cpd_label(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode].columns
-
-    def get_taxonomic_data_by_sample(self, sample_id: str) -> pd.DataFrame:
-        return self.taxonomic_data.loc[self.taxonomic_data["mgs"].isin(self.get_bin_list_by_sample(sample_id))]
 
     def get_bin_list(self, mode: str = "cscope"):
         bin_list = {}
