@@ -648,7 +648,7 @@ def add_factor_column(metadata, serie_id, factor_id):
     return new_col
 
 def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
-    boolean_production_df = main_dataframe
+    boolean_production_df = main_dataframe.copy()
     if not is_indexed_by_id(boolean_production_df):
         boolean_production_df.set_index("smplID",inplace=True,drop=True)
     boolean_production_df["Total_production"] = boolean_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
