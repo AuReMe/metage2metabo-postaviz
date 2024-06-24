@@ -3,7 +3,7 @@ import os
 
 from m2m_postaviz import data_utils as du
 
-def data_processing_test():
+def test_data_processing():
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     MODULE_DIR = os.path.dirname(BASE_DIR)
