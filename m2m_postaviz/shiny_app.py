@@ -248,7 +248,7 @@ def run_shiny(data: DataStorage):
             if bool(all_dataframe):
                 if not all_dataframe["producer_test_df"] is None:
                     res = production_test_dataframe()
-                    du.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
+                    data.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
             return
         
         @reactive.Effect
@@ -257,7 +257,7 @@ def run_shiny(data: DataStorage):
             if bool(all_dataframe):
                 if all_dataframe["abundance_test_df"] is not None:
                     res = production_test_dataframe()
-                    du.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
+                    data.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
             return
         
         @reactive.Effect
@@ -266,7 +266,7 @@ def run_shiny(data: DataStorage):
             if bool(all_dataframe):
                 if all_dataframe["abundance_plot_df"] is not None:
                     res = production_test_dataframe()
-                    du.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
+                    data.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
             return
         
         @reactive.Effect
@@ -275,7 +275,7 @@ def run_shiny(data: DataStorage):
             if bool(all_dataframe):
                 if all_dataframe["producer_plot_df"] is not None:
                     res = production_test_dataframe()
-                    du.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
+                    data.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
             return
 
         @render_widget
@@ -370,7 +370,7 @@ def run_shiny(data: DataStorage):
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
         
             if inputx1 == "None":
-                return px.bar(df, x="smplID", y=column_value, title=f"Total production.")
+                return px.bar(df, x="smplID", y=column_value, title=f"Total production.", color="smplID")
             elif inputx2 == "None":
                 if df.shape[0] == len(df[inputx1].unique()):
                     return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")

@@ -4,7 +4,8 @@ import pandas as pd
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
-
+import os
+import sys
 import m2m_postaviz.data_utils as du
 
 
@@ -12,13 +13,24 @@ class DataStorage:
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
-    def __init__(self, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None):
+    def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None):
 
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
         self.metadata = data_container["metadata"]
         self.cpd_producers_long = data_container["producers_long_format"]
         self.total_production_dataframe = total_production_dataframe
+        
+        if du.is_valid_dir(save_path):
+            self.output_path = save_path
+        else:
+            try:
+                os.makedirs(save_path)
+                self.output_path = save_path
+            except Exception as e:
+                print(e)
+                sys.exit(1)
+
 
         if taxonomic_data_container is not None:
             self.long_taxonomic_data = taxonomic_data_container
@@ -192,3 +204,25 @@ class DataStorage:
             pcoa_results.samples[col] = df[col].astype("category")
 
         return pcoa_results
+
+    def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
+        path_to_save = self.output_path
+        final_file_path = path_to_save + "/" + file_name + "." + extension
+        if os.path.isfile(final_file_path):
+            final_file_path = self.check_and_rename(final_file_path)
+
+        df_to_save.to_csv(final_file_path)
+        print(f"Saved in {final_file_path}")
+        return
+    
+    def check_and_rename(self, file_path: str, add: int = 0) -> str:
+        original_file_path = file_path
+        print(original_file_path)
+        if add != 0:
+            file_name, extension = os.path.splitext(file_path)
+            file_name = file_name + "_" + str(add)
+            file_path = file_name + extension
+        if not os.path.isfile(file_path):
+            return file_path
+        else:
+            return self.check_and_rename(original_file_path, add + 1)
