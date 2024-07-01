@@ -39,4 +39,9 @@ def test_data_processing():
         # .loc by sample index the main dataframe into a serie. then extract the values and sum() the get the of cpd amount produced. Then compare with json file.
         assert data_dictionnary["main_dataframe"].loc[data_dictionnary["main_dataframe"].index == sample].values.sum() == len(sample_json),f"The amount of metabolites produced for {sample} in main_dataframe is not the same as com_scopes json file."
 
+    # Producers_long_format tests
+    assert len(data_dictionnary["sample_data"].keys()) == len(data_dictionnary["producers_long_format"]["smplID"].unique()), "length of sample_data keys (numbers of samples) and length of producers dataframe smplID.unique() are not the same."
+
+    # Production data tests
+    assert all(k in production_data.columns.tolist() for k in data_dictionnary["metadata"].columns.tolist())
 

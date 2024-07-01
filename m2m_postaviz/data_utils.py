@@ -655,7 +655,7 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
     results = pd.DataFrame(boolean_production_df["Total_production"])
 
     if abundance_matrix is not None:
-        abundance_production_df = abundance_matrix
+        abundance_production_df = abundance_matrix.copy()
         if not is_indexed_by_id(boolean_production_df):
             abundance_production_df.set_index("smplID",inplace=True,drop=True)
         abundance_production_df["Total_abundance_weighted"] = abundance_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
