@@ -210,10 +210,12 @@ class DataStorage:
         final_file_path = path_to_save + "/" + file_name + "." + extension
         if os.path.isfile(final_file_path):
             final_file_path = self.check_and_rename(final_file_path)
-
-        df_to_save.to_csv(final_file_path)
-        print(f"Saved in {final_file_path}")
-        return
+        try:
+            df_to_save.to_csv(final_file_path)
+            logs = f"Saved in :\n{final_file_path}"
+        except Exception as e:
+            logs = e
+        return logs
     
     def check_and_rename(self, file_path: str, add: int = 0) -> str:
         original_file_path = file_path
