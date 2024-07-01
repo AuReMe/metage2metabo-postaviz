@@ -26,6 +26,7 @@ parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
+parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. If created if not valid. If not provided, save options disabled.")
 
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
@@ -48,6 +49,7 @@ def main(args=None):
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
+        save_path = "test_path"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path)
 
     elif arg_parser.dev:
@@ -55,6 +57,7 @@ def main(args=None):
         metadata = TESTS_DIR + "refined_palleja_metadata.tsv"
         abundance_path = "~/Downloads/matrix_palleja.tsv"
         taxonomic_path = "~/Downloads/gtdbtk.summary_split.tsv"
+        save_path = "/home/lbrindel/output/save_output_m2m"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path)
 
     else:
@@ -63,9 +66,9 @@ def main(args=None):
         metadata = arg_parser["metadata"]
         taxonomy_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
+        save_path = arg_parser["output"]
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomy_path)
 
-    Data = DataStorage(global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe)
-    # Data.performance_benchmark()
+    Data = DataStorage(save_path, global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe)
 
     sh.run_shiny(Data)
