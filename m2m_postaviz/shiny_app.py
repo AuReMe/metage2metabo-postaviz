@@ -48,7 +48,12 @@ def run_shiny(data: DataStorage):
                     ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
                     ui.input_checkbox("ab_norm", "With normalised data"),
                     ui.input_action_button("save_abundance_plot", "Save plot dataframe"),
+                    ui.output_text_verbatim("save_ab_plot_txt", True),
                     ui.input_action_button("save_abundance_test", "Save test dataframe"),
+                    ui.output_text_verbatim("save_ab_test_txt", True),
+                    width=350,
+                    gap=50,
+
             ),
         output_widget("Abundance_boxplot"), 
         ui.output_data_frame("abundance_test_dataframe")
@@ -61,6 +66,7 @@ def run_shiny(data: DataStorage):
                 ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
                 ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
                 ui.input_checkbox("taxo_norm", "With normalised data"),
+                width=350,
             ),
             output_widget("taxonomic_boxplot"),
         )
@@ -73,12 +79,15 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
                 ui.input_action_button("save_producer_plot", "Save plot dataframe"),
-                ui.input_action_button("save_producer_test", "Save test dataframe")
+                ui.output_text_verbatim("save_prod_plot_txt", True),
+                ui.input_action_button("save_producer_test", "Save test dataframe"),
+                ui.output_text_verbatim("save_prod_test_txt", True),
+                width=350,
+                gap=50,
             ),
             output_widget("producer_boxplot"),
             ui.output_data_frame("production_test_dataframe")
-        )
-    )
+        ))
 
     metadata_table = ui.card(
         ui.row(
@@ -234,49 +243,62 @@ def run_shiny(data: DataStorage):
                         tested_data[layer_1] = {}
                         for layer_2 in df[x2].unique():
                             selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][column_value]
-                            if len(selected_data) != 0:
+                            if len(selected_data) > 1:
                                 tested_data[layer_1][layer_2] = {}
                                 tested_data[layer_1][layer_2]["data"] = selected_data.values
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-                    res = du.stat_on_plot(tested_data, 2)
+                    # In case tested_data has no value (barplot)
+                    if all(len(tested_data[k]) == 0 for k in tested_data.keys()):
+                        print("No values in each keys")
+                        return
+                    # In case tested_data is not a double layer dict
+                    if all(len(tested_data[k]) == 1 for k in tested_data.keys()):
+                        print("Only one pair per layer.")
+                        return
+                    else:
+                        res = du.stat_on_plot(tested_data, 2)
                     all_dataframe["producer_test_df"] = res
                     return res
         
-        @reactive.Effect
+        @render.text
         @reactive.event(input.save_producer_test)
-        def save_file():
+        def save_prod_test_txt():
             if bool(all_dataframe):
-                if not all_dataframe["producer_test_df"] is None:
-                    res = production_test_dataframe()
-                    data.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
-            return
+                if all_dataframe["producer_test_df"] is not None:
+                   log = data.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
+                else:
+                    log = "Unable to find any dataframe to save."
+            return log
         
-        @reactive.Effect
+        @render.text
         @reactive.event(input.save_abundance_test)
-        def save_file():
+        def save_ab_test_txt():
             if bool(all_dataframe):
                 if all_dataframe["abundance_test_df"] is not None:
-                    res = production_test_dataframe()
-                    data.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
-            return
-        
-        @reactive.Effect
+                   log = data.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
+                else:
+                    log = "Unable to find any dataframe to save."
+            return log
+
+        @render.text
         @reactive.event(input.save_abundance_plot)
-        def save_file():
+        def save_ab_plot_txt():
             if bool(all_dataframe):
                 if all_dataframe["abundance_plot_df"] is not None:
-                    res = production_test_dataframe()
-                    data.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
-            return
-        
-        @reactive.Effect
+                   log = data.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
+                else:
+                    log = "Unable to find any dataframe to save."
+            return log
+
+        @render.text
         @reactive.event(input.save_producer_plot)
-        def save_file():
+        def save_prod_plot_txt():
             if bool(all_dataframe):
                 if all_dataframe["producer_plot_df"] is not None:
-                    res = production_test_dataframe()
-                    data.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
-            return
+                    log = data.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
+                else:
+                    log = "Unable to find any dataframe to save."
+            return log
 
         @render_widget
         def Abundance_boxplot():
