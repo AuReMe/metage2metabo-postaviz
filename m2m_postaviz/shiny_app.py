@@ -52,12 +52,14 @@ def run_shiny(data: DataStorage):
                     ui.input_action_button("save_abundance_test", "Save test dataframe"),
                     ui.output_text_verbatim("save_ab_test_txt", True),
                     width=350,
-                    gap=50,
+                    gap=30,
 
             ),
         output_widget("Abundance_boxplot"), 
         ui.output_data_frame("abundance_test_dataframe")
-        ))
+        ),
+        full_screen=True
+        )
 
     taxonomy_boxplot = ui.card(
         ui.layout_sidebar(
@@ -69,10 +71,12 @@ def run_shiny(data: DataStorage):
                 width=350,
             ),
             output_widget("taxonomic_boxplot"),
-        )
+        ),
+        full_screen=True
     )
     ### PRODUCER BOXPLOT CARD
     producer_boxplot = ui.card(
+        ui.card_header("Total production of all compound, weighted with the abundance if provided."),
         ui.layout_sidebar(
             ui.sidebar(
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
@@ -83,11 +87,14 @@ def run_shiny(data: DataStorage):
                 ui.input_action_button("save_producer_test", "Save test dataframe"),
                 ui.output_text_verbatim("save_prod_test_txt", True),
                 width=350,
-                gap=50,
+                gap=30,
             ),
             output_widget("producer_boxplot"),
             ui.output_data_frame("production_test_dataframe")
-        ))
+        
+        ),
+        full_screen=True
+        )
 
     metadata_table = ui.card(
         ui.row(
