@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
+from multiprocessing import Pool
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -512,6 +513,27 @@ def build_main_dataframe(sample_data: dict):
     
     return results
 
+
+def retrieve_all_sample_data_multiproc(path):
+    """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
+
+    Args:
+        path (str): Directory path
+
+    Returns:
+        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
+    """
+    all_sample_data = {}
+    for sample in os.listdir(path):
+        if os.path.isdir(os.path.join(path, sample)):
+            all_sample_data[sample] = {}
+            # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+            all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
+            # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
+            # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+    return all_sample_data
+
+@benchmark_decorator
 def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
@@ -532,7 +554,7 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         sys.exit(1)
 
     all_data = {}
-
+  
     all_data["sample_data"] = retrieve_all_sample_data(dir_path)
 
     cpd_producers = cscope_producers(all_data["sample_data"])
