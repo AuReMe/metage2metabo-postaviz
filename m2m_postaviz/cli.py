@@ -53,10 +53,10 @@ def main(args=None):
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path)
 
     elif arg_parser.dev:
-        dir_path = "/home/lbrindel/output/palleja/"
-        metadata = TESTS_DIR + "refined_palleja_metadata.tsv"
-        abundance_path = "~/Downloads/matrix_palleja.tsv"
-        taxonomic_path = "~/Downloads/gtdbtk.summary_split.tsv"
+        dir_path = "/home/lbrindel/output/m2m_grp6_output/"
+        metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
+        abundance_path = "~/Downloads/western_diet_exp/specI.mat"
+        taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
         save_path = "/home/lbrindel/output/save_output_m2m"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path)
 

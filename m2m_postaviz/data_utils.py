@@ -82,6 +82,20 @@ def benchmark_decorator(func):
 
     return wrapper
 
+def find_total_row_in_abundance(abundance_matrix: pd.Series):
+    count=0
+    total = abundance_matrix.sum()
+    for index,value in abundance_matrix.items():
+        count +=1
+        if count < 6:
+            print(value)
+            print(total)
+            print(total - value)
+        if value == (total - value):
+            print(value, "AND", total)
+            return (True,index)
+
+    return (False,None)
 
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
@@ -96,9 +110,20 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """
     smpl_norm_abundance = []
     smpl_norm_index = []
+    print(abundance_matrix)
+
+    str_filter = abundance_matrix.select_dtypes(include=["string","object","category"])
+
+    if len(str_filter.columns) == 1:
+        index_column = str_filter.columns.values[0]
+        print(index_column, "column is str type, using it as index")
+        abundance_matrix.set_index(index_column,drop=True,inplace=True)
+
+    # _has_sum_row, index_row = find_total_row_in_abundance(abundance_matrix.iloc[:,1])
+    # if _has_sum_row:
+    #     abundance_matrix.drop(index=index_row,inplace=True  )
 
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
-
 
     for sample in sample_data.keys():
 
@@ -108,8 +133,6 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
             sample_matrix.set_index("smplID", inplace=True)
         
         sample_matrix = sample_matrix.apply(lambda row: row * abundance_matrix_normalised.at[row.name, sample], axis=1)
-        # print(sample_matrix)
-        # print(type(sample_matrix))
         sample_matrix = sample_matrix.apply(lambda col: col.to_numpy().sum(), axis=0)
         sample_matrix.name = sample
 
@@ -486,16 +509,7 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     return row
 
 
-def cscope_producers(sample_data: dict):
-    cpd_producers = {}
-    for sample in sample_data.keys():
-        df = sample_data[sample]["cscope"]
-        cpd_producers[sample] = {}
-        for cpd in df.columns:
-            cpd_vector = df[cpd].sum()
-            cpd_producers[sample][cpd] = cpd_vector
-    return cpd_producers
-
+@benchmark_decorator
 def build_main_dataframe(sample_data: dict):
     all_series = []
     for sample in sample_data.keys():
@@ -514,26 +528,7 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 
-def retrieve_all_sample_data_multiproc(path):
-    """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
-
-    Args:
-        path (str): Directory path
-
-    Returns:
-        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
-    """
-    all_sample_data = {}
-    for sample in os.listdir(path):
-        if os.path.isdir(os.path.join(path, sample)):
-            all_sample_data[sample] = {}
-            # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
-            all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
-            # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-            # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-    return all_sample_data
-
-@benchmark_decorator
+# @benchmark_decorator
 def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
@@ -548,10 +543,12 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         abundance_data: pandas dataframe
     """
     if not is_valid_dir(dir_path):
+        print(dir_path, "Not valid directory")
         sys.exit(1)
     
-    if not is_valid_file(metadata):
-        sys.exit(1)
+    # if not is_valid_file(metadata):
+    #     print(metadata, "Not valid file metadata")
+    #     sys.exit(1)
 
     all_data = {}
   
@@ -568,16 +565,27 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     all_data["producers_long_format"] = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
 
     if abundance_path is not None:
-        raw_abundance_file = open_tsv(abundance_path)
-        normalised_abundance_dataframe = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
+        try:
+            raw_abundance_file = open_tsv(abundance_path)
+            normalised_abundance_dataframe = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
+        except Exception as e:
+            print("Abundance process went wrong.",e)
+            normalised_abundance_dataframe = None
     else:
         normalised_abundance_dataframe = None
 
     if taxonomic_path is not None:
-        raw_taxonomic_data = open_tsv(taxonomic_path)
-        long_taxonomic_data = taxonomic_data_long_format(
-                raw_taxonomic_data, get_bin_list(all_data["sample_data"]), all_data["metadata"].columns[1:],all_data["metadata"]
-            )
+        try:
+            raw_taxonomic_data = open_tsv(taxonomic_path)
+            long_taxonomic_data = taxonomic_data_long_format(
+                    raw_taxonomic_data, get_bin_list(all_data["sample_data"]), all_data["metadata"].columns[1:],all_data["metadata"]
+                )
+        except Exception as e:
+            print("Taxonomy process went wrong.", e)
+            long_taxonomic_data = None
+    else:
+        long_taxonomic_data = None
+
 
     total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
 
@@ -694,10 +702,7 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
     results["smplID"] = results["smplID"].astype("category")
     return results
 
-def printall(*args):
-    for arg in args:
-        print(arg)
-
+@benchmark_decorator
 def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
     main_dataframe = main_dataframe.reset_index()
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
@@ -714,6 +719,17 @@ def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, c
     main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
     
     return main_dataframe
+
+@benchmark_decorator
+def cscope_producers(sample_data: dict):
+    cpd_producers = {}
+    for sample in sample_data.keys():
+        df = sample_data[sample]["cscope"]
+        cpd_producers[sample] = {}
+        for cpd in df.columns:
+            cpd_vector = df[cpd].to_numpy().sum()
+            cpd_producers[sample][cpd] = cpd_vector
+    return cpd_producers
 
 def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
     """Adds notations giving the p-value between two box plot data (t-test two-sided comparison)

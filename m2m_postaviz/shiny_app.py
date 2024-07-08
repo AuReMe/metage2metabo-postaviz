@@ -22,10 +22,12 @@ def run_shiny(data: DataStorage):
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
     producer_data = data.get_producer_long_dataframe()
     cpd_prod_by_sample = data.get_total_cpd_production_by_sample_and_compound()
-    long_taxo_df = data.get_long_taxonomic_data()
     list_of_bin = data.get_bin_list()
     list_of_cpd = data.get_cpd_list()
     total_production = data.get_total_production_by_sample()
+
+    if data.HAS_TAXONOMIC_DATA:
+        long_taxo_df = data.get_long_taxonomic_data()
 
     metadata = data.get_main_metadata()
     main_dataframe = data.get_main_dataframe()
@@ -61,19 +63,23 @@ def run_shiny(data: DataStorage):
         full_screen=True
         )
 
-    taxonomy_boxplot = ui.card(
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_select("tax_inpx1", "Label for X axis", factor_list),
-                ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
-                ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
-                ui.input_checkbox("taxo_norm", "With normalised data"),
-                width=350,
+    if data.HAS_TAXONOMIC_DATA:
+        taxonomy_boxplot = ui.card(
+            ui.layout_sidebar(
+                ui.sidebar(
+                    ui.input_select("tax_inpx1", "Label for X axis", factor_list),
+                    ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
+                    ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
+                    ui.input_checkbox("taxo_norm", "With normalised data"),
+                    width=350,
+                ),
+                output_widget("taxonomic_boxplot"),
             ),
-            output_widget("taxonomic_boxplot"),
-        ),
-        full_screen=True
-    )
+            full_screen=True
+        )
+    else:
+        taxonomy_boxplot = ui.output_text_verbatim("no_taxonomy", True),
+
     ### PRODUCER BOXPLOT CARD
     producer_boxplot = ui.card(
         ui.card_header("Total production of all compound, weighted with the abundance if provided."),
@@ -479,6 +485,9 @@ def run_shiny(data: DataStorage):
                 text = f"Cannot perform changes, {e}" 
             return text
         
+        @render.text
+        def no_taxonomy():
+            return "No taxonomic data provided."
 
     app = App(app_ui, server)
     run_app(app=app, launch_browser=False, reload_dirs="./")

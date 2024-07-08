@@ -39,8 +39,7 @@ class DataStorage:
         if abundance_data is not None:
             self.normalised_abundance_matrix = abundance_data
             self.HAS_ABUNDANCE_DATA = True
-
-        self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
+            self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
         self.list_of_factor = list(self.metadata.columns)
         self.factorize_metadata()
