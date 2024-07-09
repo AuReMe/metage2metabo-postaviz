@@ -371,6 +371,8 @@ def retrieve_all_sample_data(sample, path):
 def multiprocess_retrieve_data(path):
     retrieve_data = partial(retrieve_all_sample_data, path=path)
     nb_cpu = cpu_count() - 1
+    if not type(nb_cpu) == int or nb_cpu < 1:
+        nb_cpu = 1
     pool = Pool(nb_cpu)
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
     pool.close()
