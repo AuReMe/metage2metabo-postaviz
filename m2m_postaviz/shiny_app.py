@@ -119,7 +119,18 @@ def run_shiny(data: DataStorage):
         ),
         ui.output_data_frame("main_panel_table"),
     )
-    pcoa_plot_dev_table = ui.card(output_widget("pcoa_plot"))
+    pcoa_plot_dev_table = ui.card(
+        ui.layout_sidebar(
+                    ui.sidebar(
+                        ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
+                        ui.input_checkbox("pcoa_check", "with abundance data."),
+                        width=350,
+                        gap=30,
+                    ),
+        output_widget("pcoa_plot")
+        ),
+        full_screen=True
+    )
 
     ### APPLICATION TREE ###
 
@@ -133,16 +144,10 @@ def run_shiny(data: DataStorage):
             ),
             ui.nav(
                 "PCOA",
-                ui.layout_sidebar(
-                    ui.sidebar(
-                        ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.input_checkbox("pcoa_check", "with abundance data."),
-                    ),
                     pcoa_plot_dev_table,
                 ),
             ),
         )
-    )
 
     def server(input, output, session):
         @render_widget

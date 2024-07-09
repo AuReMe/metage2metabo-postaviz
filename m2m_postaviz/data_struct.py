@@ -126,8 +126,6 @@ class DataStorage:
     def produce_long_abundance_dataframe(self):
         """Transform the wide format abundance dataframe into a long format.
         Usefull for anyplot.
-        Args:
-            with_normalisation (bool, optional): Which dataframe to transform. Defaults to True.
 
         Returns:
             pd.dataframe: Long format abundance dataframe.

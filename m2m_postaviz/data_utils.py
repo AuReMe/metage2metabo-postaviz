@@ -10,6 +10,9 @@ import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 from multiprocessing import Pool
+from multiprocessing import cpu_count
+from os import getpid
+from functools import partial
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -82,20 +85,6 @@ def benchmark_decorator(func):
 
     return wrapper
 
-def find_total_row_in_abundance(abundance_matrix: pd.Series):
-    count=0
-    total = abundance_matrix.sum()
-    for index,value in abundance_matrix.items():
-        count +=1
-        if count < 6:
-            print(value)
-            print(total)
-            print(total - value)
-        if value == (total - value):
-            print(value, "AND", total)
-            return (True,index)
-
-    return (False,None)
 
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
@@ -110,7 +99,6 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
     """
     smpl_norm_abundance = []
     smpl_norm_index = []
-    print(abundance_matrix)
 
     str_filter = abundance_matrix.select_dtypes(include=["string","object","category"])
 
@@ -118,10 +106,6 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
         index_column = str_filter.columns.values[0]
         print(index_column, "column is str type, using it as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
-
-    # _has_sum_row, index_row = find_total_row_in_abundance(abundance_matrix.iloc[:,1])
-    # if _has_sum_row:
-    #     abundance_matrix.drop(index=index_row,inplace=True  )
 
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
@@ -417,7 +401,7 @@ def open_tsv(file_name: str, convert_cpd_id: bool = False, rename_columns: bool 
     return data
 
 
-def get_scopes(file_name, path):
+def get_scopes(file_name, path) -> pd.DataFrame:
     for root, dirs, files in os.walk(path):
         if file_name in files:
             scope_matrix = open_tsv(os.path.join(root, file_name), convert_cpd_id=True, rename_columns=True)
@@ -471,8 +455,53 @@ def get_contributions(file_name, path):
             contributions_file = contribution_processing(contributions_file)
             return contributions_file
 
+def retrieve_all_sample_data(sample, path):
+    """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
-def retrieve_all_sample_data(path):
+    Args:
+        path (str): Directory path
+
+    Returns:
+        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
+    """
+    sample_directory_path = os.path.join(path, sample)
+    if os.path.isdir(sample_directory_path):
+
+        cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
+        cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
+        cscope_total_production.name = sample
+
+        # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
+        # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
+        # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+
+
+    return cscope_dataframe, sample, cscope_total_production
+
+@benchmark_decorator
+def test_retrieve_data(path):
+    retrieve_data = partial(retrieve_all_sample_data, path=path)
+    nb_cpu = cpu_count() - 1
+    pool = Pool(nb_cpu)
+    results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
+    pool.close()
+    pool.join
+    cpd_producers = []
+    all_data = {}
+    for df, smpl, cpd_prod in results_list:
+        cpd_producers.append(cpd_prod)
+        all_data[smpl] = {}
+        all_data[smpl]["cscope"] = df
+
+    cpd_producers = pd.concat(cpd_producers,axis=1).T
+    cpd_producers.fillna(0,inplace=True)
+    cpd_producers = cpd_producers.astype(int)
+    cpd_producers.index.name = "smplID"
+
+    return all_data, cpd_producers
+
+@benchmark_decorator
+def old_version_retrieve_all_sample_data(path):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
     Args:
@@ -482,25 +511,32 @@ def retrieve_all_sample_data(path):
         dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
     all_sample_data = {}
+    cpd_producers = []
     for sample in os.listdir(path):
         if os.path.isdir(os.path.join(path, sample)):
             all_sample_data[sample] = {}
             # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
             all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
+            cscope_prod = all_sample_data[sample]["cscope"].apply(lambda col: col.to_numpy().sum(), axis=0)
+            cscope_prod.name=sample
+            cpd_producers.append(cscope_prod)
             # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
             # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-    return all_sample_data
+    cpd_producers = pd.concat(cpd_producers,axis=1).T
+    cpd_producers.fillna(0,inplace=True)
+    cpd_producers = cpd_producers.astype(int)
+    cpd_producers.index.name = "smplID"
+
+    return all_sample_data, cpd_producers
 
 
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
 
-
 def merge_df(left_df, right_df, how: str = "left"):
     data = left_df.iloc[:, 0]
     filter = right_df.loc[right_df["mgs"].isin(data)]
     return filter
-
 
 def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     row = row.astype(float)
@@ -508,8 +544,6 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     row *= abundance_value
     return row
 
-
-@benchmark_decorator
 def build_main_dataframe(sample_data: dict):
     all_series = []
     for sample in sample_data.keys():
@@ -526,6 +560,7 @@ def build_main_dataframe(sample_data: dict):
     results.index.name = "smplID"
     
     return results
+
 
 
 # @benchmark_decorator
@@ -551,10 +586,14 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     #     sys.exit(1)
 
     all_data = {}
-  
-    all_data["sample_data"] = retrieve_all_sample_data(dir_path)
 
-    cpd_producers = cscope_producers(all_data["sample_data"])
+    all_data["sample_data"], cpd_producers = test_retrieve_data(dir_path)
+    all_data["test"], capd_producers = old_version_retrieve_all_sample_data(dir_path)
+
+    assert cpd_producers.equals(capd_producers), "Not equal"
+    quit()
+
+    # cpd_producers = cscope_producers(all_data["sample_data"])
 
     main_df = build_main_dataframe(all_data["sample_data"])
 
@@ -563,7 +602,7 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     all_data["main_dataframe"] = main_df
 
     all_data["producers_long_format"] = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
-
+    # all_data["producers_long_format_new_method"] = producer_long_format_new_method(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
     if abundance_path is not None:
         try:
             raw_abundance_file = open_tsv(abundance_path)
@@ -702,13 +741,30 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
     results["smplID"] = results["smplID"].astype("category")
     return results
 
-@benchmark_decorator
-def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
+def processing_number_producers(df,cpd):
+    df["Nb_producers"] = df.apply(lambda row: cpd[row["smplID"]][row["Compound"]],axis=1)
+    return df
+
+def producer_long_format_new_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: pd.DataFrame, metadata_label: list):
     main_dataframe = main_dataframe.reset_index()
     main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
     main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
 
-    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers[row["smplID"]][row["Compound"]],axis=1)
+    nb_cpu = cpu_count() - 1
+    print(nb_cpu, "CPU available")
+    pool = Pool(nb_cpu)
+    all_sub_dataframes = []
+    nb_prod_count = partial(processing_number_producers,cpd=cpd_producers)
+
+    for sample in main_dataframe["smplID"].unique():
+        tmp_df = main_dataframe.loc[main_dataframe["smplID"] == sample]
+        all_sub_dataframes.append(tmp_df)
+
+    res_sub_dataframe = pool.map(nb_prod_count,all_sub_dataframes)
+    pool.close()
+    pool.join()
+
+    main_dataframe = pd.concat(res_sub_dataframe)
 
     metadata_dict = {}
     # Makes all metadata columns
@@ -720,144 +776,23 @@ def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, c
     
     return main_dataframe
 
-@benchmark_decorator
-def cscope_producers(sample_data: dict):
-    cpd_producers = {}
-    for sample in sample_data.keys():
-        df = sample_data[sample]["cscope"]
-        cpd_producers[sample] = {}
-        for cpd in df.columns:
-            cpd_vector = df[cpd].to_numpy().sum()
-            cpd_producers[sample][cpd] = cpd_vector
-    return cpd_producers
+def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
+    main_dataframe = main_dataframe.reset_index()
+    main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
+    main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
 
-def add_p_value_annotation(fig, array_columns, subplot=None, _format=dict(interline=0.07, text_height=1.07, color="black")):
-    """Adds notations giving the p-value between two box plot data (t-test two-sided comparison)
+    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers.at[row["smplID"],row["Compound"]],axis=1)
 
-    Parameters:
-    ----------
-    fig: figure
-        plotly boxplot figure
-    array_columns: np.array
-        array of which columns to compare
-        e.g.: [[0,1], [1,2]] compares column 0 with 1 and 1 with 2
-    subplot: None or int
-        specifies if the figures has subplots and what subplot to add the notation to
-    _format: dict
-        format characteristics for the lines
+    metadata_dict = {}
+    # Makes all metadata columns
+    for factor in metadata_label:
+        metadata_dict[factor] = add_factor_column(metadata, main_dataframe["smplID"], factor)
 
-    Returns:
-    -------
-    fig: figure
-        figure with the added notation
-    """
-    # Specify in what y_range to plot for each pair of columns
-    y_range = np.zeros([len(array_columns), 2])
-    for i in range(len(array_columns)):
-        y_range[i] = [1.01 + i * _format["interline"], 1.02 + i * _format["interline"]]
+    main_dataframe = main_dataframe.assign(**metadata_dict)
+    main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
+    
+    return main_dataframe
 
-    # Get values from figure
-    fig_dict = fig.to_dict()
-    # Get indices if working with subplots
-    if subplot:
-        if subplot == 1:
-            subplot_str = ""
-        else:
-            subplot_str = str(subplot)
-            print("Subplot str is : ", subplot_str)
-        indices = []  # Change the box index to the indices of the data for that subplot
-        for index, data in enumerate(fig_dict["data"]):
-            if data["xaxis"] == "x" + subplot_str:
-                indices = np.append(indices, index)
-        indices = [int(i) for i in indices]
-        print(indices)
-    else:
-        subplot_str = ""
-
-    # Print the p-values
-    for index, column_pair in enumerate(array_columns):
-        print(column_pair)
-        if subplot:
-            data_pair = [indices[column_pair[0]], indices[column_pair[1]]]
-        else:
-            data_pair = column_pair
-
-        # Mare sure it is selecting the data and subplot you want
-        # print(data_pair)
-        # print('0:', fig_dict['data'][data_pair[0]]['name'], fig_dict['data'][data_pair[0]]['xaxis'])
-        # print('1:', fig_dict['data'][data_pair[1]]['name'], fig_dict['data'][data_pair[1]]['xaxis'])
-
-        # Get the p-value
-        pvalue = stats.kruskal(
-            fig_dict["data"][data_pair[0]]["y"],
-            fig_dict["data"][data_pair[1]]["y"],
-            # equal_var=False,
-        )[1]
-        if pvalue >= 0.05:
-            symbol = "ns"
-        elif pvalue >= 0.01:
-            symbol = "*"
-        elif pvalue >= 0.001:
-            symbol = "**"
-        else:
-            symbol = "***"
-        # Vertical line
-        fig.add_shape(
-            type="line",
-            xref="x" + subplot_str,
-            yref="y" + subplot_str + " domain",
-            x0=column_pair[0],
-            y0=y_range[index][0],
-            x1=column_pair[0],
-            y1=y_range[index][1],
-            line=dict(
-                color=_format["color"],
-                width=2,
-            ),
-        )
-        # Horizontal line
-        fig.add_shape(
-            type="line",
-            xref="x" + subplot_str,
-            yref="y" + subplot_str + " domain",
-            x0=column_pair[0],
-            y0=y_range[index][1],
-            x1=column_pair[1],
-            y1=y_range[index][1],
-            line=dict(
-                color=_format["color"],
-                width=2,
-            ),
-        )
-        # Vertical line
-        fig.add_shape(
-            type="line",
-            xref="x" + subplot_str,
-            yref="y" + subplot_str + " domain",
-            x0=column_pair[1],
-            y0=y_range[index][0],
-            x1=column_pair[1],
-            y1=y_range[index][1],
-            line=dict(
-                color=_format["color"],
-                width=2,
-            ),
-        )
-        ## add text at the correct x, y coordinates
-        ## for bars, there is a direct mapping from the bar number to 0, 1, 2...
-        fig.add_annotation(
-            dict(
-                font=dict(color=_format["color"], size=14),
-                x=(column_pair[0] + column_pair[1]) / 2,
-                y=y_range[index][1] * _format["text_height"],
-                showarrow=False,
-                text=symbol,
-                textangle=0,
-                xref="x" + subplot_str,
-                yref="y" + subplot_str + " domain",
-            )
-        )
-    return fig
 
 def stat_on_plot(data: dict, layer: int):
     """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.

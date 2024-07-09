@@ -43,5 +43,5 @@ def test_data_processing():
     assert len(data_dictionnary["sample_data"].keys()) == len(data_dictionnary["producers_long_format"]["smplID"].unique()), "length of sample_data keys (numbers of samples) and length of producers dataframe smplID.unique() are not the same."
 
     # Production data tests
-    assert all(k in production_data.columns.tolist() for k in data_dictionnary["metadata"].columns.tolist())
+    assert all(k in production_data.columns.tolist() for k in data_dictionnary["metadata"].columns.tolist()), "Not all metadata have been inserted in production dataframe."
 
