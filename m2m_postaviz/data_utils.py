@@ -61,13 +61,6 @@ def extract_tarfile(tar_file, outdir):
     #     tar.extractall(outdir)
 
 
-def multiply_production_abundance(df_row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
-    df_row = df_row.astype(float)
-    abundance_value = abundance_matrix.at[df_row.name, sample_id]
-    df_row *= abundance_value
-    return df_row
-
-
 def benchmark_decorator(func):
     def wrapper(*args, **kwargs):
         results = list()
@@ -148,27 +141,6 @@ def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
     return results
 
 
-def taxonomic_overview(list_bin_id, taxonomic_dataframe, metadata, mode: str = "cscope", with_count: bool = True):
-    current_selection = []
-    current_rank = taxonomic_dataframe.columns[-1]
-
-    for sample in list_bin_id.keys():
-        tmp_df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(list_bin_id[sample])]
-        tmp_df = tmp_df[["mgs", current_rank]]
-        if with_count:
-            tmp_df = tmp_df.groupby([current_rank]).count()
-            tmp_df = tmp_df.reset_index()
-            tmp_df.columns = [current_rank, "Count"]
-        value, label = get_metadata(sample, metadata)
-        for i in range(len(label)):
-            tmp_df.insert(0, label[i], value[i])
-        tmp_df.insert(0, "nb_taxon", tmp_df[current_rank].nunique())
-
-        current_selection.append(tmp_df)
-
-    return pd.concat(current_selection, join="outer", ignore_index=True)
-
-
 def get_metadata(sample_id: str, metadata: pd.DataFrame):
     return tuple(
         [metadata.loc[metadata["smplID"] == sample_id].values.tolist()[0], metadata.loc[metadata["smplID"] == sample_id].columns.to_list()]
@@ -225,18 +197,6 @@ def taxonomic_dataframe_from_input(
     return final_results
 
 
-def get_added_value_size(sample: str, metadataframe: dict):
-    return len(metadataframe[sample]["advalue"])
-
-
-def get_individual_production_size(sample: str, metadataframe: dict):
-    return len(metadataframe[sample]["iscope"].columns)
-
-
-def get_total_production_size(sample: str, samples_data: dict):
-    return len(samples_data[sample]["cscope"].columns)
-
-
 def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
     """Return the numbers of different species in one sample.
 
@@ -258,52 +218,8 @@ def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFra
     return len(taxonomy_size)
 
 
-def get_metabolic_info(sample_data: dict, metadataframe: pd.DataFrame, taxonomic_dataframe: pd.DataFrame):
-    """Really ugly and probably useless need rework.
-    Return a dataframe with global information of all the sample in input.
-
-    Args:
-        sample_data (dict): _description_
-        metadataframe (pd.DataFrame): _description_
-        taxonomic_dataframe (pd.DataFrame): _description_
-
-    Returns:
-        _type_: _description_
-    """
-    tot_size = []
-    ind_size = []
-    ad_size = []
-    taxo_size = []
-    model_size = []
-    for sample in metadataframe["smplID"]:
-        tot_size.append(get_total_production_size(sample, sample_data))
-        ind_size.append(get_individual_production_size(sample, sample_data))
-        ad_size.append(get_added_value_size(sample, sample_data))
-        taxo_size.append(get_taxonomy_size(sample_data[sample]["iscope"], taxonomic_dataframe))
-        model_size.append(get_taxonomy_size(sample_data[sample]["iscope"], taxonomic_dataframe, only_metabolic_model_size=True))
-    new_df = metadataframe
-    new_df["prod_community"] = tot_size
-    new_df["prod_individual"] = ind_size
-    new_df["added_value_total"] = ad_size
-    new_df["Numbers of models"] = model_size
-    new_df["Numbers of species"] = taxo_size
-    return new_df
-
-
-def get_metabolic_model_prod_size(sample: str, metadataframe: dict):
-    return len(metadataframe[sample]["cscope"].columns)
-
-
 def add_row(df: pd.DataFrame, row: list):
     df.loc[len(df)] = row
-
-
-def deal_with_duplicated_row(df: pd.DataFrame, dropcol=None):
-    if not dropcol == None:
-        df = df.drop(dropcol, axis=1)
-    df = pd.get_dummies(df, prefix="", prefix_sep="", columns=["category"])
-    df = df.groupby(["compound_id"]).sum()
-    return df
 
 
 def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = False) -> dict:
@@ -326,23 +242,6 @@ def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = 
         res = res[sample]
         results[sample] = res
     return results
-
-
-def get_percent_value(df: pd.DataFrame, transpose: bool = False) -> pd.DataFrame:
-    """Calculate the total of each columns and replace value by their percentage.
-
-    Args:
-        df (pd.DataFrame): Count matrix as dataframe value must be row indexed and sample in columns.
-        transpose (bool, optional): Transpose the matrix. Defaults to False.
-
-    Returns:
-        pd.DataFrame: ERROR 404
-    """
-    if transpose:
-        df = df.T
-    total = df.sum()
-    percentage = (df / total) * 100
-    return percentage
 
 
 def get_files(file_name: str, path: str, with_directory_name: bool = True):
@@ -415,16 +314,6 @@ def is_indexed_by_id(df: pd.DataFrame):
         return False
 
 
-def get_column_size(df: pd.DataFrame):
-    size = len(df.columns)
-    return size
-
-
-def get_row_size(df: pd.DataFrame):
-    size = len(df)
-    return size
-
-
 def get_columns_index(df: pd.DataFrame, key_list):
     index_list = [0]
     for k in key_list:
@@ -478,8 +367,8 @@ def retrieve_all_sample_data(sample, path):
 
     return cscope_dataframe, sample, cscope_total_production
 
-@benchmark_decorator
-def test_retrieve_data(path):
+
+def multiprocess_retrieve_data(path):
     retrieve_data = partial(retrieve_all_sample_data, path=path)
     nb_cpu = cpu_count() - 1
     pool = Pool(nb_cpu)
@@ -499,35 +388,6 @@ def test_retrieve_data(path):
     cpd_producers.index.name = "smplID"
 
     return all_data, cpd_producers
-
-@benchmark_decorator
-def old_version_retrieve_all_sample_data(path):
-    """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
-
-    Args:
-        path (str): Directory path
-
-    Returns:
-        dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
-    """
-    all_sample_data = {}
-    cpd_producers = []
-    for sample in os.listdir(path):
-        if os.path.isdir(os.path.join(path, sample)):
-            all_sample_data[sample] = {}
-            # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
-            all_sample_data[sample]["cscope"] = get_scopes("rev_cscope.tsv", os.path.join(path, sample))
-            cscope_prod = all_sample_data[sample]["cscope"].apply(lambda col: col.to_numpy().sum(), axis=0)
-            cscope_prod.name=sample
-            cpd_producers.append(cscope_prod)
-            # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-            # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-    cpd_producers = pd.concat(cpd_producers,axis=1).T
-    cpd_producers.fillna(0,inplace=True)
-    cpd_producers = cpd_producers.astype(int)
-    cpd_producers.index.name = "smplID"
-
-    return all_sample_data, cpd_producers
 
 
 def merge_metadata_with_df(main_dataframe, metadata):
@@ -587,13 +447,7 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
 
     all_data = {}
 
-    all_data["sample_data"], cpd_producers = test_retrieve_data(dir_path)
-    all_data["test"], capd_producers = old_version_retrieve_all_sample_data(dir_path)
-
-    assert cpd_producers.equals(capd_producers), "Not equal"
-    quit()
-
-    # cpd_producers = cscope_producers(all_data["sample_data"])
+    all_data["sample_data"], cpd_producers = multiprocess_retrieve_data(dir_path)
 
     main_df = build_main_dataframe(all_data["sample_data"])
 
