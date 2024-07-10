@@ -363,7 +363,8 @@ def retrieve_all_sample_data(sample, path):
         # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
         # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
         # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-
+    else:
+        return
 
     return cscope_dataframe, sample, cscope_total_production
 
