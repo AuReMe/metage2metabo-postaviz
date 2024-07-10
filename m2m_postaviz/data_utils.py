@@ -364,7 +364,7 @@ def retrieve_all_sample_data(sample, path):
         # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
         # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
     else:
-        return
+        return None, None, None
 
     return cscope_dataframe, sample, cscope_total_production
 
@@ -381,9 +381,10 @@ def multiprocess_retrieve_data(path):
     cpd_producers = []
     all_data = {}
     for df, smpl, cpd_prod in results_list:
-        cpd_producers.append(cpd_prod)
-        all_data[smpl] = {}
-        all_data[smpl]["cscope"] = df
+        if not df is None: 
+            cpd_producers.append(cpd_prod)
+            all_data[smpl] = {}
+            all_data[smpl]["cscope"] = df
 
     cpd_producers = pd.concat(cpd_producers,axis=1).T
     cpd_producers.fillna(0,inplace=True)
