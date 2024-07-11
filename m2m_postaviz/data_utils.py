@@ -13,6 +13,7 @@ from multiprocessing import Pool
 from multiprocessing import cpu_count
 from os import getpid
 from functools import partial
+from itertools import combinations
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -25,20 +26,6 @@ def is_valid_dir(dirpath):
     if os.path.isdir(dirpath) == True:
         return True
     else:
-        return False
-
-
-def is_valid_file(filepath):
-    """Return True if filepath exists
-    Args:
-        filepath (str): path to file
-    Returns:
-        bool: True if path exists, False otherwise
-    """
-    try:
-        open(filepath, 'r').close()
-        return True
-    except OSError:
         return False
 
 
@@ -79,29 +66,35 @@ def benchmark_decorator(func):
     return wrapper
 
 
-def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict):
-    """Use the abundance matrix given in input with the dataframe of the sample's production in community to create 2 abundance dataframe.
-    1 with normalised bin quantity with x / x.sum(), the other without any transformation.
+def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -> pd.DataFrame:
+    """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
     Args:
-        abundance_file_path (str): path to the abundance file.
-        sample_data (dict): dictionnary of the cscope, iscope of each sample.
+        abundance_matrix (pd.DataFrame): abundance matrix given in input.
+        sample_data (dict): Dictionnary of sample's cscopes.
+
+    Raises:
+        RuntimeError: If more than one column of type other than INT.
 
     Returns:
-        Tuple: (Normalised abundance dataframe, Abundance dataframe)
+        Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
     smpl_norm_abundance = []
     smpl_norm_index = []
 
+    # Checking if all column are INT type, if one is not its used as index, if more than 1 raise RuntimeERROR.
     str_filter = abundance_matrix.select_dtypes(include=["string","object","category"])
-
     if len(str_filter.columns) == 1:
         index_column = str_filter.columns.values[0]
-        print(index_column, "column is str type, using it as index")
+        print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
-
+    elif len(str_filter.columns) > 1:
+        raise RuntimeError("More than one non-INT columns.")
+    
+    # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
+    # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix. 
     for sample in sample_data.keys():
 
         sample_matrix = sample_data[sample]["cscope"].copy()
@@ -359,7 +352,8 @@ def retrieve_all_sample_data(sample, path):
         cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
         cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
         cscope_total_production.name = sample
-
+        cscope_total_production = pd.DataFrame([cscope_total_production])
+        cscope_total_production.index.name = "smplID"
         # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
         # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
         # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
@@ -369,7 +363,16 @@ def retrieve_all_sample_data(sample, path):
     return cscope_dataframe, sample, cscope_total_production
 
 
-def multiprocess_retrieve_data(path):
+def multiprocess_retrieve_data(path, metadata):
+    """Open all directories given in -d path input. Get all cscopes tsv and load them in emomry as pandas
+    dataframe. Also return a dataframe with the total production by each sample. 
+
+    Args:
+        path (str): Path of directory
+
+    Returns:
+        Tuple: (Dict , Dataframe)
+    """
     retrieve_data = partial(retrieve_all_sample_data, path=path)
     nb_cpu = cpu_count() - 1
     if not type(nb_cpu) == int or nb_cpu < 1:
@@ -377,7 +380,8 @@ def multiprocess_retrieve_data(path):
     pool = Pool(nb_cpu)
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
     pool.close()
-    pool.join
+    pool.join()
+
     cpd_producers = []
     all_data = {}
     for df, smpl, cpd_prod in results_list:
@@ -386,13 +390,26 @@ def multiprocess_retrieve_data(path):
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
 
-    cpd_producers = pd.concat(cpd_producers,axis=1).T
-    cpd_producers.fillna(0,inplace=True)
-    cpd_producers = cpd_producers.astype(int)
-    cpd_producers.index.name = "smplID"
+    pool = Pool(nb_cpu)
+    melted_cpd_df = pool.map(melt_df_multi,cpd_producers)
+    pool.close()
+    pool.join()
+
+    cpd_producers = pd.concat(melted_cpd_df,axis=0)
+    metadata_dict = {}
+    # Makes all metadata columns
+    for factor in metadata.columns[1:]:
+        metadata_dict[factor] = add_factor_column(metadata, cpd_producers["smplID"], factor)
+
+    cpd_producers = cpd_producers.assign(**metadata_dict)
+    cpd_producers["smplID"] = cpd_producers["smplID"].astype("category")
+    # cpd_producers.set_index("smplID",inplace=True)
 
     return all_data, cpd_producers
 
+def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
+    dataframe.reset_index(inplace=True)
+    return dataframe.melt("smplID",var_name="Compound",value_name="Value")
 
 def merge_metadata_with_df(main_dataframe, metadata):
     return pd.merge(metadata, main_dataframe, how="left")
@@ -426,8 +443,6 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 
-
-# @benchmark_decorator
 def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
@@ -444,23 +459,17 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     if not is_valid_dir(dir_path):
         print(dir_path, "Not valid directory")
         sys.exit(1)
-    
-    # if not is_valid_file(metadata):
-    #     print(metadata, "Not valid file metadata")
-    #     sys.exit(1)
 
     all_data = {}
 
-    all_data["sample_data"], cpd_producers = multiprocess_retrieve_data(dir_path)
+    all_data["metadata"] = open_tsv(metadata)
+
+    all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
 
     main_df = build_main_dataframe(all_data["sample_data"])
 
-    all_data["metadata"] = open_tsv(metadata)
-
     all_data["main_dataframe"] = main_df
 
-    all_data["producers_long_format"] = producer_long_format(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
-    # all_data["producers_long_format_new_method"] = producer_long_format_new_method(all_data["main_dataframe"],all_data["metadata"], cpd_producers, all_data["metadata"].columns[1:])
     if abundance_path is not None:
         try:
             raw_abundance_file = open_tsv(abundance_path)
@@ -482,7 +491,6 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
             long_taxonomic_data = None
     else:
         long_taxonomic_data = None
-
 
     total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
 
@@ -599,58 +607,6 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
     results["smplID"] = results["smplID"].astype("category")
     return results
 
-def processing_number_producers(df,cpd):
-    df["Nb_producers"] = df.apply(lambda row: cpd[row["smplID"]][row["Compound"]],axis=1)
-    return df
-
-def producer_long_format_new_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: pd.DataFrame, metadata_label: list):
-    main_dataframe = main_dataframe.reset_index()
-    main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
-    main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
-
-    nb_cpu = cpu_count() - 1
-    print(nb_cpu, "CPU available")
-    pool = Pool(nb_cpu)
-    all_sub_dataframes = []
-    nb_prod_count = partial(processing_number_producers,cpd=cpd_producers)
-
-    for sample in main_dataframe["smplID"].unique():
-        tmp_df = main_dataframe.loc[main_dataframe["smplID"] == sample]
-        all_sub_dataframes.append(tmp_df)
-
-    res_sub_dataframe = pool.map(nb_prod_count,all_sub_dataframes)
-    pool.close()
-    pool.join()
-
-    main_dataframe = pd.concat(res_sub_dataframe)
-
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata_label:
-        metadata_dict[factor] = add_factor_column(metadata, main_dataframe["smplID"], factor)
-
-    main_dataframe = main_dataframe.assign(**metadata_dict)
-    main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
-    
-    return main_dataframe
-
-def producer_long_format(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, cpd_producers: dict, metadata_label: list):
-    main_dataframe = main_dataframe.reset_index()
-    main_dataframe = main_dataframe.melt("smplID",var_name="Compound",value_name="Value")
-    main_dataframe = main_dataframe.loc[main_dataframe["Value"] != 0]
-
-    main_dataframe["Nb_producers"] = main_dataframe.apply(lambda row: cpd_producers.at[row["smplID"],row["Compound"]],axis=1)
-
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata_label:
-        metadata_dict[factor] = add_factor_column(metadata, main_dataframe["smplID"], factor)
-
-    main_dataframe = main_dataframe.assign(**metadata_dict)
-    main_dataframe["smplID"] = main_dataframe["smplID"].astype("category")
-    
-    return main_dataframe
-
 
 def stat_on_plot(data: dict, layer: int):
     """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
@@ -678,15 +634,15 @@ def stat_on_plot(data: dict, layer: int):
                                 try:
                                     test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                     test_type = "Wilcoxon"
-                                except:
-                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data])
+                                except Exception as e:
+                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
                                     continue
                             else:
                                 try:
                                     test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                     test_type = "Mann-Whitney"
-                                except:
-                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data])
+                                except Exception as e:
+                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
                                     continue
                             if p_value >= 0.05:
                                 symbol = "ns"
@@ -750,5 +706,5 @@ def stat_on_plot(data: dict, layer: int):
                                             }
                                 res.loc[len(res)] = new_row
     print("At least: ",len(error_log)," errors occured.")
-    print(error_log)
+    print(error_log)    
     return res

@@ -195,12 +195,12 @@ def run_shiny(data: DataStorage):
                 column_value = "Quantity"
             else:
                 df = producer_data
-                column_value = "Nb_producers"
+                column_value = "Value"
 
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
             if len(y1) == 0:
                 return
-
+            df = df.loc[df["Compound"].isin(y1)]    
             # No input selected
             if x1 == "None":
                 return 
@@ -209,9 +209,11 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value]
-                        tested_data[layer_1]["n_data"] = len(df.loc[(df[x1] == layer_1) & (df["Compound"].isin(y1))][column_value])
+                        selected_data = df.loc[df[x1] == layer_1][column_value]
+                        if len(selected_data) > 1:
+                            tested_data[layer_1] = {}
+                            tested_data[layer_1]["data"] = selected_data
+                            tested_data[layer_1]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 1)
                     all_dataframe["abundance_test_df"] = res
                     return res
@@ -221,8 +223,8 @@ def run_shiny(data: DataStorage):
                     for layer_1 in df[x1].unique():
                         tested_data[layer_1] = {}
                         for layer_2 in df[x2].unique():
-                            selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2) & (df["Compound"].isin(y1))][column_value]
-                            if len(selected_data) != 0:
+                            selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][column_value]
+                            if len(selected_data) > 1:
                                 tested_data[layer_1][layer_2] = {}
                                 tested_data[layer_1][layer_2]["data"] = selected_data
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
@@ -327,74 +329,71 @@ def run_shiny(data: DataStorage):
                 column_value = "Quantity"
             else:
                 df = producer_data
-                column_value = "Nb_producers"
+                column_value = "Value"
                 
             all_dataframe["abundance_plot_df"] = df
             # import button input from shiny
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
+            df = df.loc[df["Compound"].isin(y1)]
 
             if len(y1) == 0:
                 return
             if x1 == "None":
                 return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample.")
-            else:
-                if x2 == "None":
-                    new_df = df.loc[df["Compound"].isin(y1)]
-                    fig = px.box(
-                        new_df,
-                        x=x1,
-                        y=column_value,
-                        color=x1,
-                        title=f"Estimated amount of {*y1,} produced by {x1}.",
-                    )
-                    return fig
+            
+            elif x2 == "None":
+                if df.shape[0] == len(df[x1].unique()):
+                    return px.bar(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
                 else:
-                    conditionx2 = df[x2].unique()
-                    conditionx1 = df[x1].unique()
+                    return px.box(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
 
-                    fig = go.Figure()
+            else:
+                conditionx2 = df[x2].unique()
+                conditionx1 = df[x1].unique()
 
-                    has_unique_value = True
+                fig = go.Figure()
 
-                    # If one of the case has multiple y values --> boxplot
-                    for layer1 in conditionx1:
-                        for layer2 in conditionx2:
-                            if not len(df.loc[(df[x2] == layer2) & (df[x1] == layer1) & (df["Compound"].isin(y1))][column_value]) <= 1:
-                                has_unique_value = False
+                has_unique_value = True
 
-                    for condition2 in conditionx2:
-                        if has_unique_value:
-                            fig.add_trace(
-                            go.Bar(
+                # If one of the case has multiple y values --> boxplot
+                for layer1 in conditionx1:
+                    for layer2 in conditionx2:
+                        if len(df.loc[(df[x2] == layer2) & (df[x1] == layer1) & (df["Compound"].isin(y1))][column_value]) > 1:
+                            has_unique_value = False
+
+                for condition2 in conditionx2:
+                    if has_unique_value:
+                        fig.add_trace(
+                        go.Bar(
+                            x=df.loc[df[x2] == condition2][x1],
+                            y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
+                            name=str(condition2),
+                        )
+                        )
+
+                    else:
+                        fig.add_trace(
+                            go.Box(
                                 x=df.loc[df[x2] == condition2][x1],
                                 y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
                                 name=str(condition2),
                             )
-                            )
-
-                        else:
-                            fig.add_trace(
-                                go.Box(
-                                    x=df.loc[df[x2] == condition2][x1],
-                                    y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
-                                    name=str(condition2),
-                                )
-                            )
-                        if has_unique_value:
-                            fig.update_layout(
-                                barmode="group",
-                                hovermode="x",
-                                bargroupgap=0.2,
-                                title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
-                            )
-                        else:
-                            fig.update_layout(
-                                boxmode="group",
-                                hovermode="x",
-                                boxgroupgap=0.1,
-                                title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
-                            )
-                    return fig
+                        )
+                    if has_unique_value:
+                        fig.update_layout(
+                            barmode="group",
+                            hovermode="x",
+                            bargroupgap=0.2,
+                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
+                        )
+                    else:
+                        fig.update_layout(
+                            boxmode="group",
+                            hovermode="x",
+                            boxgroupgap=0.1,
+                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
+                        )
+                return fig
 
         @render_widget
         def producer_boxplot():
