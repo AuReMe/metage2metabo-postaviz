@@ -18,6 +18,7 @@ class DataStorage:
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
         self.metadata = data_container["metadata"]
+        
         self.cpd_producers_long = data_container["producers_long_format"]
         self.total_production_dataframe = total_production_dataframe
         
@@ -31,7 +32,6 @@ class DataStorage:
                 print(e)
                 sys.exit(1)
 
-
         if taxonomic_data_container is not None:
             self.long_taxonomic_data = taxonomic_data_container
             self.HAS_TAXONOMIC_DATA = True
@@ -42,19 +42,15 @@ class DataStorage:
             self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
         self.list_of_factor = list(self.metadata.columns)
-        self.factorize_metadata()
+        # self.factorize_metadata()
 
-        
-        self.compound_production_by_sample_and_compound = du.total_production_by_sample_and_compound(self.get_main_dataframe(), self.get_all_sample_data())
+        self.current_pcoadf = self.run_pcoa()
 
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
 
     def get_total_production_by_sample(self, as_copy: bool = True):
         return self.total_production_dataframe.copy() if as_copy else self.total_production_dataframe
-
-    def get_total_cpd_production_by_sample_and_compound(self, as_copy: bool = True):
-        return self.compound_production_by_sample_and_compound.copy() if as_copy else self.compound_production_by_sample_and_compound
 
     def get_producer_long_dataframe(self, as_copy: bool = True):
         return self.cpd_producers_long.copy() if as_copy else self.cpd_producers_long
@@ -89,6 +85,7 @@ class DataStorage:
     def get_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.normalised_abundance_dataframe.copy() if as_copy else self.normalised_abundance_dataframe
 
+    ### LATER STILL USEFULL ?
     def get_melted_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
 
@@ -156,7 +153,7 @@ class DataStorage:
         result = metadata.loc[metadata["smplID"] == id_value][metadata_col].values[0]
         return result
 
-    def run_pcoa(self, main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
+    def run_pcoa(self, distance_method: str = "jaccard"):
         """Calculate Principal Coordinate Analysis with the dataframe given in args.
         Use metadata's drataframe as second argument to return the full ordination result plus
         all metadata column inserted along Ordination.samples dataframe.
@@ -169,38 +166,33 @@ class DataStorage:
         Returns:
             _type_: Ordination results object from skbio's package.
         """
-        df = self.get_main_dataframe()
+        main_df = self.get_main_dataframe()
+        metadata = self.get_main_metadata()
+
         # Need the matrix version for distance calculation.
         if not self.is_indexed(main_df):
             main_df.set_index("smplID", inplace=True)
 
-        if self.is_indexed(df):
-            df.reset_index(inplace=True)
-
-        # Add metadata columns with the accurate value in temporary dataframe.
-        for col in metadata.columns:
-            if col == "smplID":
-                continue
-            df[col] = df["smplID"].apply(lambda row: self.weird_way_to_do_it(row, col, metadata))
-
         # Normalisation
-        main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
+        # main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
+
         # Calculate distance matrix with Bray-Curtis method.
         dist_m = pdist(main_df, distance_method)
+
         # Transform distance matrix into squareform.
         squaref_m = squareform(dist_m)
+
         # Run the PCOA with the newly generated distance matrix.
         pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0] - 1)
 
         # Verify if PCOA_results's samples dataframe is aligned with df dataframe.
-        df = df.set_index(pcoa_results.samples.index)
-        # Put each metadata column in the pcoa results's dataframe for PLOT.
-        for col in metadata.columns:
-            if col == "smplID":
-                continue
-            pcoa_results.samples[col] = df[col].astype("category")
-
-        return pcoa_results
+        final_results = pcoa_results.samples
+        final_results.set_index(main_df.index,inplace = True)
+        final_results.reset_index(inplace=True)
+        metadata_loc = self.metadata.loc[metadata["smplID"].isin(final_results["smplID"])]
+        final_results = pd.merge(final_results,metadata_loc, how='outer', on=None)
+        
+        return final_results
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path

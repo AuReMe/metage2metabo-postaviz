@@ -463,7 +463,12 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     all_data = {}
 
     all_data["metadata"] = open_tsv(metadata)
+    # print(all_data["metadata"].dtypes)
 
+    ### AUTO-CONVERT when opening seems fine.
+    # all_data["metadata"] = all_data["metadata"].convert_dtypes()
+    # print(all_data["metadata"].dtypes)
+    # quit()
     all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
 
     main_df = build_main_dataframe(all_data["sample_data"])
@@ -555,25 +560,6 @@ def search_long_format(id_value, df):
     value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
     return len(value)
 
-def get_cpd_quantity(sample_data: dict, sample_id: str):
-    results = {}
-    for cpd in sample_data[sample_id]["cscope"].columns[1:]:
-        results[cpd] = sample_data[sample_id]["cscope"][cpd].sum()
-    return pd.Series(results, name=sample_id)
-
-def total_production_by_sample_and_compound(main_df: pd.DataFrame, sample_data: dict):
-    prod_df = []
-    if not is_indexed_by_id(main_df):
-        main_df = main_df.set_index("smplID",drop=True)
-
-    for sample in main_df.index:
-        prod_df.append(get_cpd_quantity(sample_data, sample))
-    
-    final_df = pd.concat(prod_df, axis=1)
-    final_df = final_df.fillna(0)
-    final_df = final_df.T
-    return final_df
-
 def add_factor_column(metadata, serie_id, factor_id):
     if not is_indexed_by_id(metadata):
         metadata = metadata.set_index("smplID", drop=True)
@@ -635,14 +621,14 @@ def stat_on_plot(data: dict, layer: int):
                                     test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                     test_type = "Wilcoxon"
                                 except Exception as e:
-                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
                             else:
                                 try:
                                     test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                     test_type = "Mann-Whitney"
                                 except Exception as e:
-                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
                             if p_value >= 0.05:
                                 symbol = "ns"
