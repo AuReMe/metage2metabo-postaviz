@@ -11,9 +11,7 @@ from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-from os import getpid
 from functools import partial
-from itertools import combinations
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -337,6 +335,7 @@ def get_contributions(file_name, path):
             contributions_file = contribution_processing(contributions_file)
             return contributions_file
 
+
 def retrieve_all_sample_data(sample, path):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
@@ -350,10 +349,15 @@ def retrieve_all_sample_data(sample, path):
     if os.path.isdir(sample_directory_path):
 
         cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
-        cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
-        cscope_total_production.name = sample
-        cscope_total_production = pd.DataFrame([cscope_total_production])
-        cscope_total_production.index.name = "smplID"
+        try:
+            cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
+            cscope_total_production.name = sample
+            cscope_total_production = pd.DataFrame([cscope_total_production])
+            cscope_total_production.index.name = "smplID"
+        except Exception as e:
+            print(e,"\n")
+            print(sample,"\n",sample_directory_path)
+            return None, None, None
         # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
         # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
         # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
@@ -362,7 +366,7 @@ def retrieve_all_sample_data(sample, path):
 
     return cscope_dataframe, sample, cscope_total_production
 
-
+@benchmark_decorator
 def multiprocess_retrieve_data(path, metadata):
     """Open all directories given in -d path input. Get all cscopes tsv and load them in emomry as pandas
     dataframe. Also return a dataframe with the total production by each sample. 
@@ -374,11 +378,14 @@ def multiprocess_retrieve_data(path, metadata):
         Tuple: (Dict , Dataframe)
     """
     retrieve_data = partial(retrieve_all_sample_data, path=path)
+
     nb_cpu = cpu_count() - 1
     if not type(nb_cpu) == int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
+
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
+    
     pool.close()
     pool.join()
 
@@ -389,7 +396,7 @@ def multiprocess_retrieve_data(path, metadata):
             cpd_producers.append(cpd_prod)
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
-
+    # print(all_data)
     pool = Pool(nb_cpu)
     melted_cpd_df = pool.map(melt_df_multi,cpd_producers)
     pool.close()
@@ -465,12 +472,12 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     all_data["metadata"] = open_tsv(metadata)
     # print(all_data["metadata"].dtypes)
 
-    ### AUTO-CONVERT when opening seems fine.
+    # ## AUTO-CONVERT when opening seems fine.
     # all_data["metadata"] = all_data["metadata"].convert_dtypes()
     # print(all_data["metadata"].dtypes)
     # quit()
     all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
-
+    quit()
     main_df = build_main_dataframe(all_data["sample_data"])
 
     all_data["main_dataframe"] = main_df

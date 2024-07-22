@@ -53,7 +53,7 @@ def main(args=None):
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path)
 
     elif arg_parser.dev:
-        dir_path = "/home/lbrindel/output/m2m_grp6_output/"
+        dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
         metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"

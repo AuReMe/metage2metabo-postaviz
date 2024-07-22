@@ -173,7 +173,6 @@ def run_shiny(data: DataStorage):
 
             return px.scatter(df, x="PC1", y="PC2", color=selected_col, symbol=pcoa_symbol, size=plot_size)
 
-
         @render.ui
         @reactive.event(input.pcoa_color)
         def pcoa_ui():
@@ -189,6 +188,7 @@ def run_shiny(data: DataStorage):
                             ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
                             ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0])
                         )
+            
         @render_widget
         def taxonomic_boxplot():
             if not data.HAS_TAXONOMIC_DATA:
@@ -289,9 +289,11 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = df.loc[df[x1] == layer_1,column_value].values
-                        tested_data[layer_1]["n_data"] = len(df.loc[df[x1] == layer_1][column_value])
+                        selected_data = df.loc[df[x1] == layer_1][column_value]
+                        if len(selected_data) > 1:
+                            tested_data[layer_1] = {}
+                            tested_data[layer_1]["data"] = selected_data
+                            tested_data[layer_1]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 1)
                     all_dataframe["producer_test_df"] = res
                     return res
