@@ -477,7 +477,7 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     # print(all_data["metadata"].dtypes)
     # quit()
     all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
-    quit()
+
     main_df = build_main_dataframe(all_data["sample_data"])
 
     all_data["main_dataframe"] = main_df
