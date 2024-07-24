@@ -349,25 +349,43 @@ def retrieve_all_sample_data(sample, path):
     if os.path.isdir(sample_directory_path):
 
         cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
-        try:
-            cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
-            cscope_total_production.name = sample
-            cscope_total_production = pd.DataFrame([cscope_total_production])
-            cscope_total_production.index.name = "smplID"
-        except Exception as e:
-            print(e,"\n")
-            print(sample,"\n",sample_directory_path)
-            return None, None, None
-        # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
-        # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-        # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
-    else:
-        return None, None, None
+        if cscope_dataframe is None:
+            return None, sample
 
-    return cscope_dataframe, sample, cscope_total_production
+    return cscope_dataframe, sample
 
-@benchmark_decorator
-def multiprocess_retrieve_data(path, metadata):
+def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
+        
+    cpu_available = cpu_count() - 1
+    if not type(cpu_available) == int or cpu_available < 1:
+        cpu_available = 1
+    pool = Pool(cpu_available)
+    all_producers = pool.starmap(individual_producers_processing,[(all_data[sample]["cscope"], sample) for sample in all_data.keys()])
+    pool.close()
+    pool.join()
+
+    res = pd.concat(all_producers,axis=1).T
+    res.fillna(0,inplace=True)
+    res.index.name = "smplID"
+    res.reset_index(inplace=True)
+    res = res.loc[res["smplID"].isin(metadata["smplID"])]
+    metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
+    res = pd.merge(res,metadata,'outer',"smplID")
+
+
+    return res, metadata
+
+def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
+        serie_value = []
+        serie_index = []
+
+        for i in range(len(sample_cscope.columns)):
+            serie_index.append(sample_cscope.columns[i])
+            serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
+        return pd.Series(serie_value,index=serie_index,name=sample)
+
+
+def multiprocess_retrieve_data(path):
     """Open all directories given in -d path input. Get all cscopes tsv and load them in emomry as pandas
     dataframe. Also return a dataframe with the total production by each sample. 
 
@@ -389,30 +407,13 @@ def multiprocess_retrieve_data(path, metadata):
     pool.close()
     pool.join()
 
-    cpd_producers = []
     all_data = {}
-    for df, smpl, cpd_prod in results_list:
+    for df, smpl in results_list:
         if not df is None: 
-            cpd_producers.append(cpd_prod)
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
-    # print(all_data)
-    pool = Pool(nb_cpu)
-    melted_cpd_df = pool.map(melt_df_multi,cpd_producers)
-    pool.close()
-    pool.join()
 
-    cpd_producers = pd.concat(melted_cpd_df,axis=0)
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata.columns[1:]:
-        metadata_dict[factor] = add_factor_column(metadata, cpd_producers["smplID"], factor)
-
-    cpd_producers = cpd_producers.assign(**metadata_dict)
-    cpd_producers["smplID"] = cpd_producers["smplID"].astype("category")
-    # cpd_producers.set_index("smplID",inplace=True)
-
-    return all_data, cpd_producers
+    return all_data
 
 def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe.reset_index(inplace=True)
@@ -468,19 +469,20 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         sys.exit(1)
 
     all_data = {}
-
+    print(len(all_data.keys()))
     all_data["metadata"] = open_tsv(metadata)
-    # print(all_data["metadata"].dtypes)
 
-    # ## AUTO-CONVERT when opening seems fine.
-    # all_data["metadata"] = all_data["metadata"].convert_dtypes()
-    # print(all_data["metadata"].dtypes)
-    # quit()
-    all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
+    all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
-    main_df = build_main_dataframe(all_data["sample_data"])
+    all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
 
-    all_data["main_dataframe"] = main_df
+    # print(len(all_data.keys()))
+    # for sample in all_data["sample_data"].keys():
+    #     if not sample in all_data["metadata"]["smplID"]:
+    #         del all_data["sample_data"][sample]
+    # print(len(all_data.keys()))
+
+    all_data["main_dataframe"] = build_main_dataframe(all_data["sample_data"])
 
     if abundance_path is not None:
         try:

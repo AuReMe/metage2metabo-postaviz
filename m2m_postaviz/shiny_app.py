@@ -188,7 +188,7 @@ def run_shiny(data: DataStorage):
                             ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
                             ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0])
                         )
-            
+        
         @render_widget
         def taxonomic_boxplot():
             if not data.HAS_TAXONOMIC_DATA:
