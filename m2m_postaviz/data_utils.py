@@ -352,6 +352,9 @@ def retrieve_all_sample_data(sample, path):
         if cscope_dataframe is None:
             return None, sample
 
+    else:
+        return None, sample
+
     return cscope_dataframe, sample
 
 def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
