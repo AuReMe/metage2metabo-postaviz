@@ -11,9 +11,7 @@ from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 from multiprocessing import Pool
 from multiprocessing import cpu_count
-from os import getpid
 from functools import partial
-from itertools import combinations
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -337,6 +335,7 @@ def get_contributions(file_name, path):
             contributions_file = contribution_processing(contributions_file)
             return contributions_file
 
+
 def retrieve_all_sample_data(sample, path):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
@@ -350,20 +349,46 @@ def retrieve_all_sample_data(sample, path):
     if os.path.isdir(sample_directory_path):
 
         cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
-        cscope_total_production = cscope_dataframe.apply(lambda column: column.to_numpy().sum(),axis=0)
-        cscope_total_production.name = sample
-        cscope_total_production = pd.DataFrame([cscope_total_production])
-        cscope_total_production.index.name = "smplID"
-        # all_sample_data[sample]["iscope"] = get_scopes("rev_iscope.tsv", os.path.join(path, sample))
-        # all_sample_data[sample]["advalue"] = open_added_value("addedvalue.json", os.path.join(path, sample))
-        # all_sample_data[sample]["contribution"] = get_contributions("contributions_of_microbes.json", os.path.join(path, sample))
+        if cscope_dataframe is None:
+            return None, sample
+
     else:
-        return None, None, None
+        return None, sample
 
-    return cscope_dataframe, sample, cscope_total_production
+    return cscope_dataframe, sample
+
+def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
+        
+    cpu_available = cpu_count() - 1
+    if not type(cpu_available) == int or cpu_available < 1:
+        cpu_available = 1
+    pool = Pool(cpu_available)
+    all_producers = pool.starmap(individual_producers_processing,[(all_data[sample]["cscope"], sample) for sample in all_data.keys()])
+    pool.close()
+    pool.join()
+
+    res = pd.concat(all_producers,axis=1).T
+    res.fillna(0,inplace=True)
+    res.index.name = "smplID"
+    res.reset_index(inplace=True)
+    res = res.loc[res["smplID"].isin(metadata["smplID"])]
+    metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
+    res = pd.merge(res,metadata,'outer',"smplID")
 
 
-def multiprocess_retrieve_data(path, metadata):
+    return res, metadata
+
+def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
+        serie_value = []
+        serie_index = []
+
+        for i in range(len(sample_cscope.columns)):
+            serie_index.append(sample_cscope.columns[i])
+            serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
+        return pd.Series(serie_value,index=serie_index,name=sample)
+
+
+def multiprocess_retrieve_data(path):
     """Open all directories given in -d path input. Get all cscopes tsv and load them in emomry as pandas
     dataframe. Also return a dataframe with the total production by each sample. 
 
@@ -374,38 +399,24 @@ def multiprocess_retrieve_data(path, metadata):
         Tuple: (Dict , Dataframe)
     """
     retrieve_data = partial(retrieve_all_sample_data, path=path)
+
     nb_cpu = cpu_count() - 1
     if not type(nb_cpu) == int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
+
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
+    
     pool.close()
     pool.join()
 
-    cpd_producers = []
     all_data = {}
-    for df, smpl, cpd_prod in results_list:
+    for df, smpl in results_list:
         if not df is None: 
-            cpd_producers.append(cpd_prod)
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
 
-    pool = Pool(nb_cpu)
-    melted_cpd_df = pool.map(melt_df_multi,cpd_producers)
-    pool.close()
-    pool.join()
-
-    cpd_producers = pd.concat(melted_cpd_df,axis=0)
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata.columns[1:]:
-        metadata_dict[factor] = add_factor_column(metadata, cpd_producers["smplID"], factor)
-
-    cpd_producers = cpd_producers.assign(**metadata_dict)
-    cpd_producers["smplID"] = cpd_producers["smplID"].astype("category")
-    # cpd_producers.set_index("smplID",inplace=True)
-
-    return all_data, cpd_producers
+    return all_data
 
 def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe.reset_index(inplace=True)
@@ -461,14 +472,20 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         sys.exit(1)
 
     all_data = {}
-
+    print(len(all_data.keys()))
     all_data["metadata"] = open_tsv(metadata)
 
-    all_data["sample_data"], all_data["producers_long_format"] = multiprocess_retrieve_data(dir_path, all_data["metadata"])
+    all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
-    main_df = build_main_dataframe(all_data["sample_data"])
+    all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
 
-    all_data["main_dataframe"] = main_df
+    # print(len(all_data.keys()))
+    # for sample in all_data["sample_data"].keys():
+    #     if not sample in all_data["metadata"]["smplID"]:
+    #         del all_data["sample_data"][sample]
+    # print(len(all_data.keys()))
+
+    all_data["main_dataframe"] = build_main_dataframe(all_data["sample_data"])
 
     if abundance_path is not None:
         try:
@@ -555,25 +572,6 @@ def search_long_format(id_value, df):
     value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
     return len(value)
 
-def get_cpd_quantity(sample_data: dict, sample_id: str):
-    results = {}
-    for cpd in sample_data[sample_id]["cscope"].columns[1:]:
-        results[cpd] = sample_data[sample_id]["cscope"][cpd].sum()
-    return pd.Series(results, name=sample_id)
-
-def total_production_by_sample_and_compound(main_df: pd.DataFrame, sample_data: dict):
-    prod_df = []
-    if not is_indexed_by_id(main_df):
-        main_df = main_df.set_index("smplID",drop=True)
-
-    for sample in main_df.index:
-        prod_df.append(get_cpd_quantity(sample_data, sample))
-    
-    final_df = pd.concat(prod_df, axis=1)
-    final_df = final_df.fillna(0)
-    final_df = final_df.T
-    return final_df
-
 def add_factor_column(metadata, serie_id, factor_id):
     if not is_indexed_by_id(metadata):
         metadata = metadata.set_index("smplID", drop=True)
@@ -635,14 +633,14 @@ def stat_on_plot(data: dict, layer: int):
                                     test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                     test_type = "Wilcoxon"
                                 except Exception as e:
-                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
                             else:
                                 try:
                                     test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                     test_type = "Mann-Whitney"
                                 except Exception as e:
-                                    error_log.append([pair_1,pair1_data.values,pair_2,pair2_data.values,e])
+                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
                             if p_value >= 0.05:
                                 symbol = "ns"

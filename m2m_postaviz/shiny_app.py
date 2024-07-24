@@ -8,6 +8,7 @@ from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
+import numpy as np
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -20,21 +21,18 @@ def del_list_duplicate(mylist: list):
 def run_shiny(data: DataStorage):
     ###
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
-    producer_data = data.get_producer_long_dataframe()
-    cpd_prod_by_sample = data.get_total_cpd_production_by_sample_and_compound()
-    list_of_bin = data.get_bin_list()
     list_of_cpd = data.get_cpd_list()
+
+    producer_data = data.get_producer_long_dataframe()
     total_production = data.get_total_production_by_sample()
 
     if data.HAS_TAXONOMIC_DATA:
         long_taxo_df = data.get_long_taxonomic_data()
 
-    metadata = data.get_main_metadata()
-    main_dataframe = data.get_main_dataframe()
-    current_dataframe = data.get_main_metadata()
-
     factor_list = data.list_of_factor
     factor_list.insert(0, "None")
+
+    pcoa_dataframe = data.current_pcoadf
 
     metadata_label = data.get_metadata_label()
 
@@ -112,18 +110,11 @@ def run_shiny(data: DataStorage):
         ui.output_data_frame("metadata_table")
         )
 
-    main_panel_dataframe = ui.card(
-        ui.row(
-            ui.input_select(id="factor_choice", label="Filter", choices=factor_list, selected=factor_list[0]),
-            ui.input_select(id="factor_choice2", label="Value", choices=[]),
-        ),
-        ui.output_data_frame("main_panel_table"),
-    )
     pcoa_plot_dev_table = ui.card(
         ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.input_checkbox("pcoa_check", "with abundance data."),
+                        ui.output_ui("pcoa_ui"),
                         width=350,
                         gap=30,
                     ),
@@ -150,6 +141,54 @@ def run_shiny(data: DataStorage):
         )
 
     def server(input, output, session):
+
+        @render_widget
+        def pcoa_plot():
+
+            # Get all parameters.
+            selected_col = input.pcoa_color()
+
+            df = pcoa_dataframe
+
+            value = df[selected_col]
+
+            plot_size = None
+
+            min_limit = input.pcoa_float_limit()[0]
+
+            max_limit = input.pcoa_float_limit()[1]
+
+            pcoa_symbol = input.pcoa_symbol()
+
+            pcoa_size = input.pcoa_size()
+            # Check column dtype.
+            if value.dtype == 'float64' or value.dtype == 'int64':
+
+                df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+            
+            if df[pcoa_size].dtype == 'float64' or df[pcoa_size].dtype == 'int64':
+
+                plot_size = pcoa_size
+                
+
+            return px.scatter(df, x="PC1", y="PC2", color=selected_col, symbol=pcoa_symbol, size=plot_size)
+
+        @render.ui
+        @reactive.event(input.pcoa_color)
+        def pcoa_ui():
+            value = pcoa_dataframe[input.pcoa_color()]
+            if value.dtype == 'float64' or value.dtype == 'int64':
+                return ui.TagList(
+                            ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
+                            ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0]),
+                            ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
+                        )
+            else:
+                return ui.TagList(
+                            ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
+                            ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0])
+                        )
+        
         @render_widget
         def taxonomic_boxplot():
             if not data.HAS_TAXONOMIC_DATA:
@@ -200,7 +239,7 @@ def run_shiny(data: DataStorage):
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
             if len(y1) == 0:
                 return
-            df = df.loc[df["Compound"].isin(y1)]    
+            df = df.loc[df["Compound"].isin(y1)]
             # No input selected
             if x1 == "None":
                 return 
@@ -250,9 +289,11 @@ def run_shiny(data: DataStorage):
                 if x2 == "None":
                     tested_data = {}
                     for layer_1 in df[x1].unique():
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = df.loc[df[x1] == layer_1,column_value].values
-                        tested_data[layer_1]["n_data"] = len(df.loc[df[x1] == layer_1][column_value])
+                        selected_data = df.loc[df[x1] == layer_1][column_value]
+                        if len(selected_data) > 1:
+                            tested_data[layer_1] = {}
+                            tested_data[layer_1]["data"] = selected_data
+                            tested_data[layer_1]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 1)
                     all_dataframe["producer_test_df"] = res
                     return res
@@ -342,12 +383,14 @@ def run_shiny(data: DataStorage):
                 return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample.")
             
             elif x2 == "None":
+                # df.sort_values(x1)
                 if df.shape[0] == len(df[x1].unique()):
                     return px.bar(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
                 else:
                     return px.box(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
 
             else:
+                # df.sort_values([x1,x2])
                 conditionx2 = df[x2].unique()
                 conditionx1 = df[x1].unique()
 
@@ -358,7 +401,7 @@ def run_shiny(data: DataStorage):
                 # If one of the case has multiple y values --> boxplot
                 for layer1 in conditionx1:
                     for layer2 in conditionx2:
-                        if len(df.loc[(df[x2] == layer2) & (df[x1] == layer1) & (df["Compound"].isin(y1))][column_value]) > 1:
+                        if len(df.loc[(df[x2] == layer2) & (df[x1] == layer1)][column_value]) > 1:
                             has_unique_value = False
 
                 for condition2 in conditionx2:
@@ -455,17 +498,6 @@ def run_shiny(data: DataStorage):
                             )
                 return fig
 
-        @render_widget
-        def pcoa_plot():
-            input_ab = input.pcoa_check()
-            input_color = input.pcoa_color()
-            if input_ab:
-                in_df = data.get_ab_dataframe().drop(["Days", "Group", "Antibiotics", "Patient"], axis=1)
-                res = data.run_pcoa(in_df, metadata, "braycurtis")
-            else:
-                res = data.run_pcoa(main_dataframe, metadata)
-            return px.scatter(res.samples, x="PC1", y="PC2", color=input_color)
-
         @render.data_frame
         def dev_table():
             return render.DataGrid(data.get_long_taxonomic_data())
@@ -481,8 +513,14 @@ def run_shiny(data: DataStorage):
             text = "No changes applied."
             factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
             df = data.get_main_metadata()
+            df_prod = producer_data
+            df_tot = total_production
+            df_pcoa = pcoa_dataframe
             try:
                 df[factor_choice] = df[factor_choice].astype(dtype_choice)
+                df_prod[factor_choice] = df_prod[factor_choice].astype(dtype_choice)
+                df_tot[factor_choice] = df_tot[factor_choice].astype(dtype_choice)
+                df_pcoa[factor_choice] = df_pcoa[factor_choice].astype(dtype_choice)
                 text = f"Column {factor_choice} changed to {dtype_choice}."
                 data.set_main_metadata(df)
             except ValueError as e:
@@ -494,4 +532,4 @@ def run_shiny(data: DataStorage):
             return "No taxonomic data provided."
 
     app = App(app_ui, server)
-    run_app(app=app, launch_browser=False, reload_dirs="./")
+    run_app(app=app, launch_browser=False)
