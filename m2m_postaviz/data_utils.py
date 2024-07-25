@@ -780,7 +780,12 @@ def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_pr
         savepath (str): path to save all files.
     """
 
+    if savepath is None:
+        print("save_path is None, data will not be saved.")
+        return
+
     data_dir = os.path.join(savepath,"all_samples_dataframe_postaviz")
+
     if os.path.isdir(data_dir):
         print(data_dir, "directory already exist in save_path.")
         pass
