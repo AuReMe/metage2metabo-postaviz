@@ -24,7 +24,7 @@ def test_data_processing():
     metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
     taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
     abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
-    data_dictionnary, norm_abundance_data, taxonomic_data, production_data = du.build_df(TEST_DATA_CONTAINER, metadata_file, abundance_file, taxonomy_file)
+    data_dictionnary, norm_abundance_data, taxonomic_data, production_data = du.build_df(dir_path=TEST_DATA_CONTAINER, metadata=metadata_file, abundance_path=abundance_file, taxonomic_path=taxonomy_file)
 
     # Check if resulting all_data dictionnary containt all the keys.
     keys = ["main_dataframe", "metadata", "sample_data", "producers_long_format"]

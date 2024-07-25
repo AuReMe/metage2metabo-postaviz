@@ -454,7 +454,7 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 @benchmark_decorator
-def build_df(dir_path, metadata, save_path: str ,abundance_path: str = None, taxonomic_path: str = None):
+def build_df(dir_path, metadata, save_path: str = None,abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -471,11 +471,12 @@ def build_df(dir_path, metadata, save_path: str ,abundance_path: str = None, tax
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    if not is_valid_dir(save_path):
-        print(save_path, "Saving directory's path is not a valid directory")
-        sys.exit(1)
+    if not save_path is None:
+        if not is_valid_dir(save_path):
+            print(save_path, "Saving directory's path is not a valid directory")
+            sys.exit(1)
 
-    all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
+        all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
 
     if all_data["metadata"] is None: 
         print("metadata is None")
