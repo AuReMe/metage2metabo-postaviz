@@ -87,7 +87,7 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
         print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
     elif len(str_filter.columns) > 1:
-        raise RuntimeError("More than one non-INT columns.")
+        raise RuntimeError("More than one non-numeric columns.")
     
     # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
@@ -358,7 +358,7 @@ def retrieve_all_sample_data(sample, path):
     return cscope_dataframe, sample
 
 def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
-        
+
     cpu_available = cpu_count() - 1
     if not type(cpu_available) == int or cpu_available < 1:
         cpu_available = 1
@@ -396,7 +396,7 @@ def multiprocess_retrieve_data(path):
         path (str): Path of directory
 
     Returns:
-        Tuple: (Dict , Dataframe)
+        dict: sample_data dictionnary
     """
     retrieve_data = partial(retrieve_all_sample_data, path=path)
 
@@ -454,7 +454,7 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 
-def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None):
+def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -468,26 +468,28 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         abundance_data: pandas dataframe
     """
     if not is_valid_dir(dir_path):
-        print(dir_path, "Not valid directory")
+        print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    all_data = {}
-    print(len(all_data.keys()))
-    all_data["metadata"] = open_tsv(metadata)
+    all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
 
-    all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
+    if all_data["metadata"] is None: 
+        print("metadata is None")
+        all_data["metadata"] = open_tsv(metadata)
 
-    all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
+    if not bool(all_data["sample_data"]): 
+        print("sample_data is None")
+        all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
-    # print(len(all_data.keys()))
-    # for sample in all_data["sample_data"].keys():
-    #     if not sample in all_data["metadata"]["smplID"]:
-    #         del all_data["sample_data"][sample]
-    # print(len(all_data.keys()))
+    if all_data["producers_long_format"] is None:
+        print("producers is None")
+        all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
 
-    all_data["main_dataframe"] = build_main_dataframe(all_data["sample_data"])
+    if all_data["main_dataframe"] is None:
+        print("main_dataframe is None")
+        all_data["main_dataframe"] = build_main_dataframe(all_data["sample_data"])
 
-    if abundance_path is not None:
+    if normalised_abundance_dataframe is None and abundance_path is not None:
         try:
             raw_abundance_file = open_tsv(abundance_path)
             normalised_abundance_dataframe = relative_abundance_calc(raw_abundance_file, all_data["sample_data"])
@@ -497,7 +499,7 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     else:
         normalised_abundance_dataframe = None
 
-    if taxonomic_path is not None:
+    if long_taxonomic_data is None and taxonomic_path is not None:
         try:
             raw_taxonomic_data = open_tsv(taxonomic_path)
             long_taxonomic_data = taxonomic_data_long_format(
@@ -509,7 +511,10 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
     else:
         long_taxonomic_data = None
 
-    total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
+    if total_production_dataframe is None:
+        total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
+
+    save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, save_path)
 
     return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe
 
@@ -706,3 +711,124 @@ def stat_on_plot(data: dict, layer: int):
     print("At least: ",len(error_log)," errors occured.")
     print(error_log)    
     return res
+
+
+def check_for_files(save_path = None):
+    """Open dataframe produced from previous postaviz session in savepath directory.
+
+    Args:
+        save_path (str): save_path directory path
+
+    Returns:
+        Tuple: Tuple of dataframe (dict, dataframe, dataframe, dataframe)
+    """
+    
+    all_data = {}
+    all_data["metadata"] = None
+    all_data["main_dataframe"] = None
+    all_data["producers_long_format"] = None
+    all_data["sample_data"] = {}
+    
+    total_production_dataframe = None
+    long_taxonomic_dataframe = None
+    normalised_abundance_dataframe = None
+
+    if save_path is None or not is_valid_dir(save_path):
+        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+    
+    for root, dirname, filename in os.walk(save_path):
+
+        if "all_samples_dataframe_postaviz" in dirname:
+            dirpath = os.path.join(root,"all_samples_dataframe_postaviz")
+            for sample in os.listdir(dirpath):
+                if sample.endswith("_cscope.tsv"):
+                    try:
+                        all_data["sample_data"][sample] = {}
+                        all_data["sample_data"][sample]["cscope"] = open_tsv(os.path.join(dirpath, sample))
+                    except Exception as e:
+                        print("Read tsv file: ",sample,"in", os.path.join(dirpath,sample)," failed.")
+                        continue
+
+        if "metadata_dataframe_postaviz.tsv" in filename:
+            all_data["metadata"] = open_tsv(os.path.join(root, "metadata_dataframe_postaviz.tsv"))
+
+        if "main_dataframe_postaviz.tsv" in filename:
+            all_data["main_dataframe"] = open_tsv(os.path.join(root, "main_dataframe_postaviz.tsv"))
+
+        if "producers_dataframe_postaviz.tsv" in filename:
+            all_data["producers_long_format"] = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
+
+        if "total_production_dataframe_postaviz.tsv" in filename:
+            total_production_dataframe = open_tsv(os.path.join(root, "total_production_dataframe_postaviz.tsv"))
+
+        if "taxonomic_dataframe_postaviz.tsv" in filename:
+            long_taxonomic_dataframe = open_tsv(os.path.join(root, "taxonomic_dataframe_postaviz.tsv"))
+
+        if "normalised_abundance_dataframe_postaviz.tsv" in filename:
+            normalised_abundance_dataframe = open_tsv(os.path.join(root, "normalised_abundance_dataframe_postaviz.tsv"))
+
+    return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+
+def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_production_df, savepath):
+    """Save every dataframe to save_path input.
+
+    Args:
+        all_data (dict): all_sample dataframe, metadata, main_dataframe and producer_dataframe
+        norm_abundance_df (Dataframe): abundance dataframe normalised
+        long_taxo_df (Dataframe): taxonomic dataframe in long format
+        total_production_df (Dataframe): total production dataframe
+        savepath (str): path to save all files.
+    """
+
+    if savepath is None:
+        print("save_path is None, data will not be saved.")
+        return
+
+    data_dir = os.path.join(savepath,"all_samples_dataframe_postaviz")
+
+    if os.path.isdir(data_dir):
+        print(data_dir, "directory already exist in save_path.")
+        pass
+    else:
+        os.makedirs(data_dir)
+        print("No existing directory for path: ", data_dir)
+ 
+        for sample in all_data["sample_data"].keys():
+            try:
+                filename = str(sample+"_cscope.tsv")
+                filename_path = os.path.join(data_dir,filename)
+                all_data["sample_data"][sample]["cscope"].to_csv(filename_path,sep="\t")
+            except Exception as e:
+                print("Saving ERROR",e)
+    
+    if os.path.isfile(os.path.join(savepath,"main_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"main_dataframe_postaviz.tsv"), " file already exist.")
+    else:
+        if all_data["main_dataframe"] is not None: all_data["main_dataframe"].to_csv(os.path.join(savepath,"main_dataframe_postaviz.tsv"),sep="\t")
+
+    if os.path.isfile(os.path.join(savepath,"metadata_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"), " file already exist.")
+    else:
+        if all_data["metadata"] is not None: all_data["metadata"].to_csv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"),sep="\t")
+ 
+    if os.path.isfile(os.path.join(savepath,"producers_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"producers_dataframe_postaviz.tsv"), " file already exist.")
+    else:
+        if all_data["producers_long_format"] is not None: all_data["producers_long_format"].to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t")
+
+    if os.path.isfile(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"), " file already exist")
+    else:
+        if norm_abundance_df is not None: norm_abundance_df.to_csv(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+ 
+    if os.path.isfile(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), " file already exist")
+    else:
+        if long_taxo_df is not None: long_taxo_df.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"),sep="\t")
+ 
+    if os.path.isfile(os.path.join(savepath,"total_production_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"), " file already exist")
+    else:
+        if total_production_df is not None: total_production_df.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t")
+
+    return
