@@ -87,7 +87,7 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
         print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
     elif len(str_filter.columns) > 1:
-        raise RuntimeError("More than one non-INT columns.")
+        raise RuntimeError("More than one non-numeric columns.")
     
     # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
@@ -453,8 +453,8 @@ def build_main_dataframe(sample_data: dict):
     
     return results
 
-@benchmark_decorator
-def build_df(dir_path, metadata, save_path: str = None,abundance_path: str = None, taxonomic_path: str = None):
+
+def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = None, taxonomic_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -471,21 +471,13 @@ def build_df(dir_path, metadata, save_path: str = None,abundance_path: str = Non
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    if not save_path is None:
-        if not is_valid_dir(save_path):
-            print(save_path, "Saving directory's path is not a valid directory")
-            sys.exit(1)
-
-        all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
-
-    else:
-        all_data = {}
+    all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
 
     if all_data["metadata"] is None: 
         print("metadata is None")
         all_data["metadata"] = open_tsv(metadata)
 
-    if all_data["sample_data"] is None: 
+    if not bool(all_data["sample_data"]): 
         print("sample_data is None")
         all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
@@ -721,7 +713,7 @@ def stat_on_plot(data: dict, layer: int):
     return res
 
 
-def check_for_files(save_path):
+def check_for_files(save_path = None):
     """Open dataframe produced from previous postaviz session in savepath directory.
 
     Args:
@@ -731,54 +723,49 @@ def check_for_files(save_path):
         Tuple: Tuple of dataframe (dict, dataframe, dataframe, dataframe)
     """
     
-    metadata = None
-    all_sample_data = {}
-    main_dataframe = None
-    producers_dataframe = None
+    all_data = {}
+    all_data["metadata"] = None
+    all_data["main_dataframe"] = None
+    all_data["producers_long_format"] = None
+    all_data["sample_data"] = {}
+    
     total_production_dataframe = None
     long_taxonomic_dataframe = None
     normalised_abundance_dataframe = None
 
+    if save_path is None or not is_valid_dir(save_path):
+        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+    
     for root, dirname, filename in os.walk(save_path):
-
-        if "metadata_dataframe_postaviz.tsv" in filename:
-            metadata = open_tsv(os.path.join(root, "metadata_dataframe_postaviz.tsv"))
 
         if "all_samples_dataframe_postaviz" in dirname:
             dirpath = os.path.join(root,"all_samples_dataframe_postaviz")
             for sample in os.listdir(dirpath):
                 if sample.endswith("_cscope.tsv"):
                     try:
-                        all_sample_data[sample] = {}
-                        all_sample_data[sample]["cscope"] = open_tsv(os.path.join(dirpath, sample))
+                        all_data["sample_data"][sample] = {}
+                        all_data["sample_data"][sample]["cscope"] = open_tsv(os.path.join(dirpath, sample))
                     except Exception as e:
                         print("Read tsv file: ",sample,"in", os.path.join(dirpath,sample)," failed.")
                         continue
 
+        if "metadata_dataframe_postaviz.tsv" in filename:
+            all_data["metadata"] = open_tsv(os.path.join(root, "metadata_dataframe_postaviz.tsv"))
+
+        if "main_dataframe_postaviz.tsv" in filename:
+            all_data["main_dataframe"] = open_tsv(os.path.join(root, "main_dataframe_postaviz.tsv"))
+
         if "producers_dataframe_postaviz.tsv" in filename:
-            producers_dataframe = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
+            all_data["producers_long_format"] = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
 
         if "total_production_dataframe_postaviz.tsv" in filename:
             total_production_dataframe = open_tsv(os.path.join(root, "total_production_dataframe_postaviz.tsv"))
-
-        if "main_dataframe_postaviz.tsv" in filename:
-            main_dataframe = open_tsv(os.path.join(root, "main_dataframe_postaviz.tsv"))
 
         if "taxonomic_dataframe_postaviz.tsv" in filename:
             long_taxonomic_dataframe = open_tsv(os.path.join(root, "taxonomic_dataframe_postaviz.tsv"))
 
         if "normalised_abundance_dataframe_postaviz.tsv" in filename:
             normalised_abundance_dataframe = open_tsv(os.path.join(root, "normalised_abundance_dataframe_postaviz.tsv"))
-
-        all_data = {}
-
-        all_data["metadata"] = metadata
-
-        all_data["sample_data"] = all_sample_data if bool(all_sample_data) else None
-
-        all_data["producers_long_format"] = producers_dataframe 
-
-        all_data["main_dataframe"] = main_dataframe
 
     return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
 
@@ -806,9 +793,8 @@ def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_pr
                 filename = str(sample+"_cscope.tsv")
                 filename_path = os.path.join(data_dir,filename)
                 all_data["sample_data"][sample]["cscope"].to_csv(filename_path,sep="\t")
-                print(f"Saved in :\n{filename_path}")
             except Exception as e:
-                print("ERROR",e)
+                print("Saving ERROR",e)
     
     if os.path.isfile(os.path.join(savepath,"main_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"main_dataframe_postaviz.tsv"), " file already exist.")

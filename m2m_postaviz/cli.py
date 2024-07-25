@@ -57,7 +57,7 @@ def main(args=None):
         metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
-        save_path = "/home/lbrindel/output/save_output_m2m"
+        save_path = "/home/lbrindel/output/testouille"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, save_path, abundance_path, taxonomic_path)
 
     else:
