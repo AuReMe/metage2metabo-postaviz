@@ -478,6 +478,9 @@ def build_df(dir_path, metadata, save_path: str = None,abundance_path: str = Non
 
         all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
 
+    else:
+        all_data = {}
+
     if all_data["metadata"] is None: 
         print("metadata is None")
         all_data["metadata"] = open_tsv(metadata)
