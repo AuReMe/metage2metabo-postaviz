@@ -17,6 +17,7 @@ dependencies = [
   'plotly',
   'shiny',
   'shinywidgets'
+  'scikit-bio
 ]
 
 [project.scripts]
