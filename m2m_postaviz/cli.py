@@ -50,7 +50,7 @@ def main(args=None):
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
         save_path = "test_path"
-        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path)
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path)
 
     elif arg_parser.dev:
         dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
@@ -58,7 +58,7 @@ def main(args=None):
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
         save_path = "/home/lbrindel/output/testouille"
-        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, save_path, abundance_path, taxonomic_path)
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, save_path, abundance_path, taxonomic_path)
 
     else:
         arg_parser = vars(parser.parse_args())
@@ -67,8 +67,8 @@ def main(args=None):
         taxonomy_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe = du.build_df(dir_path, metadata, save_path, abundance_path, taxonomy_path)
+        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, save_path, abundance_path, taxonomy_path)
 
-    Data = DataStorage(save_path, global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe)
+    Data = DataStorage(save_path, global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe, pcoa_dataframe)
 
     sh.run_shiny(Data)
