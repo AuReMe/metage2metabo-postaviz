@@ -13,7 +13,7 @@ class DataStorage:
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
-    def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None):
+    def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
 
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
@@ -44,7 +44,7 @@ class DataStorage:
         self.list_of_factor = list(self.metadata.columns)
         # self.factorize_metadata()
 
-        self.current_pcoadf = self.run_pcoa()
+        self.current_pcoadf = pcoa_dataframe
 
     def performance_benchmark(self):
         cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())

@@ -16,7 +16,8 @@ dependencies = [
   'padmet',
   'plotly',
   'shiny',
-  'shinywidgets'
+  'shinywidgets',
+  'scikit-bio'
 ]
 
 [project.scripts]

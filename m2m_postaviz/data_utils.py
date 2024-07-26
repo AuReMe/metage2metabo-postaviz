@@ -12,6 +12,8 @@ from scipy import stats
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from functools import partial
+from skbio.stats.ordination import pcoa
+from scipy.spatial.distance import squareform,pdist
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -514,9 +516,10 @@ def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = No
     if total_production_dataframe is None:
         total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
 
-    save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, save_path)
+    pcoa_dataframe = pcoa_alternative_method(all_data["main_dataframe"],all_data['metadata'])
 
-    return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe
+    save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, save_path)
+    return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe
 
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
@@ -804,31 +807,54 @@ def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_pr
     if os.path.isfile(os.path.join(savepath,"main_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"main_dataframe_postaviz.tsv"), " file already exist.")
     else:
-        if all_data["main_dataframe"] is not None: all_data["main_dataframe"].to_csv(os.path.join(savepath,"main_dataframe_postaviz.tsv"),sep="\t")
+        if all_data["main_dataframe"] is not None: all_data["main_dataframe"].to_csv(os.path.join(savepath,"main_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(all_data["main_dataframe"]) else False)
 
     if os.path.isfile(os.path.join(savepath,"metadata_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"), " file already exist.")
     else:
-        if all_data["metadata"] is not None: all_data["metadata"].to_csv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"),sep="\t")
+        if all_data["metadata"] is not None: all_data["metadata"].to_csv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(all_data["metadata"]) else False)
  
     if os.path.isfile(os.path.join(savepath,"producers_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"producers_dataframe_postaviz.tsv"), " file already exist.")
     else:
-        if all_data["producers_long_format"] is not None: all_data["producers_long_format"].to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t")
+        if all_data["producers_long_format"] is not None: all_data["producers_long_format"].to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(all_data["producers_long_format"]) else False)
 
     if os.path.isfile(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"), " file already exist")
     else:
-        if norm_abundance_df is not None: norm_abundance_df.to_csv(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+        if norm_abundance_df is not None: norm_abundance_df.to_csv(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(norm_abundance_df) else False)
  
     if os.path.isfile(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), " file already exist")
     else:
-        if long_taxo_df is not None: long_taxo_df.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"),sep="\t")
+        if long_taxo_df is not None: long_taxo_df.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(long_taxo_df) else False)
  
     if os.path.isfile(os.path.join(savepath,"total_production_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"), " file already exist")
     else:
-        if total_production_df is not None: total_production_df.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t")
+        if total_production_df is not None: total_production_df.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(total_production_df) else False)
 
     return
+
+def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
+
+    if not is_indexed_by_id(main_dataframe):
+        main_dataframe = main_dataframe.set_index("smplID")
+
+    if not is_indexed_by_id(metadata):
+        metadata = metadata.set_index("smplID")
+
+    dmatrix = main_dataframe.to_numpy()
+    dist_m = pdist(dmatrix, "jaccard")
+    square_df = squareform(dist_m)
+    pcoa_result = pcoa(square_df,number_of_dimensions=2)
+    coordinate = pcoa_result.samples
+
+    df_pcoa = coordinate[['PC1','PC2']]
+    df_pcoa['smplID'] = main_dataframe.index.to_numpy()
+
+    metadata_loc = metadata.loc[metadata.index.isin(coordinate.index)]
+    df_pcoa = pd.merge(df_pcoa, metadata_loc, "outer", "smplID")
+    df_pcoa.set_index("smplID",inplace=True)
+
+    return df_pcoa

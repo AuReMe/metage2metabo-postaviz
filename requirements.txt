@@ -4,3 +4,4 @@ padmet>=5.0.1
 plotly>=5.18.0
 shiny>=0.6.0
 shinywidgets>=0.2.3
+scikit-bio>=0.5.9
