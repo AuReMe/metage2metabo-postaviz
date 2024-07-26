@@ -90,7 +90,7 @@ class DataStorage:
         return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
-        return True if df.index.name == self.ID_VAR else False
+        return True if df.index.name == "smplID" else False
 
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
@@ -111,8 +111,10 @@ class DataStorage:
         return len(self.metadata.columns)
 
     def get_metadata_label(self):
+        print(self.metadata.columns)
         if self.is_indexed(self.metadata):
             return list(self.metadata.columns)
+        print(self.metadata.columns[1:])
         return list(self.metadata.columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
