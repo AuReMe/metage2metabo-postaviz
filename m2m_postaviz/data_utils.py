@@ -377,6 +377,14 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
     res = pd.merge(res,metadata,'outer',"smplID")
 
+    # Correct melted version sys.getsizeof() == 10053680472 !
+    # res = res.melt("smplID",var_name="Compound",value_name="Value")
+    # metadata_dict = {}
+    # for factor in metadata.columns[1:]:
+    #     metadata_dict[factor] = add_factor_column(metadata, res["smplID"], factor)
+
+    # res = res.assign(**metadata_dict)
+
 
     return res, metadata
 
@@ -456,7 +464,7 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 
-def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = None, taxonomic_path: str = None):
+def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -522,7 +530,7 @@ def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = No
         pcoa_dataframe = pcoa_alternative_method(all_data["main_dataframe"],all_data['metadata'])
 
     save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe, save_path)
-
+    
     return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe
 
 
@@ -742,7 +750,8 @@ def check_for_files(save_path = None):
     pcoa_dataframe = None
 
     if save_path is None or not is_valid_dir(save_path):
-        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+        print("save_path is none, ignoring load data function.")
+        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe, pcoa_dataframe
     
     for root, dirname, filename in os.walk(save_path):
 
@@ -751,8 +760,9 @@ def check_for_files(save_path = None):
             for sample in os.listdir(dirpath):
                 if sample.endswith("_cscope.tsv"):
                     try:
-                        all_data["sample_data"][sample] = {}
-                        all_data["sample_data"][sample]["cscope"] = open_tsv(os.path.join(dirpath, sample))
+                        sample_name = sample.split("_", 1)[0]
+                        all_data["sample_data"][sample_name] = {}
+                        all_data["sample_data"][sample_name]["cscope"] = open_tsv(os.path.join(dirpath, sample),True,True)
                     except Exception as e:
                         print("Read tsv file: ",sample,"in", os.path.join(dirpath,sample)," failed.")
                         continue
