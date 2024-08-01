@@ -377,6 +377,14 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
     res = pd.merge(res,metadata,'outer',"smplID")
 
+    # Correct melted version sys.getsizeof() == 10053680472 !
+    # res = res.melt("smplID",var_name="Compound",value_name="Value")
+    # metadata_dict = {}
+    # for factor in metadata.columns[1:]:
+    #     metadata_dict[factor] = add_factor_column(metadata, res["smplID"], factor)
+
+    # res = res.assign(**metadata_dict)
+
 
     return res, metadata
 
@@ -456,7 +464,7 @@ def build_main_dataframe(sample_data: dict):
     return results
 
 
-def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = None, taxonomic_path: str = None):
+def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
     """
     Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
 
@@ -473,22 +481,22 @@ def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = No
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe = check_for_files(save_path)
+    all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
 
     if all_data["metadata"] is None: 
-        print("metadata is None")
+        print("Open metadata dataframe.")
         all_data["metadata"] = open_tsv(metadata)
 
     if not bool(all_data["sample_data"]): 
-        print("sample_data is None")
+        print("Fetch sample's cscope.")
         all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
     if all_data["producers_long_format"] is None:
-        print("producers is None")
+        print("Building producers dataframe.")
         all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
 
     if all_data["main_dataframe"] is None:
-        print("main_dataframe is None")
+        print("Building main dataframe.")
         all_data["main_dataframe"] = build_main_dataframe(all_data["sample_data"])
 
     if normalised_abundance_dataframe is None and abundance_path is not None:
@@ -514,11 +522,15 @@ def build_df(dir_path, metadata, save_path: str = None, abundance_path: str = No
         long_taxonomic_data = None
 
     if total_production_dataframe is None:
+        print("Building total production dataframe.")
         total_production_dataframe = total_production_by_sample(all_data["main_dataframe"], all_data["sample_data"], all_data["metadata"], normalised_abundance_dataframe)
 
-    pcoa_dataframe = pcoa_alternative_method(all_data["main_dataframe"],all_data['metadata'])
+    if pcoa_dataframe is None:
+        print("Run pcoa with main dataframe.")
+        pcoa_dataframe = pcoa_alternative_method(all_data["main_dataframe"],all_data['metadata'])
 
-    save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, save_path)
+    save_all_dataframe(all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe, save_path)
+    
     return all_data, normalised_abundance_dataframe, long_taxonomic_data, total_production_dataframe, pcoa_dataframe
 
 
@@ -735,9 +747,11 @@ def check_for_files(save_path = None):
     total_production_dataframe = None
     long_taxonomic_dataframe = None
     normalised_abundance_dataframe = None
+    pcoa_dataframe = None
 
     if save_path is None or not is_valid_dir(save_path):
-        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+        print("save_path is none, ignoring load data function.")
+        return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe, pcoa_dataframe
     
     for root, dirname, filename in os.walk(save_path):
 
@@ -746,8 +760,9 @@ def check_for_files(save_path = None):
             for sample in os.listdir(dirpath):
                 if sample.endswith("_cscope.tsv"):
                     try:
-                        all_data["sample_data"][sample] = {}
-                        all_data["sample_data"][sample]["cscope"] = open_tsv(os.path.join(dirpath, sample))
+                        sample_name = sample.split("_", 1)[0]
+                        all_data["sample_data"][sample_name] = {}
+                        all_data["sample_data"][sample_name]["cscope"] = open_tsv(os.path.join(dirpath, sample),True,True)
                     except Exception as e:
                         print("Read tsv file: ",sample,"in", os.path.join(dirpath,sample)," failed.")
                         continue
@@ -769,10 +784,13 @@ def check_for_files(save_path = None):
 
         if "normalised_abundance_dataframe_postaviz.tsv" in filename:
             normalised_abundance_dataframe = open_tsv(os.path.join(root, "normalised_abundance_dataframe_postaviz.tsv"))
+        
+        if "pcoa_dataframe_postaviz.tsv" in filename:
+            pcoa_dataframe = open_tsv(os.path.join(root, "pcoa_dataframe_postaviz.tsv"))
 
-    return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe
+    return all_data, normalised_abundance_dataframe, long_taxonomic_dataframe, total_production_dataframe, pcoa_dataframe
 
-def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_production_df, savepath):
+def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_production_df, pcoa_dataframe, savepath):
     """Save every dataframe to save_path input.
 
     Args:
@@ -834,10 +852,23 @@ def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_pr
     else:
         if total_production_df is not None: total_production_df.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(total_production_df) else False)
 
+    if os.path.isfile(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv")):
+        print(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"), " file already exist")
+    else:
+        if pcoa_dataframe is not None: pcoa_dataframe.to_csv(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(pcoa_dataframe) else False)
+
     return
 
 def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
+    """Comptute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
 
+    Args:
+        main_dataframe (pd.DataFrame): Dataframe from which the pcoa will be made.
+        metadata (pd.DataFrame): Metadata dataframe (Must have smplID identifer column for the merge to work)
+
+    Returns:
+        pd.DataFrame: Pcoa dataframe with sample ID as index, PC1 and PC2 results and all metadata.
+    """
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
 

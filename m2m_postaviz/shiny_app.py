@@ -14,16 +14,12 @@ import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
 
-def del_list_duplicate(mylist: list):
-    return list(dict.fromkeys(mylist))
-
-
 def run_shiny(data: DataStorage):
     ###
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
     list_of_cpd = data.get_cpd_list()
 
-    producer_data = data.get_producer_long_dataframe()
+    producer_data = data.get_producer_dataframe()
     total_production = data.get_total_production_by_sample()
 
     if data.HAS_TAXONOMIC_DATA:
@@ -40,7 +36,7 @@ def run_shiny(data: DataStorage):
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
-    abundance_boxplot =   ui.card(
+    producer_plot =   ui.card(
             ui.layout_sidebar(
                 ui.sidebar(
                     ui.input_select("box_inputx1", "Label for X axis", factor_list),
@@ -55,7 +51,7 @@ def run_shiny(data: DataStorage):
                     gap=30,
 
             ),
-        output_widget("Abundance_boxplot"), 
+        output_widget("producer_plot"), 
         ui.output_data_frame("abundance_test_dataframe")
         ),
         full_screen=True
@@ -79,7 +75,7 @@ def run_shiny(data: DataStorage):
         taxonomy_boxplot = ui.output_text_verbatim("no_taxonomy", True),
 
     ### PRODUCER BOXPLOT CARD
-    producer_boxplot = ui.card(
+    total_production_plot = ui.card(
         ui.card_header("Total production of all compound, weighted with the abundance if provided."),
         ui.layout_sidebar(
             ui.sidebar(
@@ -93,7 +89,7 @@ def run_shiny(data: DataStorage):
                 width=350,
                 gap=30,
             ),
-            output_widget("producer_boxplot"),
+            output_widget("total_production_plot"),
             ui.output_data_frame("production_test_dataframe")
         
         ),
@@ -127,7 +123,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", producer_boxplot, abundance_boxplot, taxonomy_boxplot),
+            ui.nav("Exploration", total_production_plot, taxonomy_boxplot),
             ui.nav(
                 "Metadata",
                 metadata_table,
@@ -152,26 +148,16 @@ def run_shiny(data: DataStorage):
 
             value = df[selected_col]
 
-            plot_size = None
-
             min_limit = input.pcoa_float_limit()[0]
 
             max_limit = input.pcoa_float_limit()[1]
 
-            pcoa_symbol = input.pcoa_symbol()
-
-            pcoa_size = input.pcoa_size()
             # Check column dtype.
             if value.dtype == 'float64' or value.dtype == 'int64':
 
                 df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
-            
-            if df[pcoa_size].dtype == 'float64' or df[pcoa_size].dtype == 'int64':
 
-                plot_size = pcoa_size
-                
-
-            return px.scatter(df, x="PC1", y="PC2", color=selected_col, symbol=pcoa_symbol, size=plot_size)
+            return px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
         @render.ui
         @reactive.event(input.pcoa_color)
@@ -179,15 +165,10 @@ def run_shiny(data: DataStorage):
             value = pcoa_dataframe[input.pcoa_color()]
             if value.dtype == 'float64' or value.dtype == 'int64':
                 return ui.TagList(
-                            ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
-                            ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0]),
                             ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
                         )
             else:
-                return ui.TagList(
-                            ui.input_select("pcoa_symbol", "Symbol :",metadata_label,selected=metadata_label[0]),
-                            ui.input_select("pcoa_size", "Size :",metadata_label,selected=metadata_label[0])
-                        )
+                return 
         
         @render_widget
         def taxonomic_boxplot():
@@ -362,7 +343,7 @@ def run_shiny(data: DataStorage):
             return log
 
         @render_widget
-        def Abundance_boxplot():
+        def producer_plot():
             # Which type of dataframe
             with_abundance_data = input.ab_norm()
             if with_abundance_data and data.HAS_ABUNDANCE_DATA:
@@ -439,7 +420,7 @@ def run_shiny(data: DataStorage):
                 return fig
 
         @render_widget
-        def producer_boxplot():
+        def total_production_plot():
             with_normalised_data = input.prod_norm()
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
                 column_value = "Total_abundance_weighted"

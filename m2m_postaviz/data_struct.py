@@ -1,5 +1,5 @@
 import cProfile
-
+import plotly.express as px
 import pandas as pd
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -7,19 +7,21 @@ from skbio.stats.ordination import pcoa
 import os
 import sys
 import m2m_postaviz.data_utils as du
-
+import plotly.graph_objects as go
 
 class DataStorage:
+
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
+
     def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
 
         self.main_data = data_container["main_dataframe"]
         self.sample_data = data_container["sample_data"]
         self.metadata = data_container["metadata"]
         
-        self.cpd_producers_long = data_container["producers_long_format"]
+        self.producer_dataframe = data_container["producers_long_format"]
         self.total_production_dataframe = total_production_dataframe
         
         if du.is_valid_dir(save_path):
@@ -52,8 +54,8 @@ class DataStorage:
     def get_total_production_by_sample(self, as_copy: bool = True):
         return self.total_production_dataframe.copy() if as_copy else self.total_production_dataframe
 
-    def get_producer_long_dataframe(self, as_copy: bool = True):
-        return self.cpd_producers_long.copy() if as_copy else self.cpd_producers_long
+    def get_producer_dataframe(self, as_copy: bool = True):
+        return self.producer_dataframe.copy() if as_copy else self.producer_dataframe
 
     def get_cpd_list(self):
         query = self.get_main_dataframe().columns.tolist()
@@ -90,7 +92,7 @@ class DataStorage:
         return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
-        return True if df.index.name == self.ID_VAR else False
+        return True if df.index.name == "smplID" else False
 
     def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
         return self.sample_data[sample_id][mode]["Name"].to_list()
@@ -111,8 +113,10 @@ class DataStorage:
         return len(self.metadata.columns)
 
     def get_metadata_label(self):
+        print(self.metadata.columns)
         if self.is_indexed(self.metadata):
             return list(self.metadata.columns)
+        print(self.metadata.columns[1:])
         return list(self.metadata.columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
@@ -153,47 +157,6 @@ class DataStorage:
         result = metadata.loc[metadata["smplID"] == id_value][metadata_col].values[0]
         return result
 
-    def run_pcoa(self, distance_method: str = "jaccard"):
-        """Calculate Principal Coordinate Analysis with the dataframe given in args.
-        Use metadata's drataframe as second argument to return the full ordination result plus
-        all metadata column inserted along Ordination.samples dataframe.
-        Ready to be plotted.
-
-        Args:
-            main_df (pd.DataFrame): Main dataframe of compound production
-            metadata (pd.DataFrame): Metadata's dataframe
-
-        Returns:
-            _type_: Ordination results object from skbio's package.
-        """
-        main_df = self.get_main_dataframe()
-        metadata = self.get_main_metadata()
-
-        # Need the matrix version for distance calculation.
-        if not self.is_indexed(main_df):
-            main_df.set_index("smplID", inplace=True)
-
-        # Normalisation
-        # main_df = main_df.apply(lambda x: x / x.sum(), axis=0)
-
-        # Calculate distance matrix with Bray-Curtis method.
-        dist_m = pdist(main_df, distance_method)
-
-        # Transform distance matrix into squareform.
-        squaref_m = squareform(dist_m)
-
-        # Run the PCOA with the newly generated distance matrix.
-        pcoa_results = pcoa(squaref_m, number_of_dimensions=main_df.shape[0] - 1)
-
-        # Verify if PCOA_results's samples dataframe is aligned with df dataframe.
-        final_results = pcoa_results.samples
-        final_results.set_index(main_df.index,inplace = True)
-        final_results.reset_index(inplace=True)
-        metadata_loc = self.metadata.loc[metadata["smplID"].isin(final_results["smplID"])]
-        final_results = pd.merge(final_results,metadata_loc, how='outer', on=None)
-        
-        return final_results
-
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path
         final_file_path = path_to_save + "/" + file_name + "." + extension
@@ -217,3 +180,51 @@ class DataStorage:
             return file_path
         else:
             return self.check_and_rename(original_file_path, add + 1)
+        
+    def make_figure_from_df(df: pd.DataFrame):
+        fig = go.Figure()
+        fig.add_trace(go.scatter(
+                df,
+                x='PC1',
+                y='PC2',
+                color=df.index
+            )
+        )
+        return fig
+    
+    def plot(df: pd.DataFrame, compounds_input: str, first_input:str = "None", second_input = "None"):
+        """Return a plotly express figure from the dataframe and the input(s).
+        Checks for y single value case for barplot or boxplot.
+
+        Args:
+            df (pd.DataFrame): dataframe to plot
+            compounds_input (str): list of compounds to show
+            first_input (str, optional): first axis of the plot, must be a label of a column of the dataframe. Defaults to "None".
+            second_input (str, optional): second axis of the plot, must be a column's label of the datafrale. Defaults to "None".
+
+        Returns:
+            px.figure: plotly express figure.
+        """
+        if first_input == "None":
+            return px.box(df,y=compounds_input, notched=True)
+
+        if second_input == "None":
+            has_unique_value = True
+            for value_input1 in df[first_input].unique():   
+                print(len(df.loc[df[first_input] == value_input1][compounds_input]))
+                if len(df.loc[df[first_input] == value_input1][compounds_input]) > 1:
+                    has_unique_value = False
+                    break
+
+            return px.bar(df,x=first_input,y=compounds_input,color=first_input) if has_unique_value else px.box(df,x=first_input,y=compounds_input,color=first_input, notched=True)
+            
+        has_unique_value = True
+        for value_input1 in df[first_input].unique():
+                for value_input2 in df[second_input].unique():   
+                    if len(df.loc[(df[second_input] == value_input2) & (df[first_input] == value_input1)][compounds_input]) > 1:
+                        has_unique_value = False
+                        break
+
+        return px.bar(df, x=first_input, y=compounds_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compounds_input,color=second_input, boxmode="group")
+
+        
