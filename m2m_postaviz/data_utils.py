@@ -872,8 +872,8 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
 
-    if not is_indexed_by_id(metadata):
-        metadata = metadata.set_index("smplID")
+    if  is_indexed_by_id(metadata):
+        metadata = metadata.reset_index("smplID")
 
     dmatrix = main_dataframe.to_numpy()
     dist_m = pdist(dmatrix, "jaccard")
@@ -883,8 +883,9 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
 
     df_pcoa = coordinate[['PC1','PC2']]
     df_pcoa['smplID'] = main_dataframe.index.to_numpy()
+    # df_pcoa.reset_index(inplace=True)
 
-    metadata_loc = metadata.loc[metadata.index.isin(coordinate.index)]
+    metadata_loc = metadata.loc[metadata["smplID"].isin(df_pcoa["smplID"])]
     df_pcoa = pd.merge(df_pcoa, metadata_loc, "outer", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 

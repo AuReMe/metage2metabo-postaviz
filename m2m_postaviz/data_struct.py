@@ -113,10 +113,8 @@ class DataStorage:
         return len(self.metadata.columns)
 
     def get_metadata_label(self):
-        print(self.metadata.columns)
         if self.is_indexed(self.metadata):
             return list(self.metadata.columns)
-        print(self.metadata.columns[1:])
         return list(self.metadata.columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
@@ -192,7 +190,7 @@ class DataStorage:
         )
         return fig
     
-    def plot(df: pd.DataFrame, compounds_input: str, first_input:str = "None", second_input = "None"):
+    def plot(self, df: pd.DataFrame, compounds_input: str, first_input:str = "None", second_input = "None"):
         """Return a plotly express figure from the dataframe and the input(s).
         Checks for y single value case for barplot or boxplot.
 
@@ -205,6 +203,8 @@ class DataStorage:
         Returns:
             px.figure: plotly express figure.
         """
+        print("Dealing plot with: ", first_input, second_input)
+
         if first_input == "None":
             return px.box(df,y=compounds_input, notched=True)
 

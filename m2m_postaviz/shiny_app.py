@@ -19,7 +19,7 @@ def run_shiny(data: DataStorage):
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
     list_of_cpd = data.get_cpd_list()
 
-    producer_data = data.get_producer_dataframe()
+    producer_data = data.get_producer_dataframe(False)
     total_production = data.get_total_production_by_sample()
 
     if data.HAS_TAXONOMIC_DATA:
@@ -32,7 +32,7 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_metadata_label()
 
-    all_dataframe = {"producer_test_df": None, "producer_plot_df": None, "abundance_test_df": None, "abundance_plot_df": None}
+    all_dataframe = {"total_production_test_dataframe": None, "producer_plot_df": None, "producers_test_dataframe": None, "abundance_plot_df": None}
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -52,7 +52,7 @@ def run_shiny(data: DataStorage):
 
             ),
         output_widget("producer_plot"), 
-        ui.output_data_frame("abundance_test_dataframe")
+        # ui.output_data_frame("producer_test_dataframe")
         ),
         full_screen=True
         )
@@ -74,7 +74,6 @@ def run_shiny(data: DataStorage):
     else:
         taxonomy_boxplot = ui.output_text_verbatim("no_taxonomy", True),
 
-    ### PRODUCER BOXPLOT CARD
     total_production_plot = ui.card(
         ui.card_header("Total production of all compound, weighted with the abundance if provided."),
         ui.layout_sidebar(
@@ -90,7 +89,7 @@ def run_shiny(data: DataStorage):
                 gap=30,
             ),
             output_widget("total_production_plot"),
-            ui.output_data_frame("production_test_dataframe")
+            # ui.output_data_frame("production_test_dataframe")
         
         ),
         full_screen=True
@@ -123,7 +122,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", total_production_plot, taxonomy_boxplot),
+            ui.nav("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
             ui.nav(
                 "Metadata",
                 metadata_table,
@@ -146,29 +145,34 @@ def run_shiny(data: DataStorage):
 
             df = pcoa_dataframe
 
+            print(df)
+
             value = df[selected_col]
 
-            min_limit = input.pcoa_float_limit()[0]
+            # min_limit = input.pcoa_float_limit()[0]
 
-            max_limit = input.pcoa_float_limit()[1]
+            # max_limit = input.pcoa_float_limit()[1]
 
             # Check column dtype.
-            if value.dtype == 'float64' or value.dtype == 'int64':
+            # if value.dtype == 'float64' or value.dtype == 'int64':
 
-                df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+            #     df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
 
-            return px.scatter(df, x="PC1", y="PC2", color=selected_col)
+            fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
-        @render.ui
-        @reactive.event(input.pcoa_color)
-        def pcoa_ui():
-            value = pcoa_dataframe[input.pcoa_color()]
-            if value.dtype == 'float64' or value.dtype == 'int64':
-                return ui.TagList(
-                            ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
-                        )
-            else:
-                return 
+            return fig
+
+        # Value.dtype does not seem to be reliable with Nan in columns.
+        # @render.ui
+        # @reactive.event(input.pcoa_color)
+        # def pcoa_ui():
+        #     value = pcoa_dataframe[input.pcoa_color()]
+        #     if value.dtype == 'float64' or value.dtype == 'int64':
+        #         return ui.TagList(
+        #                     ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
+        #                 )
+        #     else:
+        #         return 
         
         @render_widget
         def taxonomic_boxplot():
@@ -207,17 +211,13 @@ def run_shiny(data: DataStorage):
                 return fig
 
         @render.data_frame
-        def abundance_test_dataframe():
+        def producer_test_dataframe():
             # Get input
-            with_normalised_data = input.ab_norm()
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                df = data.get_melted_norm_ab_dataframe()
-                column_value = "Quantity"
-            else:
-                df = producer_data
-                column_value = "Value"
+            return
+            df = producer_data
 
             y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
+
             if len(y1) == 0:
                 return
             df = df.loc[df["Compound"].isin(y1)]
@@ -235,7 +235,7 @@ def run_shiny(data: DataStorage):
                             tested_data[layer_1]["data"] = selected_data
                             tested_data[layer_1]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 1)
-                    all_dataframe["abundance_test_df"] = res
+                    all_dataframe["producers_test_dataframe"] = res
                     return res
                 # Both axis have been selected
                 else:
@@ -249,11 +249,58 @@ def run_shiny(data: DataStorage):
                                 tested_data[layer_1][layer_2]["data"] = selected_data
                                 tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 2)
-                    all_dataframe["abundance_test_df"] = res
+                    all_dataframe["producers_test_dataframe"] = res
                     return res
+                
+        @render_widget
+        def producer_plot():
 
+            compound_input, first_input, second_input = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
+
+            producer_data = data.get_producer_dataframe(False)
+            producer_data = producer_data.set_index("smplID")
+            all_dataframe["abundance_plot_df"] = producer_data
+
+            if len(compound_input) == 0:
+                return
+
+            if first_input == "None":
+                prod_data = producer_data[[*compound_input]]
+                prod_data = prod_data.dropna()
+                print(prod_data)
+                print(type(prod_data))
+                return px.box(prod_data,y=compound_input, notched=True)
+
+            if second_input == "None":
+                prod_data = producer_data[[*compound_input,first_input]]
+                prod_data = prod_data.dropna()
+                print(prod_data)
+                has_unique_value = True
+                for value_input1 in prod_data[first_input].unique():   
+                    if len(prod_data.loc[prod_data[first_input] == value_input1][compound_input]) > 1:
+                        has_unique_value = False
+                        break
+
+                return px.bar(prod_data,x=first_input,y=compound_input,color=first_input) if has_unique_value else px.box(prod_data,x=first_input,y=compound_input,color=first_input, notched=True)
+
+            prod_data = producer_data[[*compound_input,first_input,second_input]]
+            prod_data = prod_data.dropna()
+            print(prod_data)
+            has_unique_value = True
+            for value_input1 in prod_data[first_input].unique():
+                    for value_input2 in prod_data[second_input].unique():   
+                        if len(prod_data.loc[(prod_data[second_input] == value_input2) & (prod_data[first_input] == value_input1)][compound_input]) > 1:
+                            has_unique_value = False
+                            break
+
+            return px.bar(prod_data, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(prod_data, x=first_input, y=compound_input,color=second_input, boxmode="group")
+
+            
+            return data.plot(df, compound_input, first_input, second_input)
+        
         @render.data_frame()
         def production_test_dataframe():
+            return
             # Get input
             with_normalised_data = input.prod_norm()
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
@@ -276,7 +323,7 @@ def run_shiny(data: DataStorage):
                             tested_data[layer_1]["data"] = selected_data
                             tested_data[layer_1]["n_data"] = len(selected_data)
                     res = du.stat_on_plot(tested_data, 1)
-                    all_dataframe["producer_test_df"] = res
+                    all_dataframe["total_production_test_dataframe"] = res
                     return res
                 # Both axis have been selected
                 else:
@@ -299,15 +346,15 @@ def run_shiny(data: DataStorage):
                         return
                     else:
                         res = du.stat_on_plot(tested_data, 2)
-                    all_dataframe["producer_test_df"] = res
+                    all_dataframe["total_production_test_dataframe"] = res
                     return res
         
         @render.text
         @reactive.event(input.save_producer_test)
         def save_prod_test_txt():
             if bool(all_dataframe):
-                if all_dataframe["producer_test_df"] is not None:
-                   log = data.save_dataframe(all_dataframe["producer_test_df"], "producer_test_dataframe")
+                if all_dataframe["total_production_test_dataframe"] is not None:
+                   log = data.save_dataframe(all_dataframe["total_production_test_dataframe"], "total_production_test_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
             return log
@@ -316,8 +363,8 @@ def run_shiny(data: DataStorage):
         @reactive.event(input.save_abundance_test)
         def save_ab_test_txt():
             if bool(all_dataframe):
-                if all_dataframe["abundance_test_df"] is not None:
-                   log = data.save_dataframe(all_dataframe["abundance_test_df"], "abundance_test_dataframe")
+                if all_dataframe["producers_test_dataframe"] is not None:
+                   log = data.save_dataframe(all_dataframe["producers_test_dataframe"], "producer_test_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
             return log
@@ -342,82 +389,7 @@ def run_shiny(data: DataStorage):
                     log = "Unable to find any dataframe to save."
             return log
 
-        @render_widget
-        def producer_plot():
-            # Which type of dataframe
-            with_abundance_data = input.ab_norm()
-            if with_abundance_data and data.HAS_ABUNDANCE_DATA:
-                df = data.get_melted_norm_ab_dataframe()
-                column_value = "Quantity"
-            else:
-                df = producer_data
-                column_value = "Value"
-                
-            all_dataframe["abundance_plot_df"] = df
-            # import button input from shiny
-            y1, x1, x2 = input.box_inputy1(), input.box_inputx1(), input.box_inputx2()
-            df = df.loc[df["Compound"].isin(y1)]
 
-            if len(y1) == 0:
-                return
-            if x1 == "None":
-                return px.box(df, y=df.loc[df["Compound"].isin(y1)][column_value], title=f"Estimated amount of {*y1,} produced by all sample.")
-            
-            elif x2 == "None":
-                # df.sort_values(x1)
-                if df.shape[0] == len(df[x1].unique()):
-                    return px.bar(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
-                else:
-                    return px.box(df, x=x1 , y=column_value, color=x1, title=f"Estimated amount of {*y1,} produced by {x1}.")
-
-            else:
-                # df.sort_values([x1,x2])
-                conditionx2 = df[x2].unique()
-                conditionx1 = df[x1].unique()
-
-                fig = go.Figure()
-
-                has_unique_value = True
-
-                # If one of the case has multiple y values --> boxplot
-                for layer1 in conditionx1:
-                    for layer2 in conditionx2:
-                        if len(df.loc[(df[x2] == layer2) & (df[x1] == layer1)][column_value]) > 1:
-                            has_unique_value = False
-
-                for condition2 in conditionx2:
-                    if has_unique_value:
-                        fig.add_trace(
-                        go.Bar(
-                            x=df.loc[df[x2] == condition2][x1],
-                            y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
-                            name=str(condition2),
-                        )
-                        )
-
-                    else:
-                        fig.add_trace(
-                            go.Box(
-                                x=df.loc[df[x2] == condition2][x1],
-                                y=df.loc[(df["Compound"].isin(y1)) & (df[x2] == condition2)][column_value],
-                                name=str(condition2),
-                            )
-                        )
-                    if has_unique_value:
-                        fig.update_layout(
-                            barmode="group",
-                            hovermode="x",
-                            bargroupgap=0.2,
-                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
-                        )
-                    else:
-                        fig.update_layout(
-                            boxmode="group",
-                            hovermode="x",
-                            boxgroupgap=0.1,
-                            title=(f"Estimated quantity of {*y1,} produced by {x1} and {x2}"),
-                        )
-                return fig
 
         @render_widget
         def total_production_plot():

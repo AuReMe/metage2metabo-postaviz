@@ -53,11 +53,11 @@ def main(args=None):
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
 
     elif arg_parser.dev:
-        dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
+        dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
         metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
-        save_path = "/home/lbrindel/output/full_run_postaviz"
+        save_path = "/home/lbrindel/output/test_res_smpl1"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path, save_path)
 
     else:
