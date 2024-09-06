@@ -9,6 +9,7 @@ from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
 import numpy as np
+import time
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -267,25 +268,23 @@ def run_shiny(data: DataStorage):
             if first_input == "None":
                 prod_data = producer_data[[*compound_input]]
                 prod_data = prod_data.dropna()
-                print(prod_data)
-                print(type(prod_data))
-                return px.box(prod_data,y=compound_input, notched=True)
+                return px.box(prod_data,y=compound_input)
 
             if second_input == "None":
                 prod_data = producer_data[[*compound_input,first_input]]
                 prod_data = prod_data.dropna()
-                print(prod_data)
+
                 has_unique_value = True
                 for value_input1 in prod_data[first_input].unique():   
                     if len(prod_data.loc[prod_data[first_input] == value_input1][compound_input]) > 1:
                         has_unique_value = False
                         break
 
-                return px.bar(prod_data,x=first_input,y=compound_input,color=first_input) if has_unique_value else px.box(prod_data,x=first_input,y=compound_input,color=first_input, notched=True)
+                return px.bar(prod_data,x=first_input,y=compound_input,color=first_input) if has_unique_value else px.box(prod_data,x=first_input,y=compound_input,color=first_input)
 
             prod_data = producer_data[[*compound_input,first_input,second_input]]
             prod_data = prod_data.dropna()
-            print(prod_data)
+
             has_unique_value = True
             for value_input1 in prod_data[first_input].unique():
                     for value_input2 in prod_data[second_input].unique():   
@@ -295,13 +294,13 @@ def run_shiny(data: DataStorage):
 
             return px.bar(prod_data, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(prod_data, x=first_input, y=compound_input,color=second_input, boxmode="group")
 
-            
-            return data.plot(df, compound_input, first_input, second_input)
-        
+                
         @render.data_frame()
         def production_test_dataframe():
-            return
             # Get input
+            return
+            startTime = time.time()
+
             with_normalised_data = input.prod_norm()
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
                 column_value = "Total_abundance_weighted"
@@ -347,6 +346,9 @@ def run_shiny(data: DataStorage):
                     else:
                         res = du.stat_on_plot(tested_data, 2)
                     all_dataframe["total_production_test_dataframe"] = res
+
+                    print('Production test dataframe function took {0} second !'.format(time.time() - startTime))
+
                     return res
         
         @render.text
@@ -388,7 +390,6 @@ def run_shiny(data: DataStorage):
                 else:
                     log = "Unable to find any dataframe to save."
             return log
-
 
 
         @render_widget
