@@ -66,6 +66,26 @@ def benchmark_decorator(func):
     return wrapper
 
 
+def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
+    """
+    Return True if df column value contain only one value per input, False otherwise.
+
+    Args:
+        dataframe (pd.DataFrame): _description_
+        column_value (_type_): _description_
+        input1 (_type_): _description_
+        input2 (str, optional): _description_. Defaults to "None".
+    """
+    nb_row = len(dataframe)
+
+    if input2 == "None":
+        return True if nb_row == len(dataframe[input1].unique()) else False
+        
+    else:
+        return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
+
+
+
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
@@ -506,8 +526,6 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         except Exception as e:
             print("Abundance process went wrong.",e)
             normalised_abundance_dataframe = None
-    else:
-        normalised_abundance_dataframe = None
 
     if long_taxonomic_data is None and taxonomic_path is not None:
         try:
