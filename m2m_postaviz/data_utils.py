@@ -66,6 +66,26 @@ def benchmark_decorator(func):
     return wrapper
 
 
+def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
+    """
+    Return True if df column value contain only one value per input, False otherwise.
+
+    Args:
+        dataframe (pd.DataFrame): _description_
+        column_value (_type_): _description_
+        input1 (_type_): _description_
+        input2 (str, optional): _description_. Defaults to "None".
+    """
+    nb_row = len(dataframe)
+
+    if input2 == "None":
+        return True if nb_row == len(dataframe[input1].unique()) else False
+        
+    else:
+        return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
+
+
+
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
@@ -506,8 +526,6 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         except Exception as e:
             print("Abundance process went wrong.",e)
             normalised_abundance_dataframe = None
-    else:
-        normalised_abundance_dataframe = None
 
     if long_taxonomic_data is None and taxonomic_path is not None:
         try:
@@ -872,8 +890,8 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
 
-    if not is_indexed_by_id(metadata):
-        metadata = metadata.set_index("smplID")
+    if  is_indexed_by_id(metadata):
+        metadata = metadata.reset_index("smplID")
 
     dmatrix = main_dataframe.to_numpy()
     dist_m = pdist(dmatrix, "jaccard")
@@ -883,8 +901,9 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
 
     df_pcoa = coordinate[['PC1','PC2']]
     df_pcoa['smplID'] = main_dataframe.index.to_numpy()
+    # df_pcoa.reset_index(inplace=True)
 
-    metadata_loc = metadata.loc[metadata.index.isin(coordinate.index)]
+    metadata_loc = metadata.loc[metadata["smplID"].isin(df_pcoa["smplID"])]
     df_pcoa = pd.merge(df_pcoa, metadata_loc, "outer", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 

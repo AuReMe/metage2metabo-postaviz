@@ -1,5 +1,4 @@
 import cProfile
-import plotly.express as px
 import pandas as pd
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -18,10 +17,13 @@ class DataStorage:
     def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
 
         self.main_data = data_container["main_dataframe"]
+
         self.sample_data = data_container["sample_data"]
+
         self.metadata = data_container["metadata"]
         
         self.producer_dataframe = data_container["producers_long_format"]
+
         self.total_production_dataframe = total_production_dataframe
         
         if du.is_valid_dir(save_path):
@@ -31,7 +33,7 @@ class DataStorage:
                 os.makedirs(save_path)
                 self.output_path = save_path
             except Exception as e:
-                print(e)
+                print(e, "Save path ERROR.")
                 sys.exit(1)
 
         if taxonomic_data_container is not None:
@@ -41,10 +43,8 @@ class DataStorage:
         if abundance_data is not None:
             self.normalised_abundance_matrix = abundance_data
             self.HAS_ABUNDANCE_DATA = True
-            self.melted_normalised_abundance_dataframe: pd.DataFrame = self.produce_long_abundance_dataframe()
 
         self.list_of_factor = list(self.metadata.columns)
-        # self.factorize_metadata()
 
         self.current_pcoadf = pcoa_dataframe
 
@@ -87,10 +87,6 @@ class DataStorage:
     def get_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
         return self.normalised_abundance_dataframe.copy() if as_copy else self.normalised_abundance_dataframe
 
-    ### LATER STILL USEFULL ?
-    def get_melted_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.melted_normalised_abundance_dataframe.copy() if as_copy else self.melted_normalised_abundance_dataframe
-
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
 
@@ -113,39 +109,14 @@ class DataStorage:
         return len(self.metadata.columns)
 
     def get_metadata_label(self):
-        print(self.metadata.columns)
         if self.is_indexed(self.metadata):
             return list(self.metadata.columns)
-        print(self.metadata.columns[1:])
         return list(self.metadata.columns[1:])
 
     def get_factor_by_id(self, sample_id, factor):
         query = self.metadata.loc[self.metadata["smplID"] == sample_id][factor]
         print("get_factor : ", sample_id, factor, "found : ", query)
         return query
-
-    def produce_long_abundance_dataframe(self):
-        """Transform the wide format abundance dataframe into a long format.
-        Usefull for anyplot.
-
-        Returns:
-            pd.dataframe: Long format abundance dataframe.
-        """
-
-        current_df = self.get_norm_ab_matrix()
-
-        if self.is_indexed(current_df):
-            current_df = current_df.reset_index()
-        current_df = current_df.melt("smplID", var_name="Compound", value_name="Quantity")
-        all_new_columns = {}
-
-        metadata_label = self.get_metadata_label()
-        for factor in metadata_label:
-            all_new_columns[factor] = du.add_factor_column(self.get_main_metadata(), current_df["smplID"], factor)
-
-        current_df = current_df.assign(**all_new_columns)
-        current_df = current_df.loc[current_df["Quantity"] != 0]
-        return current_df
 
     def factorize_metadata(self):
         for factor in self.get_metadata_label():
@@ -192,39 +163,4 @@ class DataStorage:
         )
         return fig
     
-    def plot(df: pd.DataFrame, compounds_input: str, first_input:str = "None", second_input = "None"):
-        """Return a plotly express figure from the dataframe and the input(s).
-        Checks for y single value case for barplot or boxplot.
-
-        Args:
-            df (pd.DataFrame): dataframe to plot
-            compounds_input (str): list of compounds to show
-            first_input (str, optional): first axis of the plot, must be a label of a column of the dataframe. Defaults to "None".
-            second_input (str, optional): second axis of the plot, must be a column's label of the datafrale. Defaults to "None".
-
-        Returns:
-            px.figure: plotly express figure.
-        """
-        if first_input == "None":
-            return px.box(df,y=compounds_input, notched=True)
-
-        if second_input == "None":
-            has_unique_value = True
-            for value_input1 in df[first_input].unique():   
-                print(len(df.loc[df[first_input] == value_input1][compounds_input]))
-                if len(df.loc[df[first_input] == value_input1][compounds_input]) > 1:
-                    has_unique_value = False
-                    break
-
-            return px.bar(df,x=first_input,y=compounds_input,color=first_input) if has_unique_value else px.box(df,x=first_input,y=compounds_input,color=first_input, notched=True)
-            
-        has_unique_value = True
-        for value_input1 in df[first_input].unique():
-                for value_input2 in df[second_input].unique():   
-                    if len(df.loc[(df[second_input] == value_input2) & (df[first_input] == value_input1)][compounds_input]) > 1:
-                        has_unique_value = False
-                        break
-
-        return px.bar(df, x=first_input, y=compounds_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compounds_input,color=second_input, boxmode="group")
-
         
