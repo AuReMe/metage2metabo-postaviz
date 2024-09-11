@@ -42,9 +42,11 @@ def main(args=None):
     arg_parser = parser.parse_args()
 
     if arg_parser.test:
+        
         if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
             print("No data_test/ directory found. \nExtract test data tarfile...")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
+
         data_test_dir = os.path.join(TESTS_DIR, "palleja/")
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
@@ -53,14 +55,16 @@ def main(args=None):
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
 
     elif arg_parser.dev:
-        dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
+        
+        dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
         metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
-        save_path = "/home/lbrindel/output/test_res_smpl1"
+        save_path = "/home/lbrindel/output/full_run_postaviz/"
         global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path, save_path)
 
     else:
+        
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata = arg_parser["metadata"]

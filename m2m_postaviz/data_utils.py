@@ -654,7 +654,7 @@ def stat_on_plot(data: dict, layer: int):
     Returns:
         Dataframe: Dataframe of test's results.
     """
-    
+    start_timer = time.time()
     if layer == 1:
         error_log = []
         res = pd.DataFrame(columns=["group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
@@ -742,7 +742,8 @@ def stat_on_plot(data: dict, layer: int):
                                             }
                                 res.loc[len(res)] = new_row
     print("At least: ",len(error_log)," errors occured.")
-    print(error_log)    
+    print(error_log)  
+    print(time.time() - start_timer)  
     return res
 
 

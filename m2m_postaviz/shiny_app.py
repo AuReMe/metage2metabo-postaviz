@@ -72,7 +72,7 @@ def run_shiny(data: DataStorage):
             ),
             full_screen=True
         )
-        
+
     else:
         taxonomy_boxplot = ui.output_text_verbatim("no_taxonomy", True),
 
@@ -216,9 +216,6 @@ def run_shiny(data: DataStorage):
         @render.data_frame
         def producer_test_dataframe():
             # Get input
-            startTime = time.time()
-
-            df = producer_data
 
             y1, x1, x2 = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
 
@@ -230,32 +227,62 @@ def run_shiny(data: DataStorage):
 
             # At least first axis selected
             if x2 == "None":
+
+                df = producer_data[[*y1,x1]]
+                df = df.dropna()
+
+                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
+
+                    print(len(df[x1].unique()), "unique value")
+                    df[x1] = df[x1].round(1)
+                    print(len(df[x1].unique()), "unique value after round")
+
                 tested_data = {}
                 for layer_1 in df[x1].unique():
                     selected_data = df.loc[df[x1] == layer_1][y1]
+
                     if len(selected_data) > 1:
                         tested_data[layer_1] = {}
                         tested_data[layer_1]["data"] = selected_data
                         tested_data[layer_1]["n_data"] = len(selected_data)
+
                 res = du.stat_on_plot(tested_data, 1)
                 all_dataframe["producers_test_dataframe"] = res
-                print('Production test dataframe function took {0} second !'.format(time.time() - startTime))
 
                 return res
             # Both axis have been selected
             else:
+
+                df = producer_data[[*y1,x1,x2]]
+                df = df.dropna()
+
+                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
+
+                    print(len(df[x1].unique()), "unique value")
+                    df[x1] = df[x1].round(1)
+                    print(len(df[x1].unique()), "unique value after round")
+
+                if df[x2].dtype == 'float64' and len(df[x2]) > 100:
+
+                    print(len(df[x2].unique()), "unique value")
+                    df[x2] = df[x2].round(1)
+                    print(len(df[x2].unique()), "unique value after round")
+
                 tested_data = {}
+
                 for layer_1 in df[x1].unique():
                     tested_data[layer_1] = {}
+
                     for layer_2 in df[x2].unique():
                         selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][y1]
+
                         if len(selected_data) > 1:
                             tested_data[layer_1][layer_2] = {}
                             tested_data[layer_1][layer_2]["data"] = selected_data
                             tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
+
                 res = du.stat_on_plot(tested_data, 2)
                 all_dataframe["producers_test_dataframe"] = res
-                print('Production test dataframe function took {0} second !'.format(time.time() - startTime))
 
                 return res
                 
@@ -313,6 +340,15 @@ def run_shiny(data: DataStorage):
             # At least first axis selected
             if x2 == "None":
                 df = df[[column_value,x1]]
+                df = df.dropna()
+
+                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
+
+                    print(df[x1].dtype)
+                    print(len(df[x1].unique()), "unique value")
+                    df[x1] = df[x1].round(1)
+                    print(len(df[x1].unique()), "unique value after round")
+
                 tested_data = {}
 
                 for layer_1 in df[x1].unique():
@@ -332,6 +368,18 @@ def run_shiny(data: DataStorage):
             if x1 != x2:
 
                 df = df[[column_value,x1,x2]]
+                df = df.dropna()
+
+                for factor_columns in df[[x1,x2]].columns:
+
+                    # If Series type is Float64 AND lenght of uniques values > 200 -> Round all numbers to the 10th. PERFORMANCE ISSUE
+                    if df[factor_columns].dtype == 'float64' and len(df[factor_columns]) > 100:
+
+                        print(df[x2].dtype)
+                        print(len(df[x2].unique()), "unique value")
+                        df[x2] = df[x2].round(1)
+                        print(len(df[x2].unique()), "unique value after round")
+
                 tested_data = {}
 
                 for layer_1 in df[x1].unique():
