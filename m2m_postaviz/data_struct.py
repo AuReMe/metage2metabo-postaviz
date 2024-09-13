@@ -22,7 +22,7 @@ class DataStorage:
 
         self.metadata = data_container["metadata"]
         
-        self.producer_dataframe = data_container["producers_long_format"]
+        self.producer_dataframe = data_container["producers_dataframe"]
 
         self.total_production_dataframe = total_production_dataframe
         

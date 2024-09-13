@@ -14,6 +14,7 @@ import time
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
+from profilehooks import profile
 
 def run_shiny(data: DataStorage):
     ###

@@ -511,9 +511,9 @@ def build_df(dir_path, metadata, abundance_path: str = None, taxonomic_path: str
         print("Fetch sample's cscope.")
         all_data["sample_data"] = multiprocess_retrieve_data(dir_path) 
 
-    if all_data["producers_long_format"] is None:
+    if all_data["producers_dataframe"] is None:
         print("Building producers dataframe.")
-        all_data["producers_long_format"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
+        all_data["producers_dataframe"], all_data["metadata"] = producers_by_compounds_and_samples_multi(all_data["sample_data"],all_data["metadata"]) 
 
     if all_data["main_dataframe"] is None:
         print("Building main dataframe.")
@@ -760,7 +760,7 @@ def check_for_files(save_path = None):
     all_data = {}
     all_data["metadata"] = None
     all_data["main_dataframe"] = None
-    all_data["producers_long_format"] = None
+    all_data["producers_dataframe"] = None
     all_data["sample_data"] = {}
     
     total_production_dataframe = None
@@ -793,7 +793,7 @@ def check_for_files(save_path = None):
             all_data["main_dataframe"] = open_tsv(os.path.join(root, "main_dataframe_postaviz.tsv"))
 
         if "producers_dataframe_postaviz.tsv" in filename:
-            all_data["producers_long_format"] = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
+            all_data["producers_dataframe"] = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
 
         if "total_production_dataframe_postaviz.tsv" in filename:
             total_production_dataframe = open_tsv(os.path.join(root, "total_production_dataframe_postaviz.tsv"))
@@ -854,7 +854,7 @@ def save_all_dataframe(all_data: dict, norm_abundance_df, long_taxo_df, total_pr
     if os.path.isfile(os.path.join(savepath,"producers_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"producers_dataframe_postaviz.tsv"), " file already exist.")
     else:
-        if all_data["producers_long_format"] is not None: all_data["producers_long_format"].to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(all_data["producers_long_format"]) else False)
+        if all_data["producers_dataframe"] is not None: all_data["producers_dataframe"].to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(all_data["producers_dataframe"]) else False)
 
     if os.path.isfile(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"), " file already exist")
