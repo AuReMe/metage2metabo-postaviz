@@ -14,15 +14,13 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
 
-    def __init__(self, save_path: str, data_container: dict, taxonomic_data_container: pd.DataFrame = None, abundance_data: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
+    def __init__(self, save_path: str, metadata: pd.DataFrame = None, main_dataframe: pd.DataFrame = None, norm_abundance_data: pd.DataFrame = None, taxonomic_data_container: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
 
-        self.main_data = data_container["main_dataframe"]
+        self.main_dataframe = main_dataframe
 
-        self.sample_data = data_container["sample_data"]
-
-        self.metadata = data_container["metadata"]
+        self.metadata = metadata
         
-        self.producer_dataframe = data_container["producers_dataframe"]
+        self.producer_dataframe = producers_dataframe
 
         self.total_production_dataframe = total_production_dataframe
         
@@ -40,8 +38,8 @@ class DataStorage:
             self.long_taxonomic_data = taxonomic_data_container
             self.HAS_TAXONOMIC_DATA = True
 
-        if abundance_data is not None:
-            self.normalised_abundance_matrix = abundance_data
+        if norm_abundance_data is not None:
+            self.normalised_abundance_matrix = norm_abundance_data
             self.HAS_ABUNDANCE_DATA = True
 
         self.list_of_factor = list(self.metadata.columns)
@@ -63,14 +61,8 @@ class DataStorage:
             query.remove("smplID")
         return query
 
-    def get_all_sample_data(self, mode: str = "cscope", as_copy: bool = True):
-        return self.sample_data.copy() if as_copy else self.sample_data
-
-    def get_sample_data(self, smpl_id, mode: str = "cscope", as_copy: bool = True):
-        return self.sample_data[smpl_id][mode].copy()
-
     def get_main_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.main_data.copy() if as_copy else self.main_data
+        return self.main_dataframe.copy() if as_copy else self.main_dataframe
 
     def get_main_metadata(self, as_copy: bool = True) -> pd.DataFrame:
         return self.metadata.copy() if as_copy else self.metadata
@@ -89,21 +81,6 @@ class DataStorage:
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
-
-    def get_bin_list_by_sample(self, sample_id: str, mode: str = "cscope"):
-        return self.sample_data[sample_id][mode]["Name"].to_list()
-
-    def get_cpd_label(self, sample_id: str, mode: str = "cscope"):
-        return self.sample_data[sample_id][mode].columns
-
-    def get_bin_list(self, mode: str = "cscope"):
-        bin_list = {}
-        for sample in self.sample_data.keys():
-            if self.is_indexed(self.sample_data[sample][mode]):
-                bin_list[sample] = self.sample_data[sample][mode].index.to_list()
-            else:
-                bin_list[sample] = self.sample_data[sample][mode][self.ID_VAR].to_list()
-        return bin_list
 
     def get_factor_len(self):
         return len(self.metadata.columns)

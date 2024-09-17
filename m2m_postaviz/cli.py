@@ -56,23 +56,28 @@ def main(args=None):
 
     elif arg_parser.dev:
         
+        # dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
         dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
-        metadata = "~/Downloads/western_diet_exp/metadata_drama.tsv"
+        
+        metadata_path = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
+        
+        # save_path = "/home/lbrindel/output/test_res_smpl1/"
         save_path = "/home/lbrindel/output/full_run_postaviz/"
-        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomic_path, save_path)
+        
+        metadata, main_dataframe, norm_abundance_data, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
 
     else:
         
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
-        metadata = arg_parser["metadata"]
+        metadata_path = arg_parser["metadata"]
         taxonomy_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        global_data, norm_abundance_data, long_taxonomic_data, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata, abundance_path, taxonomy_path, save_path)
+        metadata, main_dataframe, norm_abundance_data, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
 
-    Data = DataStorage(save_path, global_data, long_taxonomic_data, norm_abundance_data, total_production_dataframe, pcoa_dataframe)
+    Data = DataStorage(save_path, metadata, main_dataframe, norm_abundance_data, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe)
 
     sh.run_shiny(Data)

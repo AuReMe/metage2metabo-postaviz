@@ -21,8 +21,8 @@ def run_shiny(data: DataStorage):
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
     list_of_cpd = data.get_cpd_list()
 
-    producer_data = data.get_producer_dataframe(False)
-    total_production = data.get_total_production_by_sample()
+    # producer_data = data.get_producer_dataframe(False)
+    # total_production = data.get_total_production_by_sample(False)
 
     if data.HAS_TAXONOMIC_DATA:
         long_taxo_df = data.get_long_taxonomic_data()
@@ -229,7 +229,7 @@ def run_shiny(data: DataStorage):
             # At least first axis selected
             if x2 == "None":
 
-                df = producer_data[[*y1,x1]]
+                df = data.get_producer_dataframe(False)[[*y1,x1]]
                 df = df.dropna()
 
                 if df[x1].dtype == 'float64' and len(df[x1]) > 100:
@@ -254,7 +254,7 @@ def run_shiny(data: DataStorage):
             # Both axis have been selected
             else:
 
-                df = producer_data[[*y1,x1,x2]]
+                df = data.get_producer_dataframe(False)[[*y1,x1,x2]]
                 df = df.dropna()
 
                 if df[x1].dtype == 'float64' and len(df[x1]) > 100:
@@ -330,7 +330,7 @@ def run_shiny(data: DataStorage):
             else:
                 column_value = "Total_production"
 
-            df = total_production
+            df = data.get_total_production_by_sample(False)
 
             x1, x2 = input.prod_inputx1(), input.prod_inputx2()
 
@@ -470,7 +470,7 @@ def run_shiny(data: DataStorage):
             else:
                 column_value = "Total_production"
 
-            df = total_production
+            df = data.get_total_production_by_sample(False)
             all_dataframe["producer_plot_df"] = df
 
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
@@ -513,9 +513,9 @@ def run_shiny(data: DataStorage):
 
             df = data.get_main_metadata()
 
-            df_prod = producer_data
+            df_prod = data.get_producer_dataframe(False)
 
-            df_tot = total_production
+            df_tot = data.get_total_production_by_sample(False)
 
             df_pcoa = pcoa_dataframe
 
