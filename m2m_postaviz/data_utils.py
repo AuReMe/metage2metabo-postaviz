@@ -548,6 +548,8 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
 
     save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
     
+    sample_data = None
+
     return metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe
 
 

@@ -10,11 +10,13 @@ from shinywidgets import render_widget
 import warnings
 import numpy as np
 import time
+import sys
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
 from profilehooks import profile
+from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
     ###

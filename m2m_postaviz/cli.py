@@ -56,15 +56,15 @@ def main(args=None):
 
     elif arg_parser.dev:
         
-        # dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
-        dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
+        dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
+        # dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
         
         metadata_path = "~/Downloads/western_diet_exp/metadata_drama.tsv"
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
         
-        # save_path = "/home/lbrindel/output/test_res_smpl1/"
-        save_path = "/home/lbrindel/output/full_run_postaviz/"
+        save_path = "/home/lbrindel/output/test_res_smpl1/"
+        # save_path = "/home/lbrindel/output/full_run_postaviz/"
         
         metadata, main_dataframe, norm_abundance_data, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
 
