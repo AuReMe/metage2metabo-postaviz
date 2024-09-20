@@ -449,14 +449,6 @@ def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe.reset_index(inplace=True)
     return dataframe.melt("smplID",var_name="Compound",value_name="Value")
 
-def merge_metadata_with_df(main_dataframe, metadata):
-    return pd.merge(metadata, main_dataframe, how="left")
-
-def merge_df(left_df, right_df, how: str = "left"):
-    data = left_df.iloc[:, 0]
-    filter = right_df.loc[right_df["mgs"].isin(data)]
-    return filter
-
 def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     row = row.astype(float)
     abundance_value = abundance_matrix.at[row.name, sample_id]
@@ -497,8 +489,8 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    # sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
-    main_dataframe, metadata, producers_dataframe, normalised_abundance_dataframe, taxonomy, total_production_dataframe, pcoa_dataframe = load_hdf5_datafames(save_path)
+    sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
+    # main_dataframe, metadata, producers_dataframe, normalised_abundance_dataframe, taxonomy, total_production_dataframe, pcoa_dataframe = load_hdf5_datafames(save_path)
 
     if metadata is None: 
         print("Open metadata dataframe.")
@@ -648,10 +640,10 @@ def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.Da
         sys.exit(1)
 
 def load_hdf5_datafames(path: str):
-    keys = ["main_dataframe", "metadata", "producers_dataframe", "norm_abundance_data", "long_taxonomic_data", "total_production_dataframe", "pcoa_dataframe"]
+    keys = ["main_dataframe", "metadata", "metabolite_production_dataframe", "normalised_abundance_dataframe", "long_taxonomic_data", "global_production_dataframe", "pcoa_dataframe"]
     results = []
 
-    with pd.HDFStore(path=path,mode='r') as storage:
+    with pd.HDFStore(path=os.path.join(path,"postaviz_dataframes.h5"),mode='r') as storage:
         print("Loading following dataframes... ", storage.keys())
 
         for k in keys:
@@ -736,6 +728,7 @@ def add_factor_column(metadata, serie_id, factor_id):
 
 def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
     boolean_production_df = main_dataframe.copy()
+
     if not is_indexed_by_id(boolean_production_df):
         boolean_production_df.set_index("smplID",inplace=True,drop=True)
     boolean_production_df["Total_production"] = boolean_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
@@ -749,14 +742,13 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
         abundance_production_df = abundance_production_df["Total_abundance_weighted"]
 
         results = pd.concat([results,abundance_production_df], axis=1)
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata_dataframe.columns[1:]:
-        metadata_dict[factor] = add_factor_column(metadata_dataframe, boolean_production_df.index, factor)
 
-    results = results.assign(**metadata_dict)
+    print(results)
     results.reset_index(inplace=True)
-    results["smplID"] = results["smplID"].astype("category")
+    results = results.merge(metadata_dataframe,'inner','smplID')
+    print(results)
+    # results["smplID"] = results["smplID"].astype("category")
+
     return results
 
 
@@ -885,7 +877,7 @@ def check_for_files(save_path = None):
 
     if save_path is None or not is_valid_dir(save_path):
         print("save_path is none, ignoring load data function.")
-        return metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
+        return sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
     
     for root, dirname, filename in os.walk(save_path):
 
@@ -1017,10 +1009,8 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
 
     df_pcoa = coordinate[['PC1','PC2']]
     df_pcoa['smplID'] = main_dataframe.index.to_numpy()
-    # df_pcoa.reset_index(inplace=True)
 
-    metadata_loc = metadata.loc[metadata["smplID"].isin(df_pcoa["smplID"])]
-    df_pcoa = pd.merge(df_pcoa, metadata_loc, "outer", "smplID")
+    df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 
     return df_pcoa

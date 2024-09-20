@@ -63,7 +63,7 @@ def main(args=None):
         abundance_path = "~/Downloads/western_diet_exp/specI.mat"
         taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
 
-        # save_path = "/home/lbrindel/output/autoconvert_dtypes_test/"
+        # save_path = "/home/lbrindel/output/TEST_BUILD/"
         # save_path = "/home/lbrindel/output/test_res_smpl1/"
         save_path = "/home/lbrindel/output/full_run_postaviz/"
         

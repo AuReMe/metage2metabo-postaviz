@@ -22,7 +22,11 @@ class DataStorage:
 
         self.HAS_ABUNDANCE_DATA = abundance_provided
 
-        self.output_path = save_path
+        if save_path is not None:
+            self.output_path = save_path
+        else:
+            save_path = None
+            print("No save path provided, dataframe save option disabled.")
 
     def open_hdf5(self, key:str):
         """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
@@ -37,9 +41,9 @@ class DataStorage:
         print(f"Looking for key {key}...")
         with pd.HDFStore(path=self.hdf5_file,mode='r') as storage:
             for k in storage.keys():
-                print(k)
+                # print(k)
                 if k == key:
-                    print(f'{key} key called.')
+                    # print(f'{key} key called.')
                     try:
                         return storage[k]
 
