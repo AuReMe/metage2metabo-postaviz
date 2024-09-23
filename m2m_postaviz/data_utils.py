@@ -393,9 +393,7 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     res.fillna(0,inplace=True)
     res.index.name = "smplID"
     res.reset_index(inplace=True)
-    res = res.loc[res["smplID"].isin(metadata["smplID"])]
-    metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
-    res = pd.merge(res,metadata,'outer',"smplID")
+    res = res.merge(metadata,'inner',"smplID")
 
     # Correct melted version sys.getsizeof() == 10053680472 !
     # res = res.melt("smplID",var_name="Compound",value_name="Value")
@@ -405,8 +403,7 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
 
     # res = res.assign(**metadata_dict)
 
-
-    return res, metadata
+    return res
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
         serie_value = []
@@ -419,8 +416,8 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
 
 
 def multiprocess_retrieve_data(path):
-    """Open all directories given in -d path input. Get all cscopes tsv and load them in emomry as pandas
-    dataframe. Also return a dataframe with the total production by each sample. 
+    """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
+    dataframe. 
 
     Args:
         path (str): Path of directory
@@ -451,14 +448,6 @@ def multiprocess_retrieve_data(path):
 def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe.reset_index(inplace=True)
     return dataframe.melt("smplID",var_name="Compound",value_name="Value")
-
-def merge_metadata_with_df(main_dataframe, metadata):
-    return pd.merge(metadata, main_dataframe, how="left")
-
-def merge_df(left_df, right_df, how: str = "left"):
-    data = left_df.iloc[:, 0]
-    filter = right_df.loc[right_df["mgs"].isin(data)]
-    return filter
 
 def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     row = row.astype(float)
@@ -500,22 +489,23 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
+    sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
+    # main_dataframe, metadata, producers_dataframe, normalised_abundance_dataframe, taxonomy, total_production_dataframe, pcoa_dataframe = load_hdf5_datafames(save_path)
 
     if metadata is None: 
         print("Open metadata dataframe.")
         metadata = open_tsv(metadata_path)
 
     if not bool(sample_data): 
-        print("Fetch sample's cscope.")
+        print("Fetching sample's cscope...")
         sample_data = multiprocess_retrieve_data(dir_path) 
 
     if producers_dataframe is None:
-        print("Building producers dataframe.")
-        producers_dataframe, metadata = producers_by_compounds_and_samples_multi(sample_data,metadata) 
+        print("Building metabolite production dataframe...")
+        producers_dataframe = producers_by_compounds_and_samples_multi(sample_data,metadata) 
 
     if main_dataframe is None:
-        print("Building main dataframe.")
+        print("Building main dataframe...")
         main_dataframe = build_main_dataframe(sample_data)
 
     if normalised_abundance_dataframe is None and abundance_path is not None:
@@ -526,31 +516,148 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
             print("Abundance process went wrong.",e)
             normalised_abundance_dataframe = None
 
-    if long_taxonomic_data is None and taxonomic_path is not None:
+    if taxonomy is None and taxonomic_path is not None:
         try:
             raw_taxonomic_data = open_tsv(taxonomic_path)
-            long_taxonomic_data = taxonomic_data_long_format(
+            taxonomy = taxonomic_data_long_format(
                     raw_taxonomic_data, get_bin_list(sample_data), metadata.columns[1:],metadata
                 )
         except Exception as e:
             print("Taxonomy process went wrong.", e)
-            long_taxonomic_data = None
+            taxonomy = None
     else:
-        long_taxonomic_data = None
+        taxonomy = None
 
     if total_production_dataframe is None:
-        print("Building total production dataframe.")
+        print("Building global production dataframe...")
         total_production_dataframe = total_production_by_sample(main_dataframe, sample_data, metadata, normalised_abundance_dataframe)
 
     if pcoa_dataframe is None:
-        print("Run pcoa with main dataframe.")
+        print("Running pcoa with main dataframe...")
         pcoa_dataframe = pcoa_alternative_method(main_dataframe, metadata)
 
-    save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
-    
-    sample_data = None
+    try:
+        hdf5_file_path = save_dataframe_hdf_format(metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
 
-    return metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_data, producers_dataframe, total_production_dataframe, pcoa_dataframe
+    except Exception as e:
+        print(e)
+        print("Saving as TSV format instead")
+        save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
+
+    taxonomy_provided = False if taxonomy is None else True
+    abundance_provided = False if normalised_abundance_dataframe is None else True
+
+    return hdf5_file_path, taxonomy_provided, abundance_provided
+
+
+def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
+    """Save every dataframe to save_path input.
+
+    Args:
+        all_data (dict): all_sample dataframe, metadata, main_dataframe and producer_dataframe
+        norm_abundance_df (Dataframe): abundance dataframe normalised
+        long_taxo_df (Dataframe): taxonomic dataframe in long format
+        total_production_df (Dataframe): total production dataframe
+        savepath (str): path to save all files.
+    """
+    filename = os.path.join(savepath,"postaviz_dataframes.h5")
+
+    if savepath is None:
+        print("save_path is None, data can't be saved into HDF5 format.")
+        sys.exit(1)
+    
+    if not os.path.exists(savepath):
+        try:
+            os.makedirs(savepath)
+        except FileExistsError:
+            pass
+    
+    if os.path.isfile(filename):
+        print(f"Removing existing files at {filename}")
+        try:
+            os.remove(filename)
+        except OSError:
+            pass
+
+    pd.set_option('io.hdf.default.format', 'table')
+    
+    store = pd.HDFStore(filename)
+    
+    if norm_abundance_df is not None:
+        store['normalised_abundance_dataframe'] = norm_abundance_df
+    else:
+        print("Unable to save normalised_abundance_dataframe")
+    
+    if total_production_df is not None:
+        store['global_production_dataframe'] = total_production_df
+    else:
+        print("Unable to save global_production_dataframe")
+    
+    if producers_dataframe is not None:
+        store['metabolite_production_dataframe'] = producers_dataframe
+    else:
+        print("Unable to save metabolite_production_dataframe")
+    
+    if pcoa_dataframe is not None:
+        store['pcoa_dataframe'] = pcoa_dataframe
+    else:
+        print("Unable to save pcoa_dataframe")
+    
+    if long_taxo_df is not None:
+        store['taxonomic_dataframe'] = long_taxo_df
+    else:
+        print("Unable to save taxonomic_dataframe")
+    
+    if main_dataframe is not None:
+        store['main_dataframe'] = main_dataframe
+    else:
+        print("Unable to save main_dataframe")
+        
+    if metadata is not None:
+        store['metadata'] = metadata
+    else:
+        print("Unable to save metadata")
+    
+    store.close()
+
+    #### Usage of sample data disabled for now. ####
+
+    # store_sample = pd.HDFStore(os.path.join(savepath,"postaviz_samples.h5"))
+
+    # import warnings
+    # warnings.filterwarnings("ignore")
+
+    # for sample in global_data["sample_data"].keys():
+    #     store_sample[sample] = global_data["sample_data"][sample]["cscope"]
+
+    # store_sample.close()
+
+    if os.path.isfile(filename):
+        return filename
+    
+    else:
+        print('Error when creating HDF5 dataframe storage.')
+        sys.exit(1)
+
+def load_hdf5_datafames(path: str):
+    keys = ["main_dataframe", "metadata", "metabolite_production_dataframe", "normalised_abundance_dataframe", "long_taxonomic_data", "global_production_dataframe", "pcoa_dataframe"]
+    results = []
+
+    with pd.HDFStore(path=os.path.join(path,"postaviz_dataframes.h5"),mode='r') as storage:
+        print("Loading following dataframes... ", storage.keys())
+
+        for k in keys:
+
+            try:
+                results.append(storage[k])
+
+            except KeyError as e:
+                print(e)
+                results.append(None)
+
+    return results
+
+
 
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
@@ -621,6 +728,7 @@ def add_factor_column(metadata, serie_id, factor_id):
 
 def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
     boolean_production_df = main_dataframe.copy()
+
     if not is_indexed_by_id(boolean_production_df):
         boolean_production_df.set_index("smplID",inplace=True,drop=True)
     boolean_production_df["Total_production"] = boolean_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
@@ -634,14 +742,13 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
         abundance_production_df = abundance_production_df["Total_abundance_weighted"]
 
         results = pd.concat([results,abundance_production_df], axis=1)
-    metadata_dict = {}
-    # Makes all metadata columns
-    for factor in metadata_dataframe.columns[1:]:
-        metadata_dict[factor] = add_factor_column(metadata_dataframe, boolean_production_df.index, factor)
 
-    results = results.assign(**metadata_dict)
+    print(results)
     results.reset_index(inplace=True)
-    results["smplID"] = results["smplID"].astype("category")
+    results = results.merge(metadata_dataframe,'inner','smplID')
+    print(results)
+    # results["smplID"] = results["smplID"].astype("category")
+
     return results
 
 
@@ -770,7 +877,7 @@ def check_for_files(save_path = None):
 
     if save_path is None or not is_valid_dir(save_path):
         print("save_path is none, ignoring load data function.")
-        return metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
+        return sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
     
     for root, dirname, filename in os.walk(save_path):
 
@@ -902,10 +1009,8 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
 
     df_pcoa = coordinate[['PC1','PC2']]
     df_pcoa['smplID'] = main_dataframe.index.to_numpy()
-    # df_pcoa.reset_index(inplace=True)
 
-    metadata_loc = metadata.loc[metadata["smplID"].isin(df_pcoa["smplID"])]
-    df_pcoa = pd.merge(df_pcoa, metadata_loc, "outer", "smplID")
+    df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 
     return df_pcoa

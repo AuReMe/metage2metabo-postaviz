@@ -8,9 +8,6 @@ from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
-import numpy as np
-import time
-import sys
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -21,22 +18,16 @@ from pympler.asizeof import asizeof
 def run_shiny(data: DataStorage):
     ###
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
-    list_of_cpd = data.get_cpd_list()
 
-    # producer_data = data.get_producer_dataframe(False)
-    # total_production = data.get_total_production_by_sample(False)
+    list_of_cpd = data.get_compound_list()
 
-    if data.HAS_TAXONOMIC_DATA:
-        long_taxo_df = data.get_long_taxonomic_data()
-
-    factor_list = data.list_of_factor
+    factor_list = data.get_factors()
     factor_list.insert(0, "None")
 
-    pcoa_dataframe = data.current_pcoadf
+    metadata_label = data.get_factors()
+    metadata_label.remove("smplID")
 
-    metadata_label = data.get_metadata_label()
-
-    all_dataframe = {"total_production_test_dataframe": None, "producer_plot_df": None, "producers_test_dataframe": None, "abundance_plot_df": None}
+    all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -47,10 +38,10 @@ def run_shiny(data: DataStorage):
                     ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
                     ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
                     ui.input_checkbox("ab_norm", "With normalised data"),
-                    ui.input_action_button("save_abundance_plot", "Save plot dataframe"),
-                    ui.output_text_verbatim("save_ab_plot_txt", True),
-                    ui.input_action_button("save_abundance_test", "Save test dataframe"),
-                    ui.output_text_verbatim("save_ab_test_txt", True),
+                    ui.input_action_button("export_metabolites_plot_button", "Export plot dataframe"),
+                    ui.output_text_verbatim("export_metabolites_plot_dataframe_txt", True),
+                    ui.input_action_button("export_metabolites_test_button", "Export stats dataframe"),
+                    ui.output_text_verbatim("export_metabolites_test_dataframe_txt", True),
                     width=350,
                     gap=30,
 
@@ -67,7 +58,7 @@ def run_shiny(data: DataStorage):
                 ui.sidebar(
                     ui.input_select("tax_inpx1", "Label for X axis", factor_list),
                     ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
-                    ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
+                    # ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
                     ui.input_checkbox("taxo_norm", "With normalised data"),
                     width=350,
                 ),
@@ -86,10 +77,10 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
-                ui.input_action_button("save_producer_plot", "Save plot dataframe"),
-                ui.output_text_verbatim("save_prod_plot_txt", True),
-                ui.input_action_button("save_producer_test", "Save test dataframe"),
-                ui.output_text_verbatim("save_prod_test_txt", True),
+                ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
+                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
+                ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
+                ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
                 gap=30,
             ),
@@ -149,11 +140,9 @@ def run_shiny(data: DataStorage):
             # Get all parameters.
             selected_col = input.pcoa_color()
 
-            df = pcoa_dataframe
+            df = data.get_pcoa_dataframe()
 
-            print(df)
-
-            value = df[selected_col]
+            # value = df[selected_col]
 
             # min_limit = input.pcoa_float_limit()[0]
 
@@ -182,14 +171,19 @@ def run_shiny(data: DataStorage):
         
         @render_widget
         def taxonomic_boxplot():
+
             if not data.HAS_TAXONOMIC_DATA:
                 return
-            df = long_taxo_df
+            
+            df = data.get_taxonomic_dataframe()
             x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
+
             if len(y1) == 0:
                 y1 = df["Taxa"].unique()
+
             if x1 == "None":
                 return px.box(df, y="Nb_taxon")
+            
             if x2 == "None":
                 fig = px.box(
                     df,
@@ -197,9 +191,11 @@ def run_shiny(data: DataStorage):
                     y="Nb_taxon",
                     color=x1,
                 )
-                du.add_p_value_annotation(fig, [[0, 1]])
+
                 return fig
+            
             else:
+
                 conditionx2 = df[x2].unique()
 
                 fig = go.Figure()
@@ -214,6 +210,7 @@ def run_shiny(data: DataStorage):
                     )
 
                 fig.update_layout(boxmode="group")
+
                 return fig
 
         @render.data_frame
@@ -231,9 +228,8 @@ def run_shiny(data: DataStorage):
             # At least first axis selected
             if x2 == "None":
 
-                df = data.get_producer_dataframe(False)[[*y1,x1]]
+                df = data.get_metabolite_production_dataframe()[[*y1,x1]]
                 df = df.dropna()
-
                 if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
                     print(len(df[x1].unique()), "unique value")
@@ -250,15 +246,14 @@ def run_shiny(data: DataStorage):
                         tested_data[layer_1]["n_data"] = len(selected_data)
 
                 res = du.stat_on_plot(tested_data, 1)
-                all_dataframe["producers_test_dataframe"] = res
+                all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
             # Both axis have been selected
             else:
 
-                df = data.get_producer_dataframe(False)[[*y1,x1,x2]]
+                df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
                 df = df.dropna()
-
                 if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
                     print(len(df[x1].unique()), "unique value")
@@ -285,7 +280,7 @@ def run_shiny(data: DataStorage):
                             tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
 
                 res = du.stat_on_plot(tested_data, 2)
-                all_dataframe["producers_test_dataframe"] = res
+                all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
                 
@@ -294,22 +289,21 @@ def run_shiny(data: DataStorage):
 
             compound_input, first_input, second_input = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
 
-            producer_data = data.get_producer_dataframe(False)
+            producer_data = data.get_metabolite_production_dataframe()
             producer_data = producer_data.set_index("smplID")
-            all_dataframe["abundance_plot_df"] = producer_data
 
             if len(compound_input) == 0:
                 return
 
             if first_input == "None":
                 df = producer_data[[*compound_input]]
-                df = df.dropna()
+                all_dataframe["metabolites_production_plot_dataframe"] = df
                 return px.box(df,y=compound_input)
 
             if second_input == "None" or first_input == second_input:
                 df = producer_data[[*compound_input,first_input]]
                 df = df.dropna()
-
+                all_dataframe["metabolites_production_plot_dataframe"] = df
                 has_unique_value = du.has_only_unique_value(df, first_input)
 
 
@@ -317,7 +311,7 @@ def run_shiny(data: DataStorage):
 
             df = producer_data[[*compound_input,first_input,second_input]]
             df = df.dropna()
-
+            all_dataframe["metabolites_production_plot_dataframe"] = df
             has_unique_value = du.has_only_unique_value(df, first_input, second_input)
 
             return px.bar(df, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compound_input,color=second_input, boxmode="group")
@@ -325,6 +319,12 @@ def run_shiny(data: DataStorage):
         @render.data_frame()
         def production_test_dataframe():
 
+            x1, x2 = input.prod_inputx1(), input.prod_inputx2()
+
+            # No input selected
+            if x1 == "None":
+                return 
+            
             with_normalised_data = input.prod_norm()
 
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
@@ -332,19 +332,12 @@ def run_shiny(data: DataStorage):
             else:
                 column_value = "Total_production"
 
-            df = data.get_total_production_by_sample(False)
-
-            x1, x2 = input.prod_inputx1(), input.prod_inputx2()
-
-            # No input selected
-            if x1 == "None":
-                return 
+            df = data.get_global_production_dataframe()
             
             # At least first axis selected
             if x2 == "None":
                 df = df[[column_value,x1]]
                 df = df.dropna()
-
                 if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
                     print(df[x1].dtype)
@@ -363,7 +356,7 @@ def run_shiny(data: DataStorage):
                         tested_data[layer_1]["n_data"] = len(selected_data)
 
                 res = du.stat_on_plot(tested_data, 1)
-                all_dataframe["total_production_test_dataframe"] = res
+                all_dataframe["global_production_test_dataframe"] = res
 
                 return res
             
@@ -372,7 +365,6 @@ def run_shiny(data: DataStorage):
 
                 df = df[[column_value,x1,x2]]
                 df = df.dropna()
-
                 for factor_columns in df[[x1,x2]].columns:
 
                     # If Series type is Float64 AND lenght of uniques values > 200 -> Round all numbers to the 10th. PERFORMANCE ISSUE
@@ -408,55 +400,55 @@ def run_shiny(data: DataStorage):
                 
                 else:
                     res = du.stat_on_plot(tested_data, 2)
-                all_dataframe["total_production_test_dataframe"] = res
+                all_dataframe["global_production_test_dataframe"] = res
 
                 return res
             
             return
         
         @render.text
-        @reactive.event(input.save_producer_test)
-        def save_prod_test_txt():
+        @reactive.event(input.export_global_production_test_button)
+        def export_global_production_test_dataframe():
 
             if bool(all_dataframe):
-                if all_dataframe["total_production_test_dataframe"] is not None:
-                   log = data.save_dataframe(all_dataframe["total_production_test_dataframe"], "total_production_test_dataframe")
+                if all_dataframe["global_production_test_dataframe"] is not None:
+                   log = data.save_dataframe(all_dataframe["global_production_test_dataframe"], "global_production_test_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
 
             return log
         
         @render.text
-        @reactive.event(input.save_abundance_test)
-        def save_ab_test_txt():
+        @reactive.event(input.export_metabolites_test_button)
+        def export_metabolites_test_dataframe():
 
             if bool(all_dataframe):
-                if all_dataframe["producers_test_dataframe"] is not None:
-                   log = data.save_dataframe(all_dataframe["producers_test_dataframe"], "producer_test_dataframe")
+                if all_dataframe["metabolites_production_test_dataframe"] is not None:
+                   log = data.save_dataframe(all_dataframe["metabolites_production_test_dataframe"], "metabolites_production_test_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
 
             return log
 
         @render.text
-        @reactive.event(input.save_abundance_plot)
-        def save_ab_plot_txt():
+        @reactive.event(input.export_metabolites_plot_button)
+        def export_metabolites_plot_dataframe_txt():
 
             if bool(all_dataframe):
-                if all_dataframe["abundance_plot_df"] is not None:
-                   log = data.save_dataframe(all_dataframe["abundance_plot_df"], "abundance_plot_dataframe")
+                if all_dataframe["metabolites_production_plot_dataframe"] is not None:
+                   log = data.save_dataframe(all_dataframe["metabolites_production_plot_dataframe"], "metabolites_production_plot_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
 
             return log
 
         @render.text
-        @reactive.event(input.save_producer_plot)
-        def save_prod_plot_txt():
+        @reactive.event(input.export_global_production_plot_dataframe_button)
+        def export_global_production_plot_dataframe_txt():
 
             if bool(all_dataframe):
-                if all_dataframe["producer_plot_df"] is not None:
-                    log = data.save_dataframe(all_dataframe["producer_plot_df"], "producer_plot_dataframe")
+                if all_dataframe["global_production_plot_dataframe"] is not None:
+                    log = data.save_dataframe(all_dataframe["global_production_plot_dataframe"], "producer_plot_dataframe")
                 else:
                     log = "Unable to find any dataframe to save."
 
@@ -472,19 +464,20 @@ def run_shiny(data: DataStorage):
             else:
                 column_value = "Total_production"
 
-            df = data.get_total_production_by_sample(False)
-            all_dataframe["producer_plot_df"] = df
+            df = data.get_global_production_dataframe()
+            
 
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
         
             if inputx1 == "None":
-
-                return px.bar(df, x="smplID", y=column_value, title=f"Total production.", color="smplID")
+                all_dataframe["global_production_plot_dataframe"] = df
+                return px.box(df, y=column_value, title=f"Total production.")
             
             elif inputx2 == "None" or inputx1 == inputx2:
 
                 df = df[[column_value,inputx1]]
                 df = df.dropna()
+                all_dataframe["global_production_plot_dataframe"] = df
 
                 if du.has_only_unique_value(df, inputx1):
                     return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
@@ -495,31 +488,31 @@ def run_shiny(data: DataStorage):
 
                 df = df[[column_value,inputx1,inputx2]]
                 df = df.dropna()
-
+                all_dataframe["global_production_plot_dataframe"] = df
                 has_unique_value = du.has_only_unique_value(df, inputx1, inputx2)
 
                 return px.bar(df,x=inputx2,y=column_value,color=inputx1) if has_unique_value else px.box(df,x=inputx2,y=column_value,color=inputx1)
 
         @render.data_frame
         def metadata_table():
-            df = data.get_main_metadata()
+            df = data.get_metadata()
             return df
         
         @render.text()
         @reactive.event(input.dtype_change)
         def update_metadata_log():
-
+            return
             text = "No changes applied."
 
             factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
 
-            df = data.get_main_metadata()
+            df = data.get_metadata()
 
-            df_prod = data.get_producer_dataframe(False)
+            df_prod = data.get_metabolite_production_dataframe
 
-            df_tot = data.get_total_production_by_sample(False)
+            df_tot = data.get_global_production_dataframe()
 
-            df_pcoa = pcoa_dataframe
+            df_pcoa = data.get_pcoa_dataframe()
 
             try:
                 df[factor_choice] = df[factor_choice].astype(dtype_choice)

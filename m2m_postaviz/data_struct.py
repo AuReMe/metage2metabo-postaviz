@@ -14,81 +14,83 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
 
-    def __init__(self, save_path: str, metadata: pd.DataFrame = None, main_dataframe: pd.DataFrame = None, norm_abundance_data: pd.DataFrame = None, taxonomic_data_container: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_dataframe: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None):
+    def __init__(self, save_path: str, hdf5_file_path: str, taxonomy_provided: bool, abundance_provided: bool):
 
-        self.main_dataframe = main_dataframe
+        self.hdf5_file = hdf5_file_path
 
-        self.metadata = metadata
-        
-        self.producer_dataframe = producers_dataframe
+        self.HAS_TAXONOMIC_DATA = taxonomy_provided
 
-        self.total_production_dataframe = total_production_dataframe
-        
-        if du.is_valid_dir(save_path):
+        self.HAS_ABUNDANCE_DATA = abundance_provided
+
+        if save_path is not None:
             self.output_path = save_path
         else:
-            try:
-                os.makedirs(save_path)
-                self.output_path = save_path
-            except Exception as e:
-                print(e, "Save path ERROR.")
-                sys.exit(1)
+            save_path = None
+            print("No save path provided, dataframe save option disabled.")
 
-        if taxonomic_data_container is not None:
-            self.long_taxonomic_data = taxonomic_data_container
-            self.HAS_TAXONOMIC_DATA = True
+    def open_hdf5(self, key:str):
+        """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
 
-        if norm_abundance_data is not None:
-            self.normalised_abundance_matrix = norm_abundance_data
-            self.HAS_ABUNDANCE_DATA = True
+        Args:
+            key (str): Key of specific dataframe.
 
-        self.list_of_factor = list(self.metadata.columns)
+        Returns:
+            Dataframe: Pandas dataframe or None if wrong key.
+        """
+        dataframe = None
+        print(f"Looking for key {key}...")
+        with pd.HDFStore(path=self.hdf5_file,mode='r') as storage:
+            for k in storage.keys():
+                # print(k)
+                if k == key:
+                    # print(f'{key} key called.')
+                    try:
+                        return storage[k]
 
-        self.current_pcoadf = pcoa_dataframe
+                    except Exception as e:
+                        print(e)
+                        return None
 
-    def performance_benchmark(self):
-        cProfile.runctx("self.taxonomic_data_long_format()", globals(), locals())
+        if dataframe is None:
+            print(f'No key {key} found in hdf5 file, None value returned.')
 
-    def get_total_production_by_sample(self, as_copy: bool = True):
-        return self.total_production_dataframe.copy() if as_copy else self.total_production_dataframe
+        return dataframe
 
-    def get_producer_dataframe(self, as_copy: bool = True):
-        return self.producer_dataframe.copy() if as_copy else self.producer_dataframe
+    def get_global_production_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/global_production_dataframe')
 
-    def get_cpd_list(self):
-        query = self.get_main_dataframe().columns.tolist()
-        if "smplID" in query:
-            query.remove("smplID")
-        return query
+    def get_metabolite_production_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/metabolite_production_dataframe')
 
-    def get_main_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.main_dataframe.copy() if as_copy else self.main_dataframe
+    def get_main_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/main_dataframe')
 
-    def get_main_metadata(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.metadata.copy() if as_copy else self.metadata
+    def get_metadata(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/metadata')
 
-    def set_main_metadata(self, new_metadata):
-        self.metadata = new_metadata
+    def get_pcoa_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/pcoa_dataframe')
+    # def set_main_metadata(self, new_metadata):
+    #     self.metadata = new_metadata
 
-    def get_long_taxonomic_data(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.long_taxonomic_data.copy() if as_copy else self.long_taxonomic_data
+    def get_taxonomic_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/taxonomic_dataframe')
 
-    def get_norm_ab_matrix(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.normalised_abundance_matrix.copy() if as_copy else self.normalised_abundance_matrix
-
-    def get_norm_ab_dataframe(self, as_copy: bool = True) -> pd.DataFrame:
-        return self.normalised_abundance_dataframe.copy() if as_copy else self.normalised_abundance_dataframe
+    def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
+        return self.open_hdf5(key='/normalised_abundance_dataframe')
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
 
-    def get_factor_len(self):
-        return len(self.metadata.columns)
+    def get_factors(self) -> list:
+        return self.get_metadata().columns.tolist()
+        
+    def get_compound_list(self):
+        query = self.get_main_dataframe().columns.tolist()
+        if "smplID" in query:
+            query.remove("smplID")
 
-    def get_metadata_label(self):
-        if self.is_indexed(self.metadata):
-            return list(self.metadata.columns)
-        return list(self.metadata.columns[1:])
+        return query
 
     def get_factor_by_id(self, sample_id, factor):
         query = self.metadata.loc[self.metadata["smplID"] == sample_id][factor]
@@ -129,15 +131,4 @@ class DataStorage:
         else:
             return self.check_and_rename(original_file_path, add + 1)
         
-    def make_figure_from_df(df: pd.DataFrame):
-        fig = go.Figure()
-        fig.add_trace(go.scatter(
-                df,
-                x='PC1',
-                y='PC2',
-                color=df.index
-            )
-        )
-        return fig
-    
         
