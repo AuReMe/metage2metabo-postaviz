@@ -29,7 +29,7 @@ def test_data_processing():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path=TEST_DATA_CONTAINER, metadata=metadata_file, abundance_path=abundance_file, taxonomic_path=taxonomy_file)
+        hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path=TEST_DATA_CONTAINER, metadata_path=metadata_file, abundance_path=abundance_file, taxonomic_path=taxonomy_file)
 
     Data = DataStorage(None, hdf5_file_path, taxonomy_provided, abundance_provided)
 
