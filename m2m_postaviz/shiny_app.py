@@ -141,6 +141,9 @@ def run_shiny(data: DataStorage):
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
+            print(df.isna().sum())
+            df.dropna(inplace=True)
+            print(df.isna().sum())
 
             # value = df[selected_col]
 
@@ -338,12 +341,11 @@ def run_shiny(data: DataStorage):
             if x2 == "None":
                 df = df[[column_value,x1]]
                 df = df.dropna()
-                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
-
-                    print(df[x1].dtype)
-                    print(len(df[x1].unique()), "unique value")
-                    df[x1] = df[x1].round(1)
-                    print(len(df[x1].unique()), "unique value after round")
+                if df[x1].dtype == 'float64':
+                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+                    print(res)
+                    return res
+                    
 
                 tested_data = {}
 

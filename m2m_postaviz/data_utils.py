@@ -1014,3 +1014,20 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     df_pcoa.set_index("smplID",inplace=True)
 
     return df_pcoa
+
+def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
+    
+    if method == "pearson":
+        res = stats.pearsonr(value_array, factor_array)
+    else:
+        res = stats.spearmanr(value_array, factor_array)
+
+    if res.pvalue >= 0.05:
+        symbol = "ns"
+    elif res.pvalue >= 0.01:
+        symbol = "*"
+    elif res.pvalue >= 0.001:
+        symbol = "**"
+    else:
+        symbol = "***"
+    return pd.DataFrame([[factor_name, len(value_array), res.statistic, res.pvalue, symbol, method]],columns=["Factor", "Sample size", "Statistic", "Pvalue", "Significance", "Method"])
