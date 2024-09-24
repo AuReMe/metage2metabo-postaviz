@@ -537,17 +537,21 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         pcoa_dataframe = pcoa_alternative_method(main_dataframe, metadata)
 
     try:
+
         hdf5_file_path = save_dataframe_hdf_format(metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
+        file_format = "hdf"
 
     except Exception as e:
-        print(e)
-        print("Saving as TSV format instead")
+
+        hdf5_file_path = None
+        print(e,"\nSaving as TSV format instead")
         save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
+        file_format = "tsv"
 
     taxonomy_provided = False if taxonomy is None else True
     abundance_provided = False if normalised_abundance_dataframe is None else True
 
-    return hdf5_file_path, taxonomy_provided, abundance_provided
+    return file_format, hdf5_file_path, taxonomy_provided, abundance_provided
 
 
 def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
@@ -743,10 +747,8 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
 
         results = pd.concat([results,abundance_production_df], axis=1)
 
-    print(results)
     results.reset_index(inplace=True)
     results = results.merge(metadata_dataframe,'inner','smplID')
-    print(results)
     # results["smplID"] = results["smplID"].astype("category")
 
     return results
