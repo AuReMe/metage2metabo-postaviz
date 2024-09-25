@@ -10,11 +10,11 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
 
-    def __init__(self, save_path: str, file_format:str, saved_dataframe_path: str, taxonomy_provided: bool, abundance_provided: bool):
+    def __init__(self, save_path: str, file_format:str, hdf5_file: str, taxonomy_provided: bool, abundance_provided: bool):
 
         self.file_format = file_format
 
-        self.saved_dataframe = saved_dataframe_path
+        self.hdf5_file = hdf5_file
 
         self.HAS_TAXONOMIC_DATA = taxonomy_provided
 
@@ -40,7 +40,7 @@ class DataStorage:
             print(key, "not in keys: ", dataframe_keys)
             return
         
-        for root, dirname, filename in os.walk(self.saved_dataframe):
+        for root, dirname, filename in os.walk(self.output_path):
             if key in filename:
                 return pd.read_csv(os.path.join(root,filename),sep="\t")
 

@@ -1032,4 +1032,12 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
         symbol = "**"
     else:
         symbol = "***"
+
     return pd.DataFrame([[factor_name, len(value_array), res.statistic, res.pvalue, symbol, method]],columns=["Factor", "Sample size", "Statistic", "Pvalue", "Significance", "Method"])
+
+def serie_is_float(ser: pd.Series):
+
+    if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
+        return True
+    
+    return False
