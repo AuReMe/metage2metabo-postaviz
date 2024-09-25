@@ -42,7 +42,7 @@ class DataStorage:
         
         for root, dirname, filename in os.walk(self.output_path):
             if key in filename:
-                return pd.read_csv(os.path.join(root,filename),sep="\t")
+                return pd.read_csv(os.path.join(root,key),sep="\t")
 
     def open_hdf5(self, key: str):
         """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
