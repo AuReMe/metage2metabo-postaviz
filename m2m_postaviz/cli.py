@@ -74,7 +74,8 @@ def main(args=None):
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata_path = arg_parser["metadata"]
-        taxonomy_path = arg_parser["taxonomy"]
+        # arg_parser["taxonomy"]
+        taxonomic_path = None
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
         file_format, hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)

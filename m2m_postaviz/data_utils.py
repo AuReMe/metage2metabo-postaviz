@@ -381,6 +381,9 @@ def retrieve_all_sample_data(sample, path):
 
 def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
 
+    if not bool(all_data):
+        raise Exception("Sample data empty.")
+
     cpu_available = cpu_count() - 1
     if not type(cpu_available) == int or cpu_available < 1:
         cpu_available = 1
@@ -431,7 +434,6 @@ def multiprocess_retrieve_data(path):
     if not type(nb_cpu) == int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
-
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
     
     pool.close()
@@ -499,6 +501,7 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
     if not bool(sample_data): 
         print("Fetching sample's cscope...")
         sample_data = multiprocess_retrieve_data(dir_path) 
+        print(sample_data)
 
     if producers_dataframe is None:
         print("Building metabolite production dataframe...")
