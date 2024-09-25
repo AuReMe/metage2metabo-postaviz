@@ -24,6 +24,11 @@ Dependencies
 - pandas
 - padmet
 - scipy
+- skbio
+- plotly
+- scikit-bio
+- shiny
+- shinywidgets
 
 ::
 

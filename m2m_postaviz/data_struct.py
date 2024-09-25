@@ -1,12 +1,8 @@
-import cProfile
 import pandas as pd
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 import os
-import sys
-import m2m_postaviz.data_utils as du
-import plotly.graph_objects as go
 
 class DataStorage:
 
@@ -14,9 +10,11 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
 
-    def __init__(self, save_path: str, hdf5_file_path: str, taxonomy_provided: bool, abundance_provided: bool):
+    def __init__(self, save_path: str, file_format:str, hdf5_file: str, taxonomy_provided: bool, abundance_provided: bool):
 
-        self.hdf5_file = hdf5_file_path
+        self.file_format = file_format
+
+        self.hdf5_file = hdf5_file
 
         self.HAS_TAXONOMIC_DATA = taxonomy_provided
 
@@ -28,7 +26,25 @@ class DataStorage:
             save_path = None
             print("No save path provided, dataframe save option disabled.")
 
-    def open_hdf5(self, key:str):
+    def open_tsv(self, key: str):
+        """Return the dataframe corresponding to the key given as input.
+
+        Args:
+            key (str): name of dataframe's file
+
+        Returns:
+            pd.Dataframe: Pandas dataframe
+        """
+        dataframe_keys = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv", "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv"]
+        if not key in dataframe_keys:
+            print(key, "not in keys: ", dataframe_keys)
+            return
+        
+        for root, dirname, filename in os.walk(self.output_path):
+            if key in filename:
+                return pd.read_csv(os.path.join(root,filename),sep="\t")
+
+    def open_hdf5(self, key: str):
         """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
 
         Args:
@@ -57,19 +73,36 @@ class DataStorage:
         return dataframe
 
     def get_global_production_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/global_production_dataframe')
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/global_production_dataframe')
+        else:
+            return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
 
     def get_metabolite_production_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/metabolite_production_dataframe')
-
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/metabolite_production_dataframe')
+        else:
+            return self.open_tsv(key="producers_dataframe_postaviz.tsv")
+        
     def get_main_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/main_dataframe')
-
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/main_dataframe')
+        else:
+            return self.open_tsv(key="main_dataframe_postaviz.tsv")
+        
     def get_metadata(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/metadata')
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/metadata')
+        else:
+            return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
 
     def get_pcoa_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/pcoa_dataframe')
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/pcoa_dataframe')
+        else:
+            return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
+
+
     # def set_main_metadata(self, new_metadata):
     #     self.metadata = new_metadata
 

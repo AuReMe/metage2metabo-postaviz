@@ -8,6 +8,7 @@ from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
+import pandas as pd
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -141,6 +142,9 @@ def run_shiny(data: DataStorage):
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
+            print(df.isna().sum())
+            df.dropna(inplace=True)
+            print(df.isna().sum())
 
             # value = df[selected_col]
 
@@ -338,12 +342,11 @@ def run_shiny(data: DataStorage):
             if x2 == "None":
                 df = df[[column_value,x1]]
                 df = df.dropna()
-                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
-                    print(df[x1].dtype)
-                    print(len(df[x1].unique()), "unique value")
-                    df[x1] = df[x1].round(1)
-                    print(len(df[x1].unique()), "unique value after round")
+                if df[x1].dtype == 'float64':
+                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+                    return res
+                    
 
                 tested_data = {}
 
@@ -365,15 +368,29 @@ def run_shiny(data: DataStorage):
 
                 df = df[[column_value,x1,x2]]
                 df = df.dropna()
-                for factor_columns in df[[x1,x2]].columns:
 
-                    # If Series type is Float64 AND lenght of uniques values > 200 -> Round all numbers to the 10th. PERFORMANCE ISSUE
-                    if df[factor_columns].dtype == 'float64' and len(df[factor_columns]) > 100:
+                if du.serie_is_float(df[x1]):
 
-                        print(df[x2].dtype)
-                        print(len(df[x2].unique()), "unique value")
-                        df[x2] = df[x2].round(1)
-                        print(len(df[x2].unique()), "unique value after round")
+                    if du.serie_is_float(df[x2]):
+
+                        # Double cor
+                        res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+                        res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
+                        return pd.concat([res1,res2])
+                    
+                    else:
+
+                        # cor filtered by second categorical factor .loc
+                        all_results = []
+                        for unique_x2_value in df[x2].unique():
+                            value_array = df.loc[df[x2] == unique_x2_value][column_value]
+                            factor_array = df.loc[df[x2] == unique_x2_value][x1]
+                            all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
+
+                        return pd.concat(all_results)
+
+                if du.serie_is_float(df[x2]):
+                    raise Exception('Second axis cannot be numeric type if first axis is not')
 
                 tested_data = {}
 

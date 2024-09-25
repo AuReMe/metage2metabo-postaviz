@@ -29,7 +29,7 @@ def test_data_processing():
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path=TEST_DATA_CONTAINER, metadata=metadata_file, abundance_path=abundance_file, taxonomic_path=taxonomy_file)
+        hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path=TEST_DATA_CONTAINER, metadata_path=metadata_file, abundance_path=abundance_file, taxonomic_path=taxonomy_file)
 
     Data = DataStorage(None, hdf5_file_path, taxonomy_provided, abundance_provided)
 
@@ -38,12 +38,12 @@ def test_data_processing():
     global_production_dataframe = Data.get_global_production_dataframe()
     metabolite_production_dataframe = Data.get_metabolite_production_dataframe()
 
-    assert(any(global_production_dataframe["Total_abundance_weighted"].isna),"Nan value in global_production dataframe[Total_abundance_w]")
-    assert(any(global_production_dataframe["Total_production"].isna),"Nan value in global_production dataframe[Total_production]")
+    assert any(global_production_dataframe["Total_abundance_weighted"].isna),"Nan value in global_production dataframe[Total_abundance_w]"
+    assert any(global_production_dataframe["Total_production"].isna),"Nan value in global_production dataframe[Total_production]"
 
     metadata_against_global_dataframe = metadata.loc[metadata["smplID"].isin(global_production_dataframe["smplID"])]
-    assert(len(metadata_against_global_dataframe) == len(global_production_dataframe), "len() of metadata and global dataframe not the same after .loc")
-    assert(global_production_dataframe[:,2:].equals(metadata_against_global_dataframe), "Metadata in global_dataframe and metadata aren't equals.")
+    assert len(metadata_against_global_dataframe) == len(global_production_dataframe), "len() of metadata and global dataframe not the same after .loc"
+    assert global_production_dataframe[:,2:].equals(metadata_against_global_dataframe), "Metadata in global_dataframe and metadata aren't equals."
 
 
 

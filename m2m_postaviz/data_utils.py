@@ -381,6 +381,9 @@ def retrieve_all_sample_data(sample, path):
 
 def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
 
+    if not bool(all_data):
+        raise Exception("Sample data empty.")
+
     cpu_available = cpu_count() - 1
     if not type(cpu_available) == int or cpu_available < 1:
         cpu_available = 1
@@ -431,7 +434,6 @@ def multiprocess_retrieve_data(path):
     if not type(nb_cpu) == int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
-
     results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
     
     pool.close()
@@ -499,6 +501,7 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
     if not bool(sample_data): 
         print("Fetching sample's cscope...")
         sample_data = multiprocess_retrieve_data(dir_path) 
+        print(sample_data)
 
     if producers_dataframe is None:
         print("Building metabolite production dataframe...")
@@ -537,17 +540,21 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         pcoa_dataframe = pcoa_alternative_method(main_dataframe, metadata)
 
     try:
+
         hdf5_file_path = save_dataframe_hdf_format(metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
+        file_format = "hdf"
 
     except Exception as e:
-        print(e)
-        print("Saving as TSV format instead")
+
+        hdf5_file_path = None
+        print(e,"\nSaving as TSV format instead")
         save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
+        file_format = "tsv"
 
     taxonomy_provided = False if taxonomy is None else True
     abundance_provided = False if normalised_abundance_dataframe is None else True
 
-    return hdf5_file_path, taxonomy_provided, abundance_provided
+    return file_format, hdf5_file_path, taxonomy_provided, abundance_provided
 
 
 def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
@@ -743,10 +750,8 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, 
 
         results = pd.concat([results,abundance_production_df], axis=1)
 
-    print(results)
     results.reset_index(inplace=True)
     results = results.merge(metadata_dataframe,'inner','smplID')
-    print(results)
     # results["smplID"] = results["smplID"].astype("category")
 
     return results
@@ -1014,3 +1019,28 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     df_pcoa.set_index("smplID",inplace=True)
 
     return df_pcoa
+
+def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
+    
+    if method == "pearson":
+        res = stats.pearsonr(value_array, factor_array)
+    else:
+        res = stats.spearmanr(value_array, factor_array)
+
+    if res.pvalue >= 0.05:
+        symbol = "ns"
+    elif res.pvalue >= 0.01:
+        symbol = "*"
+    elif res.pvalue >= 0.001:
+        symbol = "**"
+    else:
+        symbol = "***"
+
+    return pd.DataFrame([[factor_name, len(value_array), res.statistic, res.pvalue, symbol, method]],columns=["Factor", "Sample size", "Statistic", "Pvalue", "Significance", "Method"])
+
+def serie_is_float(ser: pd.Series):
+
+    if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
+        return True
+    
+    return False
