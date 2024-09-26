@@ -43,7 +43,7 @@ def test_data_processing():
 
     metabolite_production_dataframe = du.producers_by_compounds_and_samples_multi(sample_data, metadata)
 
-    global_production_dataframe = du.total_production_by_sample(sample_data, metadata, du.relative_abundance_calc(du.open_tsv(abundance_file),sample_data))
+    global_production_dataframe = du.total_production_by_sample(main_dataframe, metadata, du.relative_abundance_calc(du.open_tsv(abundance_file),sample_data))
 
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.
