@@ -47,17 +47,25 @@ def test_data_processing():
 
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.
-    assert any(global_production_dataframe["Total_abundance_weighted"].isna),"Nan value in global_production dataframe[Total_abundance_w]"
+    assert any(global_production_dataframe["Total_abundance_weighted"].notna()),"Nan value in global_production dataframe[Total_abundance_w]"
 
-    assert any(global_production_dataframe["Total_production"].isna),"Nan value in global_production dataframe[Total_production]"
+    assert any(global_production_dataframe["Total_production"].notna()),"Nan value in global_production dataframe[Total_production]"
 
     # Select rows of metadata matching with global_dataframe, just in case they weren't a perfect match (metadata is bigger i think)
     metadata_against_global_dataframe = metadata.loc[metadata["smplID"].isin(global_production_dataframe["smplID"])]
 
     assert len(metadata_against_global_dataframe) == len(global_production_dataframe), "len() of metadata and global dataframe not the same after .loc"
 
+    # Set sample id as index
+    global_production_dataframe.set_index("smplID",inplace=True)
+    metadata_against_global_dataframe.set_index("smplID",inplace=True)
+    # Sort index to align both dataframe
+    global_production_dataframe.sort_index(inplace=True)
+    metadata_against_global_dataframe.sort_index(inplace=True)
+
     # After removing Total_production and Total_abundance_weighted column from global, both dataframe are supposed to be the same. This is a check for the merge which showed weird behavior.
-    assert global_production_dataframe[:,2:].equals(metadata_against_global_dataframe), "Metadata in global_dataframe and metadata aren't equals."
+    print(global_production_dataframe.drop(columns=["Total_production", "Total_abundance_weighted"]).compare(metadata_against_global_dataframe,align_axis=0))
+    assert global_production_dataframe.drop(columns=["Total_production", "Total_abundance_weighted"]).equals(metadata_against_global_dataframe), "Metadata in global_dataframe and metadata aren't equals."
 
     # Check if all sample_data are dataframe and if the numbers of metabolites produced is the same by checking len(columns in df) and len(metabolites produced list in json)
     for sample in sample_data.keys():

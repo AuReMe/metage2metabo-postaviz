@@ -142,9 +142,6 @@ def run_shiny(data: DataStorage):
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
-            print(df.isna().sum())
-            df.dropna(inplace=True)
-            print(df.isna().sum())
 
             # value = df[selected_col]
 
