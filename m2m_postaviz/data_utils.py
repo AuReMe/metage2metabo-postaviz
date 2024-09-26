@@ -733,7 +733,7 @@ def add_factor_column(metadata, serie_id, factor_id):
         new_col.append(str(metadata.at[value, factor_id]))
     return new_col
 
-def total_production_by_sample(main_dataframe: pd.DataFrame, sample_data: dict, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
+def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
     boolean_production_df = main_dataframe.copy()
 
     if not is_indexed_by_id(boolean_production_df):

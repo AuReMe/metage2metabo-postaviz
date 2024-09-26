@@ -102,7 +102,7 @@ def run_shiny(data: DataStorage):
         ui.output_data_frame("metadata_table")
         )
 
-    pcoa_plot_dev_table = ui.card(
+    pcoa_card = ui.card(
         ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
@@ -128,7 +128,7 @@ def run_shiny(data: DataStorage):
             ),
             ui.nav(
                 "PCOA",
-                    pcoa_plot_dev_table,
+                    pcoa_card,
                 ),
             ),
         )
@@ -142,9 +142,6 @@ def run_shiny(data: DataStorage):
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
-            print(df.isna().sum())
-            df.dropna(inplace=True)
-            print(df.isna().sum())
 
             # value = df[selected_col]
 
@@ -234,11 +231,16 @@ def run_shiny(data: DataStorage):
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1]]
                 df = df.dropna()
-                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
-                    print(len(df[x1].unique()), "unique value")
-                    df[x1] = df[x1].round(1)
-                    print(len(df[x1].unique()), "unique value after round")
+                if du.serie_is_float(df[x1]):
+
+                    correlation_results = []
+
+                    for y_value in y1:
+
+                        correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), x1))
+
+                    return pd.concat(correlation_results)
 
                 tested_data = {}
                 for layer_1 in df[x1].unique():
@@ -258,18 +260,35 @@ def run_shiny(data: DataStorage):
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
                 df = df.dropna()
-                if df[x1].dtype == 'float64' and len(df[x1]) > 100:
 
-                    print(len(df[x1].unique()), "unique value")
-                    df[x1] = df[x1].round(1)
-                    print(len(df[x1].unique()), "unique value after round")
+                if du.serie_is_float(df[x1]):
 
-                if df[x2].dtype == 'float64' and len(df[x2]) > 100:
+                    if du.serie_is_float(df[x2]):
 
-                    print(len(df[x2].unique()), "unique value")
-                    df[x2] = df[x2].round(1)
-                    print(len(df[x2].unique()), "unique value after round")
+                        correlation_results = []
 
+                        for y_value in y1:
+
+                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x1+" "+y_value)))
+                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x2+" "+y_value)))
+
+                        return pd.concat(correlation_results)
+
+                    else:
+
+                        correlation_results = []
+
+                        for y_value in y1:
+
+                            for x2_unique_value in df[x2].unique():
+                          
+                                factor_array = df.loc[df[x2] == x2_unique_value][x1]
+                                value_array = df.loc[df[x2] == x2_unique_value][y_value]
+
+                                correlation_results.append(du.correlation_test(value_array.to_numpy(), factor_array.to_numpy(), str(x2_unique_value)+" "+y_value))
+
+                        return pd.concat(correlation_results)
+                    
                 tested_data = {}
 
                 for layer_1 in df[x1].unique():
@@ -343,8 +362,10 @@ def run_shiny(data: DataStorage):
                 df = df[[column_value,x1]]
                 df = df.dropna()
 
-                if df[x1].dtype == 'float64':
+                if du.serie_is_float(df[x1]):
+
                     res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+
                     return res
                     
 
