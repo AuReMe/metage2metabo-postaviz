@@ -41,7 +41,7 @@ def test_data_processing():
 
     main_dataframe = du.build_main_dataframe(sample_data)
 
-    metabolite_production_dataframe = du.producers_by_compounds_and_samples_multi(metadata,sample_data)
+    metabolite_production_dataframe = du.producers_by_compounds_and_samples_multi(sample_data, metadata)
 
     global_production_dataframe = du.total_production_by_sample(sample_data, metadata, du.relative_abundance_calc(du.open_tsv(abundance_file),sample_data))
 
