@@ -29,6 +29,7 @@ Dependencies
 - scikit-bio
 - shiny
 - shinywidgets
+- pytables (Optional)
 
 ::
 
