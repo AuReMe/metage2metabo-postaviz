@@ -533,7 +533,7 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
 
     if total_production_dataframe is None:
         print("Building global production dataframe...")
-        total_production_dataframe = total_production_by_sample(main_dataframe, sample_data, metadata, normalised_abundance_dataframe)
+        total_production_dataframe = total_production_by_sample(main_dataframe, metadata, normalised_abundance_dataframe)
 
     if pcoa_dataframe is None:
         print("Running pcoa with main dataframe...")

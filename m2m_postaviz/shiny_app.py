@@ -13,8 +13,8 @@ import pandas as pd
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
-from profilehooks import profile
-from pympler.asizeof import asizeof
+# from profilehooks import profile
+# from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
     ###
