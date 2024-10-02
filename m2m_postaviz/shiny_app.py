@@ -47,8 +47,13 @@ def run_shiny(data: DataStorage):
                     gap=30,
 
             ),
-        output_widget("producer_plot"), 
-        ui.output_data_frame("producer_test_dataframe")
+            ui.layout_column_wrap(
+
+                ui.card(output_widget("producer_plot"),full_screen=True),
+         
+                ui.card(ui.output_data_frame("producer_test_dataframe"))
+                
+            ),
         ),
         full_screen=True
         )

@@ -756,6 +756,9 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
     return results
 
 
+def wilcoxon_man_whitney(list_of_array_value: list, list_of_factor_value: list, factor_name: list, method: str = "Wilcoxon"):
+    return
+
 def stat_on_plot(data: dict, layer: int):
     """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
 
@@ -772,26 +775,33 @@ def stat_on_plot(data: dict, layer: int):
         res = pd.DataFrame(columns=["group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
         for pair_1 in data.keys():
             for pair_2 in data.keys():
+
                 if pair_1 != pair_2:
                     if not pair_2 in res["group_1"].tolist():
+
                         pair1_data = data[pair_1]["data"]
                         pair2_data = data[pair_2]["data"]
                         n1, n2 = data[pair_1]["n_data"], data[pair_2]["n_data"]
+
                         if len(pair1_data) != 0 and len(pair2_data) != 0:
                             if len(pair1_data) == len(pair2_data):
+
                                 try:
                                     test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
                                     test_type = "Wilcoxon"
                                 except Exception as e:
                                     error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
+
                             else:
+
                                 try:
                                     test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
                                     test_type = "Mann-Whitney"
                                 except Exception as e:
                                     error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
                                     continue
+                                
                             if p_value >= 0.05:
                                 symbol = "ns"
                             elif p_value >= 0.01:
