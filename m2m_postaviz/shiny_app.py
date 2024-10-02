@@ -120,13 +120,13 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
-            ui.nav(
+            ui.nav_panel("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
+            ui.nav_panel(
                 "Metadata",
                 metadata_table,
                 # dev_table
             ),
-            ui.nav(
+            ui.nav_panel(
                 "PCOA",
                     pcoa_card,
                 ),
@@ -339,7 +339,7 @@ def run_shiny(data: DataStorage):
 
             return px.bar(df, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compound_input,color=second_input, boxmode="group")
 
-        @render.data_frame()
+        @render.data_frame
         def production_test_dataframe():
 
             x1, x2 = input.prod_inputx1(), input.prod_inputx2()
@@ -410,8 +410,8 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(all_results)
 
-                if du.serie_is_float(df[x2]):
-                    raise Exception('Second axis cannot be numeric type if first axis is not')
+                # if du.serie_is_float(df[x2]):
+                #     raise Exception('Second axis cannot be numeric type if first axis is not')
 
                 tested_data = {}
 
@@ -508,6 +508,7 @@ def run_shiny(data: DataStorage):
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
         
             if inputx1 == "None":
+
                 all_dataframe["global_production_plot_dataframe"] = df
                 return px.box(df, y=column_value, title=f"Total production.")
             
@@ -518,9 +519,12 @@ def run_shiny(data: DataStorage):
                 all_dataframe["global_production_plot_dataframe"] = df
 
                 if du.has_only_unique_value(df, inputx1):
+
                     return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
                 else:
-                    return px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                    
+                    fig = px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                    return fig
                 
             else:
 

@@ -501,7 +501,6 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
     if not bool(sample_data): 
         print("Fetching sample's cscope...")
         sample_data = multiprocess_retrieve_data(dir_path) 
-        print(sample_data)
 
     if producers_dataframe is None:
         print("Building metabolite production dataframe...")
