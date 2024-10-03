@@ -227,6 +227,7 @@ def run_shiny(data: DataStorage):
 
             if len(y1) == 0:
                 return
+            
             # No input selected
             if x1 == "None":
                 return 
@@ -247,16 +248,8 @@ def run_shiny(data: DataStorage):
 
                     return pd.concat(correlation_results)
 
-                tested_data = {}
-                for layer_1 in df[x1].unique():
-                    selected_data = df.loc[df[x1] == layer_1][y1]
-
-                    if len(selected_data) > 1:
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = selected_data
-                        tested_data[layer_1]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 1)
+               
+                res = du.wilcoxon_man_whitney(df, y1, x1)
                 all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
@@ -266,9 +259,9 @@ def run_shiny(data: DataStorage):
                 df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
                 df = df.dropna()
 
-                if du.serie_is_float(df[x1]):
+                if du.serie_is_float(df[x1]): # First input is Float type
 
-                    if du.serie_is_float(df[x2]):
+                    if du.serie_is_float(df[x2]): # Second input is Float type
 
                         correlation_results = []
 
@@ -279,7 +272,7 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(correlation_results)
 
-                    else:
+                    else: # Second input is not Float type
 
                         correlation_results = []
 
@@ -294,21 +287,10 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(correlation_results)
                     
-                tested_data = {}
+                else:   
 
-                for layer_1 in df[x1].unique():
-                    tested_data[layer_1] = {}
-
-                    for layer_2 in df[x2].unique():
-                        selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][y1]
-
-                        if len(selected_data) > 1:
-                            tested_data[layer_1][layer_2] = {}
-                            tested_data[layer_1][layer_2]["data"] = selected_data
-                            tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 2)
-                all_dataframe["metabolites_production_test_dataframe"] = res
+                    res = du.wilcoxon_man_whitney(df, y1, x1, x2)
+                    all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
                 
