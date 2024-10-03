@@ -398,14 +398,6 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     res.reset_index(inplace=True)
     res = res.merge(metadata,'inner',"smplID")
 
-    # Correct melted version sys.getsizeof() == 10053680472 !
-    # res = res.melt("smplID",var_name="Compound",value_name="Value")
-    # metadata_dict = {}
-    # for factor in metadata.columns[1:]:
-    #     metadata_dict[factor] = add_factor_column(metadata, res["smplID"], factor)
-
-    # res = res.assign(**metadata_dict)
-
     return res
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
@@ -756,8 +748,57 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
     return results
 
 
-def wilcoxon_man_whitney(list_of_array_value: list, list_of_factor_value: list, factor_name: list, method: str = "Wilcoxon"):
+def preprocessing_for_statistical_tests(sub_dataframe: pd.DataFrame, input1, input2, y_value):
     return
+
+def wilcoxon_man_whitney(dataframe: pd.DataFrame, list_of_value_column: list, first_factor: list, second_factor: list = None, method: str = "Wilcoxon"):
+
+    all_sub_dataframe = []
+
+    for value_array in list_of_value_column:
+
+        for first_factor_array in first_factor.unique():
+
+            if second_factor is None:
+
+                tmp_df = dataframe.loc[dataframe[first_factor] == first_factor_array][value_array].to_numpy()
+                all_sub_dataframe.append((tmp_df,str(first_factor_array)))
+                continue
+
+            for second_factor_array in second_factor.unique():
+
+                tmp_df = dataframe.loc[(dataframe[first_factor] == first_factor_array) & (dataframe[second_factor] == second_factor_array)][value_array].to_numpy()
+                all_sub_dataframe.append((tmp_df,str(first_factor_array+" - "+second_factor_array)))
+
+
+    i=0
+    results = []
+    while i < len(all_sub_dataframe):
+
+        array, name = all_sub_dataframe[i]
+        array2, name2 = all_sub_dataframe[i+1]
+
+        if len(array) < 1 or len(array2) < 1:
+            continue
+
+        if len(array) == len(array2):
+
+            test_value, pvalue = stats.wilcoxon(array, array2)
+            test_method = "Wilcoxon"
+
+            if pvalue >= 0.05:
+                symbol = "ns"
+            elif pvalue >= 0.01:
+                symbol = "*"
+            elif pvalue >= 0.001:
+                symbol = "**"
+            else:
+                symbol = "***"
+
+            results.append(pd.DataFrame([[name, len(array), name2, len(array2), test_value, pvalue, symbol, test_method]],
+                         columns=["Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"]))
+
+    return pd.concat(results)
 
 def stat_on_plot(data: dict, layer: int):
     """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
