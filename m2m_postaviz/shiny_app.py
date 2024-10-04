@@ -249,12 +249,12 @@ def run_shiny(data: DataStorage):
                     return pd.concat(correlation_results)
 
                
-                res = du.wilcoxon_man_whitney(df, y1, x1)
+                res = du.preprocessing_for_statistical_tests(df, y1, x1)
                 all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
             # Both axis have been selected
-            else:
+            if x1 != x2:
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
                 df = df.dropna()
@@ -289,7 +289,7 @@ def run_shiny(data: DataStorage):
                     
                 else:   
 
-                    res = du.wilcoxon_man_whitney(df, y1, x1, x2)
+                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2)
                     all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res

@@ -655,9 +655,6 @@ def load_hdf5_datafames(path: str):
 
     return results
 
-
-
-
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     results = {}
     value = 1
@@ -748,47 +745,68 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
     return results
 
 
-def preprocessing_for_statistical_tests(sub_dataframe: pd.DataFrame, input1, input2, y_value):
-    return
+def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None):
+    
+    all_results = []
 
-def wilcoxon_man_whitney(dataframe: pd.DataFrame, list_of_value_column: list, first_factor: str, second_factor: str = None, method: str = "Wilcoxon"):
+    for y in y_value:
 
-    all_sub_dataframe = []
+        if input2 is None:
+            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1]], y, input1))
+        else:
+            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1, input2]], y , input1, input2))
+            
+    return pd.concat(all_results)
 
-    for value_array in list_of_value_column:
+def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None):
+    
+    sub_dataframes = {}
 
-        for first_factor_array in dataframe[first_factor].unique():
+    for first_factor_array in dataframe[first_factor].unique():
 
-            if second_factor is None:
+        if second_factor is None:
 
-                tmp_df = dataframe.loc[dataframe[first_factor] == first_factor_array][value_array].to_numpy()
-                all_sub_dataframe.append((tmp_df,str(first_factor_array)))
-                continue
+            sub_dataframes[first_factor_array] = dataframe.loc[dataframe[first_factor] == first_factor_array][y].to_numpy()
+            continue
 
-            for second_factor_array in dataframe[second_factor].unique():
+        sub_dataframes[first_factor_array] = {}
 
-                tmp_df = dataframe.loc[(dataframe[first_factor] == first_factor_array) & (dataframe[second_factor] == second_factor_array)][value_array].to_numpy()
-                all_sub_dataframe.append((tmp_df,str(first_factor_array+" - "+second_factor_array)))
+        for second_factor_array in dataframe[second_factor].unique():
 
-    index = 0
-    results = []
-    for array, name in all_sub_dataframe:
-        print(name)
-        for array2, name2 in all_sub_dataframe:
-            print(name2)
-            if name == name2:
-                continue
+            sub_dataframes[first_factor_array][second_factor_array] = dataframe.loc[(dataframe[first_factor] == first_factor_array) & (dataframe[second_factor] == second_factor_array)][y].to_numpy()
 
-            if len(array) < 1 or len(array2) < 1:
-                continue
+    if second_factor is None:
 
-            if all_sub_dataframe.index(name2) < all_sub_dataframe.index(name):
-                continue
+        results = pd.DataFrame(columns=["Compound", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
 
-            if len(array) == len(array2):
+    else:
 
-                test_value, pvalue = stats.wilcoxon(array, array2)
-                test_method = "Wilcoxon"
+        results = pd.DataFrame(columns=["Compound", "Axis", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
+
+    for name in sub_dataframes.keys():
+
+        if second_factor is None:
+
+            for name2 in sub_dataframes.keys():
+
+                if name == name2:
+                    continue
+
+                if len(sub_dataframes[name]) < 1 or len(sub_dataframes[name2]) < 1:
+                    continue
+
+                if second_factor in results["Factor1"].tolist():
+                    continue
+
+                if len(sub_dataframes[name]) == len(sub_dataframes[name2]):
+
+                    test_value, pvalue = stats.wilcoxon(sub_dataframes[name], sub_dataframes[name2])
+                    test_method = "Wilcoxon"
+
+                else:
+
+                    test_value, pvalue = stats.mannwhitneyu(sub_dataframes[name], sub_dataframes[name2])
+                    test_method = "Mann-Whitney"
 
                 if pvalue >= 0.05:
                     symbol = "ns"
@@ -799,11 +817,52 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, list_of_value_column: list, fi
                 else:
                     symbol = "***"
 
-                results.append(pd.DataFrame([[name, len(array), name2, len(array2), test_value, pvalue, symbol, test_method]],
-                            columns=["Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"]))
+                results.loc[len(results)] = {"Compound": y,
+                                            "Factor1": name, "Sample size1": len(sub_dataframes[name]),
+                                              "Factor2": name2, "Sample size2": len(sub_dataframes[name2]),
+                                                "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
+
+        else:
+
+            for name2 in sub_dataframes[name].keys():
+                
+                for name3 in sub_dataframes[name].keys():
+                    
+                    if name2 == name3:
+                        continue
+
+                    if len(sub_dataframes[name][name2]) < 1 or len(sub_dataframes[name][name3]) < 1:
+                        continue
+
+                    if second_factor in results["Factor1"].tolist():
+                        continue
+
+                    if len(sub_dataframes[name][name2]) == len(sub_dataframes[name][name3]):
+
+                        test_value, pvalue = stats.wilcoxon(sub_dataframes[name][name2], sub_dataframes[name][name3])
+                        test_method = "Wilcoxon"
+
+                    else:
+
+                        test_value, pvalue = stats.mannwhitneyu(sub_dataframes[name][name2], sub_dataframes[name][name3])
+                        test_method = "Mann-Whitney"
+
+                    if pvalue >= 0.05:
+                        symbol = "ns"
+                    elif pvalue >= 0.01:
+                        symbol = "*"
+                    elif pvalue >= 0.001:
+                        symbol = "**"
+                    else:
+                        symbol = "***"
+                    
+                    results.loc[len(results)] = {"Compound": y, "Axis": name,
+                                                "Factor1": str(second_factor+": "+str(name2)), "Sample size1": len(sub_dataframes[name][name2]),
+                                                "Factor2": str(second_factor+": "+str(name3)), "Sample size2": len(sub_dataframes[name][name3]),
+                                                    "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
 
 
-    return pd.concat(results) if len(results) > 1 else results[0]
+    return results
 
 def stat_on_plot(data: dict, layer: int):
     """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
