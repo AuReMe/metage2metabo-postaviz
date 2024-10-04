@@ -746,7 +746,18 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
 
 
 def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None):
-    
+    """Create dataframe for each y_value in the list, to separate them and use wilcoxon_man_whitney function.
+    Concat all results into one dataframe.
+
+    Args:
+        dataframe (pd.DataFrame): Dataframe to test.
+        y_value (_type_): list of columns labels to separata into several dataframe. Must be of lenght 1 at least. 
+        input1 (_type_): First user's input.
+        input2 (_type_, optional): Second user's input. Defaults to None.
+
+    Returns:
+        Dataframe: Dataframe of statistical test.
+    """
     all_results = []
 
     for y in y_value:
@@ -759,7 +770,23 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
     return pd.concat(all_results)
 
 def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None):
+    """ 
+    Takes one dataframe with only one value column y and return a dataframe of statistical tests.
+    First all sub arrays by the first input then the second input are made and convert to numpy array.
+    Then Wilcoxon or Mann Whitney test are run on each pair without doublon.
+    If pairs array have the same lenght -> Wilcoxon, if not -> Mann Whitney
     
+    Args:
+    dataframe (pd.Dataframe): Pandas dataframe
+    y (str): Column label containing the values to test.
+    first_factor (str): Column label of the first user's input.
+    second_factor (str): Column label of the second user's input. Default to None
+    
+
+    Returns:
+        Dataframe: Dataframe of test's results.
+    """
+    # Array sorting by the first input and the second input if NOT None.
     sub_dataframes = {}
 
     for first_factor_array in dataframe[first_factor].unique():
@@ -775,6 +802,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
 
             sub_dataframes[first_factor_array][second_factor_array] = dataframe.loc[(dataframe[first_factor] == first_factor_array) & (dataframe[second_factor] == second_factor_array)][y].to_numpy()
 
+    # Dataframe's structure declaration, Axis column added if second input is NOT None.
     if second_factor is None:
 
         results = pd.DataFrame(columns=["Compound", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
@@ -783,9 +811,10 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
 
         results = pd.DataFrame(columns=["Compound", "Axis", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
 
+    # Test each pairs avoiding useless duplicates and Array of lenght <= 1.
     for name in sub_dataframes.keys():
 
-        if second_factor is None:
+        if second_factor is None: # One input selected
 
             for name2 in sub_dataframes.keys():
 
@@ -822,7 +851,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                                               "Factor2": name2, "Sample size2": len(sub_dataframes[name2]),
                                                 "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
 
-        else:
+        else: # Two inputs selected 
 
             for name2 in sub_dataframes[name].keys():
                 
