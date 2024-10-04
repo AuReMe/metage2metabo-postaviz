@@ -111,7 +111,8 @@ def run_shiny(data: DataStorage):
         ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.output_ui("pcoa_ui"),
+                        ui.output_ui("pcoa_ui_slider"),
+                        ui.output_ui("pcoa_ui_selectize"),
                         width=350,
                         gap=30,
                     ),
@@ -156,13 +157,34 @@ def run_shiny(data: DataStorage):
 
                 df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
 
+            else:
+
+                show_only = input.pcoa_selectize()
+
+                df = df.loc[df[selected_col].isin(show_only)]
+                print(df)
+
             fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
             return fig
 
         @render.ui
         @reactive.event(input.pcoa_color)
-        def pcoa_ui():
+        def pcoa_ui_selectize():
+
+            df = data.get_pcoa_dataframe()
+            value = df[input.pcoa_color()]
+
+            if not du.serie_is_float(value):
+                return ui.TagList(
+                            ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(), selected=value.unique().tolist(), multiple=True),
+                        )
+            else:
+                return 
+
+        @render.ui
+        @reactive.event(input.pcoa_color)
+        def pcoa_ui_slider():
 
             df = data.get_pcoa_dataframe()
             value = df[input.pcoa_color()]
