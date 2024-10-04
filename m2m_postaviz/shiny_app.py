@@ -13,8 +13,8 @@ import pandas as pd
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
-from profilehooks import profile
-from pympler.asizeof import asizeof
+# from profilehooks import profile
+# from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
     ###
@@ -47,8 +47,13 @@ def run_shiny(data: DataStorage):
                     gap=30,
 
             ),
-        output_widget("producer_plot"), 
-        ui.output_data_frame("producer_test_dataframe")
+            ui.layout_column_wrap(
+
+                ui.card(output_widget("producer_plot"),full_screen=True),
+         
+                ui.card(ui.output_data_frame("producer_test_dataframe"))
+                
+            ),
         ),
         full_screen=True
         )
@@ -120,13 +125,13 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
-            ui.nav(
+            ui.nav_panel("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
+            ui.nav_panel(
                 "Metadata",
                 metadata_table,
                 # dev_table
             ),
-            ui.nav(
+            ui.nav_panel(
                 "PCOA",
                     pcoa_card,
                 ),
@@ -222,6 +227,7 @@ def run_shiny(data: DataStorage):
 
             if len(y1) == 0:
                 return
+            
             # No input selected
             if x1 == "None":
                 return 
@@ -242,28 +248,20 @@ def run_shiny(data: DataStorage):
 
                     return pd.concat(correlation_results)
 
-                tested_data = {}
-                for layer_1 in df[x1].unique():
-                    selected_data = df.loc[df[x1] == layer_1][y1]
-
-                    if len(selected_data) > 1:
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = selected_data
-                        tested_data[layer_1]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 1)
+               
+                res = du.preprocessing_for_statistical_tests(df, y1, x1)
                 all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
             # Both axis have been selected
-            else:
+            if x1 != x2:
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
                 df = df.dropna()
 
-                if du.serie_is_float(df[x1]):
+                if du.serie_is_float(df[x1]): # First input is Float type
 
-                    if du.serie_is_float(df[x2]):
+                    if du.serie_is_float(df[x2]): # Second input is Float type
 
                         correlation_results = []
 
@@ -274,7 +272,7 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(correlation_results)
 
-                    else:
+                    else: # Second input is not Float type
 
                         correlation_results = []
 
@@ -289,21 +287,10 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(correlation_results)
                     
-                tested_data = {}
+                else:   
 
-                for layer_1 in df[x1].unique():
-                    tested_data[layer_1] = {}
-
-                    for layer_2 in df[x2].unique():
-                        selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][y1]
-
-                        if len(selected_data) > 1:
-                            tested_data[layer_1][layer_2] = {}
-                            tested_data[layer_1][layer_2]["data"] = selected_data
-                            tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 2)
-                all_dataframe["metabolites_production_test_dataframe"] = res
+                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2)
+                    all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
                 
@@ -339,7 +326,7 @@ def run_shiny(data: DataStorage):
 
             return px.bar(df, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compound_input,color=second_input, boxmode="group")
 
-        @render.data_frame()
+        @render.data_frame
         def production_test_dataframe():
 
             x1, x2 = input.prod_inputx1(), input.prod_inputx2()
@@ -410,8 +397,8 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(all_results)
 
-                if du.serie_is_float(df[x2]):
-                    raise Exception('Second axis cannot be numeric type if first axis is not')
+                # if du.serie_is_float(df[x2]):
+                #     raise Exception('Second axis cannot be numeric type if first axis is not')
 
                 tested_data = {}
 
@@ -508,6 +495,7 @@ def run_shiny(data: DataStorage):
             inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
         
             if inputx1 == "None":
+
                 all_dataframe["global_production_plot_dataframe"] = df
                 return px.box(df, y=column_value, title=f"Total production.")
             
@@ -518,9 +506,12 @@ def run_shiny(data: DataStorage):
                 all_dataframe["global_production_plot_dataframe"] = df
 
                 if du.has_only_unique_value(df, inputx1):
+
                     return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
                 else:
-                    return px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                    
+                    fig = px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                    return fig
                 
             else:
 
