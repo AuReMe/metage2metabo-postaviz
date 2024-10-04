@@ -51,7 +51,7 @@ def run_shiny(data: DataStorage):
 
                 ui.card(output_widget("producer_plot"),full_screen=True),
          
-                ui.card(ui.output_data_frame("producer_test_dataframe"))
+                ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
                 
             ),
         ),
@@ -90,9 +90,13 @@ def run_shiny(data: DataStorage):
                 width=350,
                 gap=30,
             ),
-            output_widget("total_production_plot"),
-            ui.output_data_frame("production_test_dataframe")
-        
+            ui.layout_column_wrap(
+
+            ui.card(output_widget("total_production_plot"),full_screen=True),
+
+            ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
+
+            ),
         ),
         full_screen=True
         )
@@ -377,17 +381,7 @@ def run_shiny(data: DataStorage):
                     return res
                     
 
-                tested_data = {}
-
-                for layer_1 in df[x1].unique():
-                    selected_data = df.loc[df[x1] == layer_1][column_value]
-
-                    if len(selected_data) > 1:
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = selected_data
-                        tested_data[layer_1]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 1)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -412,40 +406,15 @@ def run_shiny(data: DataStorage):
                         # cor filtered by second categorical factor .loc
                         all_results = []
                         for unique_x2_value in df[x2].unique():
+
                             value_array = df.loc[df[x2] == unique_x2_value][column_value]
                             factor_array = df.loc[df[x2] == unique_x2_value][x1]
+
                             all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
 
                         return pd.concat(all_results)
 
-                # if du.serie_is_float(df[x2]):
-                #     raise Exception('Second axis cannot be numeric type if first axis is not')
-
-                tested_data = {}
-
-                for layer_1 in df[x1].unique():
-                    tested_data[layer_1] = {}
-
-                    for layer_2 in df[x2].unique():
-                        selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][column_value]
-
-                        if len(selected_data) > 1:
-                            tested_data[layer_1][layer_2] = {}
-                            tested_data[layer_1][layer_2]["data"] = selected_data.values
-                            tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-
-                # In case tested_data has no value (barplot)
-                if all(len(tested_data[k]) == 0 for k in tested_data.keys()):
-                    print("No values in each keys")
-                    return
-                
-                # In case tested_data is not a double layer dict
-                if all(len(tested_data[k]) == 1 for k in tested_data.keys()):
-                    print("Only one pair per layer.")
-                    return
-                
-                else:
-                    res = du.stat_on_plot(tested_data, 2)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -466,7 +435,7 @@ def run_shiny(data: DataStorage):
         
         @render.text
         @reactive.event(input.export_metabolites_test_button)
-        def export_metabolites_test_dataframe():
+        def export_metabolites_test_dataframe_txt():
 
             if bool(all_dataframe):
                 if all_dataframe["metabolites_production_test_dataframe"] is not None:
