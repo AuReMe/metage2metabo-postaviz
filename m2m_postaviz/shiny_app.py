@@ -83,8 +83,7 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
-                ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
+                
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
                 ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
@@ -92,7 +91,15 @@ def run_shiny(data: DataStorage):
             ),
             ui.layout_column_wrap(
 
-            ui.card(output_widget("total_production_plot"),full_screen=True),
+            ui.card(ui.p(output_widget("total_production_plot")),
+                    ui.card_footer(
+                        ui.layout_columns(
+                            ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
+                            ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
+                            col_widths=(4,8)
+                    )),
+                    full_screen=True
+                    ),
 
             ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
 
