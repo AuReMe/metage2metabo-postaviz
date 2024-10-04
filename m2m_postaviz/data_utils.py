@@ -547,7 +547,6 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
 
     return file_format, hdf5_file_path, taxonomy_provided, abundance_provided
 
-
 def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
     """Save every dataframe to save_path input.
 
@@ -743,7 +742,6 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
     # results["smplID"] = results["smplID"].astype("category")
 
     return results
-
 
 def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None):
     """Create dataframe for each y_value in the list, to separate them and use wilcoxon_man_whitney function.

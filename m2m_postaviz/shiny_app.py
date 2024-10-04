@@ -142,38 +142,37 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def pcoa_plot():
-
             # Get all parameters.
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
 
-            # value = df[selected_col]
-
-            # min_limit = input.pcoa_float_limit()[0]
-
-            # max_limit = input.pcoa_float_limit()[1]
-
             # Check column dtype.
-            # if value.dtype == 'float64' or value.dtype == 'int64':
+            if du.serie_is_float(df[selected_col]):
 
-            #     df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+                min_limit = input.pcoa_slider()[0]
+
+                max_limit = input.pcoa_slider()[1]
+
+                df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
 
             fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
             return fig
 
-        # Value.dtype does not seem to be reliable with Nan in columns.
-        # @render.ui
-        # @reactive.event(input.pcoa_color)
-        # def pcoa_ui():
-        #     value = pcoa_dataframe[input.pcoa_color()]
-        #     if value.dtype == 'float64' or value.dtype == 'int64':
-        #         return ui.TagList(
-        #                     ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
-        #                 )
-        #     else:
-        #         return 
+        @render.ui
+        @reactive.event(input.pcoa_color)
+        def pcoa_ui():
+
+            df = data.get_pcoa_dataframe()
+            value = df[input.pcoa_color()]
+
+            if du.serie_is_float(value):
+                return ui.TagList(
+                            ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
+                        )
+            else:
+                return 
         
         @render_widget
         def taxonomic_boxplot():
