@@ -83,27 +83,18 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
-                
+                ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
+                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),                
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
                 ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
                 gap=30,
             ),
-            ui.layout_column_wrap(
 
-            ui.card(ui.p(output_widget("total_production_plot")),
-                    ui.card_footer(
-                        ui.layout_columns(
-                            ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                            ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
-                            col_widths=(4,8)
-                    )),
-                    full_screen=True
-                    ),
+            ui.card(ui.p(output_widget("total_production_plot")),full_screen=True),
 
             ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
 
-            ),
         ),
         full_screen=True
         )
@@ -517,7 +508,7 @@ def run_shiny(data: DataStorage):
                 all_dataframe["global_production_plot_dataframe"] = df
                 has_unique_value = du.has_only_unique_value(df, inputx1, inputx2)
 
-                return px.bar(df,x=inputx2,y=column_value,color=inputx1) if has_unique_value else px.box(df,x=inputx2,y=column_value,color=inputx1)
+                return px.bar(df,x=inputx1,y=column_value,color=inputx2) if has_unique_value else px.box(df,x=inputx1,y=column_value,color=inputx2)
 
         @render.data_frame
         def metadata_table():
