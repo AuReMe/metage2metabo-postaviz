@@ -815,14 +815,14 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
         if second_factor is None: # One input selected
 
             for name2 in sub_dataframes.keys():
-
+                
                 if name == name2:
                     continue
 
                 if len(sub_dataframes[name]) < 1 or len(sub_dataframes[name2]) < 1:
                     continue
 
-                if second_factor in results["Factor1"].tolist():
+                if name2 in results["Factor1"].tolist():
                     continue
 
                 if len(sub_dataframes[name]) == len(sub_dataframes[name2]):
@@ -861,7 +861,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                     if len(sub_dataframes[name][name2]) < 1 or len(sub_dataframes[name][name3]) < 1:
                         continue
 
-                    if second_factor in results["Factor1"].tolist():
+                    if len(results.loc[(results["Factor1"] == str(second_factor+": "+str(name3))) & (results["Axis"] == name)]) > 0: # Avoid duplicate
                         continue
 
                     if len(sub_dataframes[name][name2]) == len(sub_dataframes[name][name3]):
