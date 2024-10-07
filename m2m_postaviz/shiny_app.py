@@ -51,7 +51,7 @@ def run_shiny(data: DataStorage):
 
                 ui.card(output_widget("producer_plot"),full_screen=True),
          
-                ui.card(ui.output_data_frame("producer_test_dataframe"))
+                ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
                 
             ),
         ),
@@ -84,15 +84,17 @@ def run_shiny(data: DataStorage):
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
                 ui.input_checkbox("prod_norm", "Abundance data"),
                 ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
+                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),                
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
                 ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
                 gap=30,
             ),
-            output_widget("total_production_plot"),
-            ui.output_data_frame("production_test_dataframe")
-        
+
+            ui.card(ui.p(output_widget("total_production_plot")),full_screen=True),
+
+            ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
+
         ),
         full_screen=True
         )
@@ -111,7 +113,8 @@ def run_shiny(data: DataStorage):
         ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.output_ui("pcoa_ui"),
+                        ui.output_ui("pcoa_ui_slider"),
+                        ui.output_ui("pcoa_ui_selectize"),
                         width=350,
                         gap=30,
                     ),
@@ -142,38 +145,58 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def pcoa_plot():
-
             # Get all parameters.
             selected_col = input.pcoa_color()
 
             df = data.get_pcoa_dataframe()
 
-            # value = df[selected_col]
-
-            # min_limit = input.pcoa_float_limit()[0]
-
-            # max_limit = input.pcoa_float_limit()[1]
-
             # Check column dtype.
-            # if value.dtype == 'float64' or value.dtype == 'int64':
+            if du.serie_is_float(df[selected_col]):
 
-            #     df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+                min_limit = input.pcoa_slider()[0]
+
+                max_limit = input.pcoa_slider()[1]
+
+                df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+
+            else:
+
+                show_only = input.pcoa_selectize()
+
+                df = df.loc[df[selected_col].isin(show_only)]
+                print(df)
 
             fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
             return fig
 
-        # Value.dtype does not seem to be reliable with Nan in columns.
-        # @render.ui
-        # @reactive.event(input.pcoa_color)
-        # def pcoa_ui():
-        #     value = pcoa_dataframe[input.pcoa_color()]
-        #     if value.dtype == 'float64' or value.dtype == 'int64':
-        #         return ui.TagList(
-        #                     ui.input_slider("pcoa_float_limit", "Show only :", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
-        #                 )
-        #     else:
-        #         return 
+        @render.ui
+        @reactive.event(input.pcoa_color)
+        def pcoa_ui_selectize():
+
+            df = data.get_pcoa_dataframe()
+            value = df[input.pcoa_color()]
+
+            if not du.serie_is_float(value):
+                return ui.TagList(
+                            ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(), selected=value.unique().tolist(), multiple=True),
+                        )
+            else:
+                return 
+
+        @render.ui
+        @reactive.event(input.pcoa_color)
+        def pcoa_ui_slider():
+
+            df = data.get_pcoa_dataframe()
+            value = df[input.pcoa_color()]
+
+            if du.serie_is_float(value):
+                return ui.TagList(
+                            ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
+                        )
+            else:
+                return 
         
         @render_widget
         def taxonomic_boxplot():
@@ -356,17 +379,7 @@ def run_shiny(data: DataStorage):
                     return res
                     
 
-                tested_data = {}
-
-                for layer_1 in df[x1].unique():
-                    selected_data = df.loc[df[x1] == layer_1][column_value]
-
-                    if len(selected_data) > 1:
-                        tested_data[layer_1] = {}
-                        tested_data[layer_1]["data"] = selected_data
-                        tested_data[layer_1]["n_data"] = len(selected_data)
-
-                res = du.stat_on_plot(tested_data, 1)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -391,40 +404,15 @@ def run_shiny(data: DataStorage):
                         # cor filtered by second categorical factor .loc
                         all_results = []
                         for unique_x2_value in df[x2].unique():
+
                             value_array = df.loc[df[x2] == unique_x2_value][column_value]
                             factor_array = df.loc[df[x2] == unique_x2_value][x1]
+
                             all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
 
                         return pd.concat(all_results)
 
-                # if du.serie_is_float(df[x2]):
-                #     raise Exception('Second axis cannot be numeric type if first axis is not')
-
-                tested_data = {}
-
-                for layer_1 in df[x1].unique():
-                    tested_data[layer_1] = {}
-
-                    for layer_2 in df[x2].unique():
-                        selected_data = df.loc[(df[x1] == layer_1) & (df[x2] == layer_2)][column_value]
-
-                        if len(selected_data) > 1:
-                            tested_data[layer_1][layer_2] = {}
-                            tested_data[layer_1][layer_2]["data"] = selected_data.values
-                            tested_data[layer_1][layer_2]["n_data"] = len(selected_data)
-
-                # In case tested_data has no value (barplot)
-                if all(len(tested_data[k]) == 0 for k in tested_data.keys()):
-                    print("No values in each keys")
-                    return
-                
-                # In case tested_data is not a double layer dict
-                if all(len(tested_data[k]) == 1 for k in tested_data.keys()):
-                    print("Only one pair per layer.")
-                    return
-                
-                else:
-                    res = du.stat_on_plot(tested_data, 2)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -445,7 +433,7 @@ def run_shiny(data: DataStorage):
         
         @render.text
         @reactive.event(input.export_metabolites_test_button)
-        def export_metabolites_test_dataframe():
+        def export_metabolites_test_dataframe_txt():
 
             if bool(all_dataframe):
                 if all_dataframe["metabolites_production_test_dataframe"] is not None:
@@ -520,7 +508,7 @@ def run_shiny(data: DataStorage):
                 all_dataframe["global_production_plot_dataframe"] = df
                 has_unique_value = du.has_only_unique_value(df, inputx1, inputx2)
 
-                return px.bar(df,x=inputx2,y=column_value,color=inputx1) if has_unique_value else px.box(df,x=inputx2,y=column_value,color=inputx1)
+                return px.bar(df,x=inputx1,y=column_value,color=inputx2) if has_unique_value else px.box(df,x=inputx1,y=column_value,color=inputx2)
 
         @render.data_frame
         def metadata_table():
