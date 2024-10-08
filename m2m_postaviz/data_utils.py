@@ -14,6 +14,7 @@ from multiprocessing import cpu_count
 from functools import partial
 from skbio.stats.ordination import pcoa
 from scipy.spatial.distance import squareform,pdist
+from statsmodels.stats.multitest import multipletests
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -743,7 +744,7 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
 
     return results
 
-def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None):
+def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None, multipletests: bool = False, multipletests_method: str = "bonferroni"):
     """Create dataframe for each y_value in the list, to separate them and use wilcoxon_man_whitney function.
     Concat all results into one dataframe.
 
@@ -761,13 +762,13 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
     for y in y_value:
 
         if input2 is None:
-            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1]], y, input1))
+            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1]], y, input1, None, multipletests, multipletests_method))
         else:
-            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1, input2]], y , input1, input2))
+            all_results.append(wilcoxon_man_whitney(dataframe[[y, input1, input2]], y , input1, input2, multipletests, multipletests_method))
             
     return pd.concat(all_results)
 
-def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None):
+def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None, multiple_correction: bool = False, correction_method: str = "hs"):
     """ 
     Takes one dataframe with only one value column y and return a dataframe of statistical tests.
     First all sub arrays by the first input then the second input are made and convert to numpy array.
@@ -803,11 +804,11 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
     # Dataframe's structure declaration, Axis column added if second input is NOT None.
     if second_factor is None:
 
-        results = pd.DataFrame(columns=["Compound", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
+        results = pd.DataFrame(columns=["Compound", "Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
 
     else:
 
-        results = pd.DataFrame(columns=["Compound", "Axis", "Factor1", "Sample size1", "Factor2", "Sample size2", "Statistic", "Pvalue", "Significance", "Method"])
+        results = pd.DataFrame(columns=["Compound", "Axis", "Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
 
     # Test each pairs avoiding useless duplicates and Array of lenght <= 1.
     for name in sub_dataframes.keys():
@@ -815,14 +816,14 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
         if second_factor is None: # One input selected
 
             for name2 in sub_dataframes.keys():
-
+                
                 if name == name2:
                     continue
 
                 if len(sub_dataframes[name]) < 1 or len(sub_dataframes[name2]) < 1:
                     continue
 
-                if second_factor in results["Factor1"].tolist():
+                if name2 in results["Factor1"].tolist():
                     continue
 
                 if len(sub_dataframes[name]) == len(sub_dataframes[name2]):
@@ -861,7 +862,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                     if len(sub_dataframes[name][name2]) < 1 or len(sub_dataframes[name][name3]) < 1:
                         continue
 
-                    if second_factor in results["Factor1"].tolist():
+                    if len(results.loc[(results["Factor1"] == str(second_factor+": "+str(name3))) & (results["Axis"] == name)]) > 0: # Avoid duplicate
                         continue
 
                     if len(sub_dataframes[name][name2]) == len(sub_dataframes[name][name3]):
@@ -888,6 +889,13 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                                                 "Factor2": str(second_factor+": "+str(name3)), "Sample size2": len(sub_dataframes[name][name3]),
                                                     "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
 
+    if multiple_correction:
+        pvals_before_correction = results["Pvalue"].to_numpy()
+        
+        reject, pvals_after_correction, _, __ = multipletests(pvals_before_correction, method = correction_method)
+        
+        results["Pvalue corrected"] = pvals_after_correction
+        results["Correction method"] = correction_method
 
     return results
 
