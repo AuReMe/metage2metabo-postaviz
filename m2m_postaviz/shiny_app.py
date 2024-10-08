@@ -38,7 +38,14 @@ def run_shiny(data: DataStorage):
                     ui.input_select("box_inputx1", "Label for X axis", factor_list),
                     ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
                     ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
+
                     ui.input_checkbox("ab_norm", "With normalised data"),
+                    ui.input_checkbox("multiple_correction_metabo_plot", "Multiple test correction"),
+                    ui.panel_conditional("input.multiple_correction_metabo_plot",ui.input_select("multiple_test_method_metabo","Method",
+                                                                                                ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
+                                                                                                selected="bonferroni",)),
+
+
                     ui.input_action_button("export_metabolites_plot_button", "Export plot dataframe"),
                     ui.output_text_verbatim("export_metabolites_plot_dataframe_txt", True),
                     ui.input_action_button("export_metabolites_test_button", "Export stats dataframe"),
@@ -82,7 +89,13 @@ def run_shiny(data: DataStorage):
             ui.sidebar(
                 ui.input_select("prod_inputx1", "Label for X axis", factor_list),
                 ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
+
                 ui.input_checkbox("prod_norm", "Abundance data"),
+                ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
+                ui.panel_conditional("input.multiple_correction_global_plot",ui.input_select("multiple_test_method_global","Method",
+                                                                                                     ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
+                                                                                                     selected="bonferroni",)),
+
                 ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
                 ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),                
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
@@ -255,6 +268,13 @@ def run_shiny(data: DataStorage):
             if x1 == "None":
                 return 
 
+            multipletests_correction = input.multiple_correction_metabo_plot()
+
+            if multipletests_correction:
+                multipletests_method = input.multiple_test_method_metabo()
+            else:
+                multipletests_method = "hs"
+
             # At least first axis selected
             if x2 == "None":
 
@@ -272,7 +292,7 @@ def run_shiny(data: DataStorage):
                     return pd.concat(correlation_results)
 
                
-                res = du.preprocessing_for_statistical_tests(df, y1, x1)
+                res = du.preprocessing_for_statistical_tests(df, y1, x1, multipletests = multipletests_correction, multipletests_method = multipletests_method)
                 all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
@@ -312,7 +332,7 @@ def run_shiny(data: DataStorage):
                     
                 else:   
 
-                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2)
+                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2, multipletests = multipletests_correction, multipletests_method = multipletests_method)
                     all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
@@ -322,11 +342,11 @@ def run_shiny(data: DataStorage):
 
             compound_input, first_input, second_input = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
 
-            producer_data = data.get_metabolite_production_dataframe()
-            producer_data = producer_data.set_index("smplID")
-
             if len(compound_input) == 0:
                 return
+
+            producer_data = data.get_metabolite_production_dataframe()
+            producer_data = producer_data.set_index("smplID")
 
             if first_input == "None":
                 df = producer_data[[*compound_input]]
@@ -353,11 +373,18 @@ def run_shiny(data: DataStorage):
         def production_test_dataframe():
 
             x1, x2 = input.prod_inputx1(), input.prod_inputx2()
-
+            
             # No input selected
             if x1 == "None":
                 return 
             
+            multipletests_correction = input.multiple_correction_global_plot()
+
+            if multipletests_correction:
+                multipletests_method = input.multiple_test_method_global()
+            else:
+                multipletests_method = "hs"
+
             with_normalised_data = input.prod_norm()
 
             if with_normalised_data and data.HAS_ABUNDANCE_DATA:
@@ -379,7 +406,7 @@ def run_shiny(data: DataStorage):
                     return res
                     
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multipletests_correction, multipletests_method=multipletests_method)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -412,7 +439,7 @@ def run_shiny(data: DataStorage):
 
                         return pd.concat(all_results)
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multipletests_correction, multipletests_method=multipletests_method)
                 all_dataframe["global_production_test_dataframe"] = res
 
                 return res
