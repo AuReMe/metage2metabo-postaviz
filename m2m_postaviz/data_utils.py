@@ -380,6 +380,7 @@ def retrieve_all_sample_data(sample, path):
 
     return cscope_dataframe, sample
 
+
 def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
 
     if not bool(all_data):
@@ -400,6 +401,7 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     res = res.merge(metadata,'inner',"smplID")
 
     return res
+
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
         serie_value = []
@@ -440,15 +442,18 @@ def multiprocess_retrieve_data(path):
 
     return all_data
 
+
 def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
     dataframe.reset_index(inplace=True)
     return dataframe.melt("smplID",var_name="Compound",value_name="Value")
+
 
 def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
     row = row.astype(float)
     abundance_value = abundance_matrix.at[row.name, sample_id]
     row *= abundance_value
     return row
+
 
 def build_main_dataframe(sample_data: dict):
     all_series = []
@@ -466,6 +471,7 @@ def build_main_dataframe(sample_data: dict):
     results.index.name = "smplID"
     
     return results
+
 
 def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
     """
@@ -547,6 +553,7 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
     abundance_provided = False if normalised_abundance_dataframe is None else True
 
     return file_format, hdf5_file_path, taxonomy_provided, abundance_provided
+
 
 def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
     """Save every dataframe to save_path input.
@@ -637,6 +644,7 @@ def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.Da
         print('Error when creating HDF5 dataframe storage.')
         sys.exit(1)
 
+
 def load_hdf5_datafames(path: str):
     keys = ["main_dataframe", "metadata", "metabolite_production_dataframe", "normalised_abundance_dataframe", "long_taxonomic_data", "global_production_dataframe", "pcoa_dataframe"]
     results = []
@@ -655,6 +663,7 @@ def load_hdf5_datafames(path: str):
 
     return results
 
+
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
     results = {}
     value = 1
@@ -665,6 +674,7 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
             if with_quantity:
                 results[model] += value
     return pd.Series(results)
+
 
 def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
     rank = "s"
@@ -682,6 +692,7 @@ def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
     matrix.reset_index(inplace=True)
     # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
     return matrix
+
 
 def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, metadata_label: list, metadata: pd.DataFrame):
     """
@@ -709,9 +720,11 @@ def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, 
 
     return df
 
+
 def search_long_format(id_value, df):
     value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
     return len(value)
+
 
 def add_factor_column(metadata, serie_id, factor_id):
     if not is_indexed_by_id(metadata):
@@ -720,6 +733,7 @@ def add_factor_column(metadata, serie_id, factor_id):
     for value in serie_id:
         new_col.append(str(metadata.at[value, factor_id]))
     return new_col
+
 
 def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
     boolean_production_df = main_dataframe.copy()
@@ -744,6 +758,7 @@ def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe:
 
     return results
 
+
 def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None, multipletests: bool = False, multipletests_method: str = "bonferroni"):
     """Create dataframe for each y_value in the list, to separate them and use wilcoxon_man_whitney function.
     Concat all results into one dataframe.
@@ -767,6 +782,7 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
             all_results.append(wilcoxon_man_whitney(dataframe[[y, input1, input2]], y , input1, input2, multipletests, multipletests_method))
             
     return pd.concat(all_results)
+
 
 def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None, multiple_correction: bool = False, correction_method: str = "hs"):
     """ 
@@ -899,115 +915,6 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
 
     return results
 
-def stat_on_plot(data: dict, layer: int):
-    """Apply Wilcoxon or Mann-Whitney test on each pair of a dataframe.
-
-    Args:
-        data (dict): Dictionnary of each pair to test.
-        layer (int): Number of layer to the dict. 2 for nested dict.
-
-    Returns:
-        Dataframe: Dataframe of test's results.
-    """
-    start_timer = time.time()
-    if layer == 1:
-        error_log = []
-        res = pd.DataFrame(columns=["group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
-        for pair_1 in data.keys():
-            for pair_2 in data.keys():
-
-                if pair_1 != pair_2:
-                    if not pair_2 in res["group_1"].tolist():
-
-                        pair1_data = data[pair_1]["data"]
-                        pair2_data = data[pair_2]["data"]
-                        n1, n2 = data[pair_1]["n_data"], data[pair_2]["n_data"]
-
-                        if len(pair1_data) != 0 and len(pair2_data) != 0:
-                            if len(pair1_data) == len(pair2_data):
-
-                                try:
-                                    test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
-                                    test_type = "Wilcoxon"
-                                except Exception as e:
-                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
-                                    continue
-
-                            else:
-
-                                try:
-                                    test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
-                                    test_type = "Mann-Whitney"
-                                except Exception as e:
-                                    error_log.append([pair_1,pair1_data,pair_2,pair2_data,e])
-                                    continue
-                                
-                            if p_value >= 0.05:
-                                symbol = "ns"
-                            elif p_value >= 0.01:
-                                symbol = "*"
-                            elif p_value >= 0.001:
-                                symbol = "**"
-                            else:
-                                symbol = "***"
-                            new_row = {"group_1": pair_1,"n1": n1, "group_2":pair_2,"n2": n2, "test_value": test_value, "p_value": p_value,"Significance": symbol,"Test": test_type}
-                            res.loc[len(res)] = new_row
-
-    if layer == 2:
-        error_log = []
-        res = pd.DataFrame(columns=["Axis","group_1","n1","group_2","n2","test_value","p_value","Significance","Test"])
-        for current_layer in data.keys():
-            for pair_1 in data[current_layer].keys():
-                for pair_2 in data[current_layer].keys():
-                    # Don't test same pair
-                    if pair_1 != pair_2:
-                        pair1_data = data[current_layer][pair_1]["data"]
-                        pair2_data = data[current_layer][pair_2]["data"]
-                        n1, n2 = data[current_layer][pair_1]["n_data"], data[current_layer][pair_2]["n_data"]
-                        # Don't test if no value
-                        if len(pair1_data) != 0 and len(pair2_data) != 0:
-                            # Don't test pair already tested.
-                            if len(res.loc[(res["group_1"] == pair_2) & (res["Axis"] == current_layer)] ) == 0:
-                                # If len of both pair is same value then Wilcoxon, else Mann Whitney
-                                if len(pair1_data) == len(pair2_data):
-                                    try:
-                                        test_value, p_value = stats.wilcoxon(pair1_data, pair2_data)
-                                        test_type = "Wilcoxon"
-                                    except:
-                                        error_log.append([current_layer,pair_1,pair1_data,current_layer,pair_2,pair2_data])
-                                        continue
-                                else:
-                                    try:
-                                        test_value, p_value = stats.mannwhitneyu(pair1_data, pair2_data)
-                                        test_type = "Mann-Whitney"
-                                    except:
-                                        error_log.append([current_layer,pair_1,pair1_data,current_layer,pair_2,pair2_data])
-                                        continue
-
-                                if p_value >= 0.05:
-                                    symbol = "ns"
-                                elif p_value >= 0.01:
-                                    symbol = "*"
-                                elif p_value >= 0.001:
-                                    symbol = "**"
-                                else:
-                                    symbol = "***"
-                                new_row = {"Axis":current_layer,
-                                            "group_1": pair_1,
-                                            "n1": n1,
-                                            "group_2": pair_2,
-                                            "n2": n2,
-                                            "test_value": test_value,
-                                            "p_value": p_value,
-                                            "Significance": symbol,
-                                            "Test": test_type
-                                            }
-                                res.loc[len(res)] = new_row
-    print("At least: ",len(error_log)," errors occured.")
-    print(error_log)  
-    print(time.time() - start_timer)  
-    return res
-
 
 def check_for_files(save_path = None):
     """Open dataframe produced from previous postaviz session in savepath directory.
@@ -1069,6 +976,7 @@ def check_for_files(save_path = None):
             pcoa_dataframe = open_tsv(os.path.join(root, "pcoa_dataframe_postaviz.tsv"))
 
     return sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
+
 
 def save_all_dataframe(sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, savepath):
     """Save every dataframe to save_path input.
@@ -1139,6 +1047,7 @@ def save_all_dataframe(sample_data, metadata, main_dataframe, normalised_abundan
 
     return
 
+
 def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
     """Comptute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
 
@@ -1169,6 +1078,7 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
 
     return df_pcoa
 
+
 def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
     
     if method == "pearson":
@@ -1186,6 +1096,7 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
         symbol = "***"
 
     return pd.DataFrame([[factor_name, len(value_array), res.statistic, res.pvalue, symbol, method]],columns=["Factor", "Sample size", "Statistic", "Pvalue", "Significance", "Method"])
+
 
 def serie_is_float(ser: pd.Series):
 

@@ -126,8 +126,8 @@ def run_shiny(data: DataStorage):
         ui.layout_sidebar(
                     ui.sidebar(
                         ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.output_ui("pcoa_ui_slider"),
-                        ui.output_ui("pcoa_ui_selectize"),
+                        ui.output_ui("pcoa_ui"),
+                        ui.output_text("display_warning_pcoa"),
                         width=350,
                         gap=30,
                     ),
@@ -156,6 +156,10 @@ def run_shiny(data: DataStorage):
 
     def server(input, output, session):
 
+        @render.text
+        def display_warning_pcoa():
+            return "Warning: this is just for display, Pcoa's dataframe is not recalculated."
+
         @render_widget
         def pcoa_plot():
             # Get all parameters.
@@ -177,7 +181,6 @@ def run_shiny(data: DataStorage):
                 show_only = input.pcoa_selectize()
 
                 df = df.loc[df[selected_col].isin(show_only)]
-                print(df)
 
             fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
@@ -185,31 +188,22 @@ def run_shiny(data: DataStorage):
 
         @render.ui
         @reactive.event(input.pcoa_color)
-        def pcoa_ui_selectize():
+        def pcoa_ui():
 
             df = data.get_pcoa_dataframe()
             value = df[input.pcoa_color()]
 
             if not du.serie_is_float(value):
+
                 return ui.TagList(
-                            ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(), selected=value.unique().tolist(), multiple=True),
-                        )
+                            ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
+                                               selected=value.unique().tolist(),
+                                               multiple=True,
+                                               options={"plugins": ['clear_button']}),)
             else:
-                return 
 
-        @render.ui
-        @reactive.event(input.pcoa_color)
-        def pcoa_ui_slider():
-
-            df = data.get_pcoa_dataframe()
-            value = df[input.pcoa_color()]
-
-            if du.serie_is_float(value):
                 return ui.TagList(
-                            ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),
-                        )
-            else:
-                return 
+                            ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
         
         @render_widget
         def taxonomic_boxplot():
@@ -257,14 +251,12 @@ def run_shiny(data: DataStorage):
 
         @render.data_frame
         def producer_test_dataframe():
-            # Get input
 
             y1, x1, x2 = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
 
             if len(y1) == 0:
                 return
             
-            # No input selected
             if x1 == "None":
                 return 
 
@@ -275,7 +267,6 @@ def run_shiny(data: DataStorage):
             else:
                 multipletests_method = "hs"
 
-            # At least first axis selected
             if x2 == "None":
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1]]
@@ -296,7 +287,7 @@ def run_shiny(data: DataStorage):
                 all_dataframe["metabolites_production_test_dataframe"] = res
 
                 return res
-            # Both axis have been selected
+            
             if x1 != x2:
 
                 df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
