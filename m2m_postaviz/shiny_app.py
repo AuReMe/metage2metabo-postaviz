@@ -567,4 +567,4 @@ def run_shiny(data: DataStorage):
             return "No taxonomic data provided."
 
     app = App(app_ui, server)
-    run_app(app=app, launch_browser=False)
+    run_app(app=app)
