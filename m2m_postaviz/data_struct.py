@@ -107,10 +107,16 @@ class DataStorage:
     #     self.metadata = new_metadata
 
     def get_taxonomic_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/taxonomic_dataframe')
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/taxonomic_dataframe')
+        else:
+            return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
     def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
-        return self.open_hdf5(key='/normalised_abundance_dataframe')
+        if self.file_format == "hdf":
+            return self.open_hdf5(key='/normalised_abundance_dataframe')
+        else:
+            return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False

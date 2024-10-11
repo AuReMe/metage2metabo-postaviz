@@ -911,10 +911,29 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
         reject, pvals_after_correction, _, __ = multipletests(pvals_before_correction, method = correction_method)
         
         results["Pvalue corrected"] = pvals_after_correction
+        results["Significance corrected"] = results["Pvalue corrected"].apply(lambda x:get_significance_symbol(x))
         results["Correction method"] = correction_method
 
     return results
 
+
+def get_significance_symbol(pval: float) -> str:
+    """Return Significance symbol depending on pvalue given.
+
+    Args:
+        pval (float): Pvalue of the test
+
+    Returns:
+        str: Significance's symbol
+    """
+    if pval >= 0.05:
+        return "ns"
+    elif pval >= 0.01:
+        return "*"
+    elif pval >= 0.001:
+        return "**"
+    else:
+        return "***"
 
 def check_for_files(save_path = None):
     """Open dataframe produced from previous postaviz session in savepath directory.

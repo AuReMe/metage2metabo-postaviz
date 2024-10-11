@@ -17,7 +17,7 @@ from m2m_postaviz.data_struct import DataStorage
 # from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
-    ###
+    
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
 
     list_of_cpd = data.get_compound_list()
@@ -128,7 +128,7 @@ def run_shiny(data: DataStorage):
                 ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
                 ui.output_ui("pcoa_ui"),
                 ui.output_text("display_warning_pcoa"),
-                width=350,
+                width=300,
                 gap=30,
             ),
         output_widget("pcoa_plot")
@@ -136,16 +136,19 @@ def run_shiny(data: DataStorage):
         full_screen=True
     )
 
-    custom_pcoa_card = ui.card(
+    custom_pcoa_card = ui.card(ui.card_header("Make a custom pcoa filtered by columns values."),
         ui.layout_sidebar(
             ui.sidebar(
 
+                ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
                 ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
                 ui.output_ui("pcoa_custom_choice"),
+                ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
+
 
                 ui.input_task_button("run_custom_pcoa","Go"),
-                width=350,
-                gap=30,
+                width=300,
+                gap=35,
             ),
         output_widget("pcoa_custom_plot"),
         ),
@@ -180,13 +183,17 @@ def run_shiny(data: DataStorage):
         @reactive.effect
         @reactive.event(input.run_custom_pcoa, ignore_none=False)
         def handle_click():
-            make_custom_pcoa(input.custom_pcoa_selection(), input.pcoa_custom_choice())
+            make_custom_pcoa(input.custom_pcoa_selection(), input.pcoa_custom_choice(), input.pcoa_custom_abundance_check(), input.pcoa_custom_color())
 
         @ui.bind_task_button(button_id="run_custom_pcoa")
         @reactive.extended_task
-        async def make_custom_pcoa(column, choices):
+        async def make_custom_pcoa(column, choices, abundance, color):
             
-            df = data.get_main_dataframe()
+            if abundance:
+                df = data.get_normalised_abundance_dataframe()
+            else:
+                df = data.get_main_dataframe()
+
             metadata = data.get_metadata()
 
             if du.is_indexed_by_id(df):
@@ -209,7 +216,9 @@ def run_shiny(data: DataStorage):
 
             plot_df = du.pcoa_alternative_method(df, metadata)
 
-            fig = px.scatter(plot_df, x="PC1", y="PC2", color=column)
+            fig = px.scatter(plot_df, x="PC1", y="PC2",
+                             color= color  
+                             )
 
             return fig
 
