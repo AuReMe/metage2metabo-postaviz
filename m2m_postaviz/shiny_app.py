@@ -17,7 +17,7 @@ from m2m_postaviz.data_struct import DataStorage
 # from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
-    ###
+    
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
 
     list_of_cpd = data.get_compound_list()
@@ -124,14 +124,33 @@ def run_shiny(data: DataStorage):
 
     pcoa_card = ui.card(
         ui.layout_sidebar(
-                    ui.sidebar(
-                        ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                        ui.output_ui("pcoa_ui"),
-                        ui.output_text("display_warning_pcoa"),
-                        width=350,
-                        gap=30,
-                    ),
+            ui.sidebar(
+                ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
+                ui.output_ui("pcoa_ui"),
+                ui.output_text("display_warning_pcoa"),
+                width=300,
+                gap=30,
+            ),
         output_widget("pcoa_plot")
+        ),
+        full_screen=True
+    )
+
+    custom_pcoa_card = ui.card(ui.card_header("Make a custom pcoa filtered by columns values."),
+        ui.layout_sidebar(
+            ui.sidebar(
+
+                ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
+                ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
+                ui.output_ui("pcoa_custom_choice"),
+                ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
+
+
+                ui.input_task_button("run_custom_pcoa","Go"),
+                width=300,
+                gap=35,
+            ),
+        output_widget("pcoa_custom_plot"),
         ),
         full_screen=True
     )
@@ -150,6 +169,7 @@ def run_shiny(data: DataStorage):
             ui.nav_panel(
                 "PCOA",
                     pcoa_card,
+                    custom_pcoa_card
                 ),
             ),
         )
@@ -160,6 +180,71 @@ def run_shiny(data: DataStorage):
         def display_warning_pcoa():
             return "Warning: this is just for display, Pcoa's dataframe is not recalculated."
 
+        @reactive.effect
+        @reactive.event(input.run_custom_pcoa, ignore_none=False)
+        def handle_click():
+            make_custom_pcoa(input.custom_pcoa_selection(), input.pcoa_custom_choice(), input.pcoa_custom_abundance_check(), input.pcoa_custom_color())
+
+        @ui.bind_task_button(button_id="run_custom_pcoa")
+        @reactive.extended_task
+        async def make_custom_pcoa(column, choices, abundance, color):
+            
+            if abundance:
+                df = data.get_normalised_abundance_dataframe()
+            else:
+                df = data.get_main_dataframe()
+
+            metadata = data.get_metadata()
+
+            if du.is_indexed_by_id(df):
+                df.reset_index(inplace=True)
+
+            if du.is_indexed_by_id(metadata):
+                metadata.reset_index(inplace=True)
+
+            if du.serie_is_float(metadata[column]):
+
+                selected_sample = metadata.loc[(metadata[column] >= choices[0]) & (metadata[column] <= choices[1])]["smplID"]
+                df = df.loc[df["smplID"].isin(selected_sample)]
+                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
+
+            else:
+
+                selected_sample = metadata.loc[metadata[column].isin(choices)]["smplID"]
+                df = df.loc[df["smplID"].isin(selected_sample)]
+                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
+
+            plot_df = du.pcoa_alternative_method(df, metadata)
+
+            fig = px.scatter(plot_df, x="PC1", y="PC2",
+                             color= color  
+                             )
+
+            return fig
+
+        @render_widget
+        def pcoa_custom_plot():
+            return make_custom_pcoa.result()
+
+        @render.ui
+        @reactive.event(input.custom_pcoa_selection)
+        def pcoa_custom_choice():
+
+            df = data.get_metadata()
+            value = df[input.custom_pcoa_selection()]
+
+            if not du.serie_is_float(value):
+
+                return ui.TagList(
+                            ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
+                                               selected=value.unique().tolist(),
+                                               multiple=True,
+                                               options={"plugins": ['clear_button']}),)
+            else:
+
+                return ui.TagList(
+                            ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
+        
         @render_widget
         def pcoa_plot():
             # Get all parameters.
@@ -508,12 +593,18 @@ def run_shiny(data: DataStorage):
             elif inputx2 == "None" or inputx1 == inputx2:
 
                 df = df[[column_value,inputx1]]
+                drop_count = len(df)
                 df = df.dropna()
+
+                if drop_count - len(df) > 0:
+                    ui.notification_show(f'{drop_count - len(df)} lines dropped(NaN values).',duration=8,close_button=True,type="warning")
+
                 all_dataframe["global_production_plot_dataframe"] = df
 
                 if du.has_only_unique_value(df, inputx1):
 
                     return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
+                
                 else:
                     
                     fig = px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
