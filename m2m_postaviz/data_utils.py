@@ -906,8 +906,8 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                                                     "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
 
     if multiple_correction:
+
         pvals_before_correction = results["Pvalue"].to_numpy()
-        
         reject, pvals_after_correction, _, __ = multipletests(pvals_before_correction, method = correction_method)
         
         results["Pvalue corrected"] = pvals_after_correction
