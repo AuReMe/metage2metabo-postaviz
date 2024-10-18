@@ -155,7 +155,16 @@ def run_shiny(data: DataStorage):
         full_screen=True
     )
 
-
+    # bins_exploration_card = ui.card(
+    #     ui.card_footer("Bins exploration"),
+    #     ui.card_body(
+    #         ui.input_selectize("bin_choice", "Choose", list_of_bins, selected=list_of_bins[0], multiple=False),
+            
+    #         output_widget("indiv_exploration_plot"),
+    #         output_widget("com_exploration_plot"),
+    #     )
+    # )
+    
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fillable(
