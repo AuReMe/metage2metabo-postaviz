@@ -1,5 +1,6 @@
 import plotly.express as px
 import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 from shiny import App
 from shiny import render
 from shiny import run_app
@@ -27,6 +28,12 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_factors()
     metadata_label.remove("smplID")
+
+    list_of_bins = data.get_bins_list()
+    if data.HAS_TAXONOMIC_DATA:
+        list_of_bins = du.associate_bin_taxonomy(list_of_bins, data.get_taxonomic_dataframe())
+
+    bins_count = data.get_bins_count()
 
     all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
 
@@ -127,7 +134,7 @@ def run_shiny(data: DataStorage):
             ui.sidebar(
                 ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
                 ui.output_ui("pcoa_ui"),
-                ui.output_text("display_warning_pcoa"),
+                ui.help_text(ui.output_text("display_warning_pcoa")),
                 width=300,
                 gap=30,
             ),
@@ -155,21 +162,29 @@ def run_shiny(data: DataStorage):
         full_screen=True
     )
 
-    # bins_exploration_card = ui.card(
-    #     ui.card_footer("Bins exploration"),
-    #     ui.card_body(
-    #         ui.input_selectize("bin_choice", "Choose", list_of_bins, selected=list_of_bins[0], multiple=False),
-            
-    #         output_widget("indiv_exploration_plot"),
-    #         output_widget("com_exploration_plot"),
-    #     )
-    # )
+    bins_exploration_card = ui.card(
+        ui.card_header("Bins exploration"),
+        ui.card_body(
+            ui.layout_sidebar(
+                ui.sidebar(
+                ui.input_selectize("bin_choice", "Choose", list_of_bins, selected=list_of_bins[0], multiple=False, width='400px'),
+                ui.output_text("bin_size_text"),
+                ui.input_selectize("bin_factor", "Choose", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                ui.input_task_button("run_bin_exploration","Go"),
+                width=350,
+                gap=35,
+                bg='lightgrey'
+            ),
+            output_widget("bin_count_plot"),
+            output_widget("bin_abundance_plot"),
+        )
+    ),full_screen=True)
     
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav_panel("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
+            # ui.nav_panel("Exploration", total_production_plot, producer_plot, taxonomy_boxplot),
             ui.nav_panel(
                 "Metadata",
                 metadata_table,
@@ -179,11 +194,79 @@ def run_shiny(data: DataStorage):
                 "PCOA",
                     pcoa_card,
                     custom_pcoa_card
-                ),
+            ),
+            ui.nav_panel("Bins",
+                         bins_exploration_card
+            )
             ),
         )
 
     def server(input, output, session):
+
+        @render.text
+        def bin_size_text():
+            bin_input = input.bin_choice().split("/")[0]
+            return "Found in "+str(bins_count[bin_input])+" sample(s)"
+
+        @render_widget
+        def bin_abundance_plot():
+            return run_exploration.result()[1]
+
+        @render_widget
+        def bin_count_plot():
+            return run_exploration.result()[0]
+
+        @ui.bind_task_button(button_id="run_custom_pcoa")
+        @reactive.extended_task
+        async def run_exploration(bin_choice, factor):
+
+            res = data.from_bin_get_dataframe(bin_choice, factor)
+            if factor == "None":
+                res.sort_index(inplace=True)
+            else:
+                res.sort_values(by=factor,inplace=True)
+
+            max_count_range = res["Count"].max() + res["Count"].max() * 0.01
+            min_count_range = res["Count"].min() - res["Count"].min() * 0.02
+
+            fig1 = px.bar(res, x=res.index, y="Count", text="Count", color="Count" if factor =="None" else factor, range_y=[min_count_range,max_count_range])
+
+            fig2 = px.bar(res, x=res.index, y="Abundance", color="Abundance")
+
+
+            # # Create figure with secondary y-axis
+            # fig = make_subplots(specs=[[{"secondary_y": True}]])
+
+            # # Add traces
+            # fig.add_trace(
+            #     go.Bar(x=res.index, y=res["Count"], name="count subplot", text=res["Count"], offsetgroup=1),
+            #     secondary_y=False
+            # )
+
+            # fig.add_trace(
+            #     go.Bar(x=res.index, y=res["Abundance"], name="abundance subplot", text=res["Abundance"], offsetgroup=2),
+            #     secondary_y=True
+            # )
+
+            # # Add figure title
+            # fig.update_layout(
+            #     title_text=f"Number of compounds {bin_choice} produce by sample(s) with their respective abundance.",
+            #     barmode="group"
+            # )
+
+            # # Set x-axis title
+            # fig.update_xaxes(title_text="Sample ID")
+
+            # # Set y-axes titles
+            # fig.update_yaxes(title_text="<b>Compounds produced</b>", secondary_y=False)
+            # fig.update_yaxes(title_text="<b>Abundance in %</b>", secondary_y=True)
+
+            return fig1, fig2
+
+        @reactive.effect
+        @reactive.event(input.run_bin_exploration, ignore_none=True)
+        def handle_click_bin_exploration():
+            run_exploration(input.bin_choice().split("/")[0], input.bin_factor())
 
         @render.text
         def display_warning_pcoa():

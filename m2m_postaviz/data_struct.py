@@ -3,18 +3,27 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 import os
+import pickle
+import numpy as np
+from json import load
+
 
 class DataStorage:
 
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
+    SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
+    JSON_FILENAME = 'sample_info.json'
+    HDF5_FILENAME = "postaviz_dataframes.h5"
+    ABUNDANCE_FILE = 'abundance_file.tsv'
+    DF_KEYS = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv"]
 
-    def __init__(self, save_path: str, file_format:str, hdf5_file: str, taxonomy_provided: bool, abundance_provided: bool):
+    def __init__(self, save_path: str, file_format:str, taxonomy_provided: bool, abundance_provided: bool):
 
         self.file_format = file_format
-
-        self.hdf5_file = hdf5_file
 
         self.HAS_TAXONOMIC_DATA = taxonomy_provided
 
@@ -26,6 +35,13 @@ class DataStorage:
             save_path = None
             print("No save path provided, dataframe save option disabled.")
 
+
+    def open_pickle_file(self, file_path):
+        with open(file_path, "rb") as f:
+                obj = pickle.load(f)
+        return obj
+
+
     def open_tsv(self, key: str):
         """Return the dataframe corresponding to the key given as input.
 
@@ -35,14 +51,14 @@ class DataStorage:
         Returns:
             pd.Dataframe: Pandas dataframe
         """
-        dataframe_keys = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv", "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv"]
-        if not key in dataframe_keys:
-            print(key, "not in keys: ", dataframe_keys)
+        if not key in self.DF_KEYS:
+            print(key, "not in keys: ", self.DF_KEYS)
             return
         
         for root, dirname, filename in os.walk(self.output_path):
             if key in filename:
                 return pd.read_csv(os.path.join(root,key),sep="\t")
+
 
     def open_hdf5(self, key: str):
         """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
@@ -72,11 +88,81 @@ class DataStorage:
 
         return dataframe
 
+
+    def from_bin_get_dataframe(self, bin_id, factor) -> pd.DataFrame:
+        return self.get_bin_dataframe(self.get_sample_list(bin_id), bin_id, factor)
+
+
+    def get_bin_dataframe(self, sample_list, bin_id, factor) -> pd.DataFrame:
+        cscope_path = os.path.join(self.output_path, self.SAMPLES_DIRNAME)
+        res = []
+        for sample in sample_list:
+            
+            tmp_df = pd.read_pickle(os.path.join(cscope_path, sample+"_cscope.pkl"))
+            tmp_df.insert(0, "smplID", sample)
+            res.append(tmp_df.loc[tmp_df.index == bin_id])
+
+        res = pd.concat(res)
+        res.fillna(0,inplace=True)
+        res.name = bin_id
+        res.set_index("smplID",inplace=True)
+        res["Count"] = res.apply(np.sum,axis=1)
+
+        abundance_matrix = self.get_raw_abundance_file()
+        
+        if abundance_matrix is not None:
+
+            abundance_matrix.columns.values[0] = "binID"
+            abundance_matrix.set_index("binID",inplace=True)
+            abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
+            
+            res["Abundance"] = res.apply(lambda row: abundance_matrix_normalised.at[bin_id,row.name],axis=1)
+
+        if factor == "None":
+            final_res = res[["Count","Abundance"]] if abundance_matrix is not None else res[["Count"]]
+            return final_res
+        
+        metadata = self.get_metadata()
+        metadata = metadata.set_index("smplID")
+
+        res[factor] = res.apply(lambda row: metadata.at[row.name,factor], axis=1)
+
+        final_res = res[["Count","Abundance",factor]] if abundance_matrix is not None else res[["Count",factor]]
+        print(final_res)
+        return final_res
+
+
+    def get_sample_list(self, bin_id) -> list:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["bins_sample_list"][bin_id]
+
+
+    def get_bins_list(self) -> list:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["bins_list"]
+
+
+    def get_bins_count(self) -> int:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["bins_count"]
+
+
+    def get_raw_abundance_file(self):
+        return self.open_tsv(key='abundance_file.tsv') if self.HAS_ABUNDANCE_DATA else None
+
+
     def get_global_production_dataframe(self) -> pd.DataFrame:
         if self.file_format == "hdf":
             return self.open_hdf5(key='/global_production_dataframe')
         else:
             return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
+
 
     def get_metabolite_production_dataframe(self) -> pd.DataFrame:
         if self.file_format == "hdf":
@@ -84,17 +170,20 @@ class DataStorage:
         else:
             return self.open_tsv(key="producers_dataframe_postaviz.tsv")
         
+
     def get_main_dataframe(self) -> pd.DataFrame:
         if self.file_format == "hdf":
             return self.open_hdf5(key='/main_dataframe')
         else:
             return self.open_tsv(key="main_dataframe_postaviz.tsv")
         
+
     def get_metadata(self) -> pd.DataFrame:
         if self.file_format == "hdf":
             return self.open_hdf5(key='/metadata')
         else:
             return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
+
 
     def get_pcoa_dataframe(self) -> pd.DataFrame:
         if self.file_format == "hdf":
