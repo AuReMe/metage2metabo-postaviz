@@ -51,7 +51,7 @@ def main(args=None):
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
-        save_path = "/home/lbrindel/postaviz_test_run"
+        save_path = "/home/lbrindel/postaviz_test_run/smpl100"
         file_format, taxonomy_provided, abundance_provided = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
 
     elif arg_parser.dev:

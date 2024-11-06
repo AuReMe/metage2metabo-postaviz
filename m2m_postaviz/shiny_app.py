@@ -10,6 +10,8 @@ from shinywidgets import output_widget
 from shinywidgets import render_widget
 import warnings
 import pandas as pd
+from ontosunburst.ontosunburst import ontosunburst as ontos
+import time
 
 import m2m_postaviz.data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -29,13 +31,19 @@ def run_shiny(data: DataStorage):
     metadata_label = data.get_factors()
     metadata_label.remove("smplID")
 
+    taxonomic_rank = data.get_taxonomy_rank()
+
+
     list_of_bins = data.get_bins_list()
     if data.HAS_TAXONOMIC_DATA:
         list_of_bins = du.associate_bin_taxonomy(list_of_bins, data.get_taxonomic_dataframe())
 
+
     bins_count = data.get_bins_count()
 
     all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
+
+    current_bin_dataframe = None
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -167,16 +175,24 @@ def run_shiny(data: DataStorage):
         ui.card_body(
             ui.layout_sidebar(
                 ui.sidebar(
-                ui.input_selectize("bin_choice", "Choose", list_of_bins, selected=list_of_bins[0], multiple=False, width='400px'),
-                ui.output_text("bin_size_text"),
-                ui.input_selectize("bin_factor", "Choose", factor_list, selected=factor_list[0], multiple=False, width='400px'),
-                ui.input_task_button("run_bin_exploration","Go"),
+
+                    ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width='400px'),
+                    ui.output_ui("rank_unique_choice"),
+
+                    ui.input_selectize("bin_choice", "Choose", list_of_bins, selected=list_of_bins[0], multiple=False, width='400px'),
+                    ui.output_text("bin_size_text"),
+                    ui.input_selectize("bin_factor", "Choose", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                    ui.input_task_button("run_bin_exploration","Go"),
+                    ui.output_text("iscope_info"),
+                    
+                    ui.output_ui("bin_sample_select"),
                 width=350,
                 gap=35,
                 bg='lightgrey'
             ),
-            output_widget("bin_count_plot"),
-            output_widget("bin_abundance_plot"),
+            ui.card(output_widget("bin_count_plot"),full_screen=True),
+            ui.card(output_widget("bin_abundance_plot"),full_screen=True),
+            ui.card(output_widget("ontosunburst"),full_screen=True),
         )
     ),full_screen=True)
     
@@ -203,10 +219,81 @@ def run_shiny(data: DataStorage):
 
     def server(input, output, session):
 
+
+        @render.ui
+        def rank_unique_choice():
+
+            rank_choice = input.rank_choice()
+            
+            df = data.get_taxonomic_dataframe()
+
+            choices = df[rank_choice].unique().tolist()
+
+            return ui.TagList(
+                ui.input_selectize("rank_unique_choice", "Select", choices=choices, multiple=False,)
+                )
+
+        @render.ui
+        def bin_sample_select():
+            df = run_exploration.result()[2]
+            choice = df["smplID"].tolist()
+
+            return ui.TagList(
+                ui.input_selectize("bin_sample_select_input", "Choose sample", choices=choice, multiple=False,)
+                )
+
         @render.text
         def bin_size_text():
             bin_input = input.bin_choice().split("/")[0]
+
             return "Found in "+str(bins_count[bin_input])+" sample(s)"
+
+        @render.text
+        def iscope_info():
+            # bin_input = input.bin_choice().split("/")[0]
+            # iscope_prod = data.get_iscope_production(bin_input)
+            # df = run_exploration.result()[2]
+            # cscope_prod = df.loc[df["Count"] == df["Count"].max()]["Production"].tolist()
+
+            # res = []
+            # for cpd in cscope_prod:
+            #     if cpd not in iscope_prod:
+            #         res.append(cpd)
+            timer = run_exploration.result()[3]
+            return f"Took {timer} seconds to run."
+
+        @render_widget
+        def ontosunburst():
+
+            smpl_choice = input.bin_sample_select_input()
+            bin_input = input.bin_choice().split("/")[0]
+
+            df = run_exploration.result()[2]
+            
+            if not du.is_indexed_by_id(df):
+                df.set_index("smplID", inplace=True)
+
+            cscope_prod = df.at[smpl_choice,"Production"]
+            iscope_prod = data.get_iscope_production(bin_input)
+
+            res = []
+            reference_set = []
+            for cpd in cscope_prod:
+                if cpd not in iscope_prod:
+                    res.append(cpd)
+                reference_set.append(cpd)
+
+            for i, cpd in enumerate(res):
+                res[i] = cpd[:-3]
+
+            for i, cpd in enumerate(cscope_prod):
+                reference_set[i] = cpd[:-3]
+
+            interest_set = pd.Series( (cpd for cpd in res) )
+
+
+            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology='metacyc')
+            return fig
 
         @render_widget
         def bin_abundance_plot():
@@ -218,9 +305,23 @@ def run_shiny(data: DataStorage):
 
         @ui.bind_task_button(button_id="run_custom_pcoa")
         @reactive.extended_task
-        async def run_exploration(bin_choice, factor):
+        async def run_exploration(bin_choice, factor, rank, rank_choice):
+            start_timer = time.time()
+            list_of_bin_in_rank = data.get_bin_list_from_taxonomic_rank(rank, rank_choice)
 
-            res = data.from_bin_get_dataframe(bin_choice, factor)
+            #### Taxonomic dataframe can contain MORE information and MORE bin than the data who can be un subset of the whole data. Filtering is needed.
+            set_bin = set(list_of_bins)
+            [x for x in list_of_bin_in_rank if x in set_bin]
+
+            res = []
+            for bin in [x for x in list_of_bin_in_rank if x in set_bin]:
+                df = data.from_bin_get_dataframe(bin, factor)
+                df.insert(0 , "binID", bin)
+                res.append(df)
+            
+            res = pd.concat(res)
+            res.fillna(0)
+            print(res)
             if factor == "None":
                 res.sort_index(inplace=True)
             else:
@@ -229,9 +330,9 @@ def run_shiny(data: DataStorage):
             max_count_range = res["Count"].max() + res["Count"].max() * 0.01
             min_count_range = res["Count"].min() - res["Count"].min() * 0.02
 
-            fig1 = px.bar(res, x=res.index, y="Count", text="Count", color="Count" if factor =="None" else factor, range_y=[min_count_range,max_count_range])
+            fig1 = px.bar(res, x="smplID", y="Count", text="Count", color="smplID" if factor =="None" else factor)
 
-            fig2 = px.bar(res, x=res.index, y="Abundance", color="Abundance")
+            fig2 = px.bar(res, x="smplID", y="Abundance", color="Abundance")
 
 
             # # Create figure with secondary y-axis
@@ -261,12 +362,12 @@ def run_shiny(data: DataStorage):
             # fig.update_yaxes(title_text="<b>Compounds produced</b>", secondary_y=False)
             # fig.update_yaxes(title_text="<b>Abundance in %</b>", secondary_y=True)
 
-            return fig1, fig2
+            return fig1, fig2, res, time.time() - start_timer
 
         @reactive.effect
         @reactive.event(input.run_bin_exploration, ignore_none=True)
         def handle_click_bin_exploration():
-            run_exploration(input.bin_choice().split("/")[0], input.bin_factor())
+            run_exploration(input.bin_choice().split("/")[0], input.bin_factor(), input.rank_choice(), input.rank_unique_choice())
 
         @render.text
         def display_warning_pcoa():

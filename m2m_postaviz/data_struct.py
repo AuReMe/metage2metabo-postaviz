@@ -99,40 +99,72 @@ class DataStorage:
         for sample in sample_list:
             
             tmp_df = pd.read_pickle(os.path.join(cscope_path, sample+"_cscope.pkl"))
-            tmp_df.insert(0, "smplID", sample)
-            res.append(tmp_df.loc[tmp_df.index == bin_id])
+            bin_row = tmp_df.loc[tmp_df.index == bin_id]
+            bin_row.insert(0, "smplID", sample)
+            res.append(bin_row)
 
         res = pd.concat(res)
         res.fillna(0,inplace=True)
-        res.name = bin_id
         res.set_index("smplID",inplace=True)
-        res["Count"] = res.apply(np.sum,axis=1)
+
+        s = res.apply(lambda row: self.get_production_list_from_bin_dataframe(row), axis=1)
+        count = res.apply(np.sum,axis=1)
+
+
+        res.reset_index(inplace=True)
 
         abundance_matrix = self.get_raw_abundance_file()
-        
+        # metadata = self.get_metadata()
+        # metadata = metadata.loc[metadata["smplID"].isin(res["smplID"])]
+        # res = res[["smplID","Count","Production"]].merge(metadata, 'inner', "smplID")
+
+        iscope_production = self.get_iscope_production(bin_id)
+        iscope = [iscope_production for _ in range(len(res))]
+
         if abundance_matrix is not None:
 
             abundance_matrix.columns.values[0] = "binID"
             abundance_matrix.set_index("binID",inplace=True)
             abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
             
-            res["Abundance"] = res.apply(lambda row: abundance_matrix_normalised.at[bin_id,row.name],axis=1)
+            abundance = res.apply(lambda row: abundance_matrix_normalised.at[bin_id,row["smplID"]],axis=1)
+            res = pd.concat([s,count,iscope,abundance], axis=1)
 
-        if factor == "None":
-            final_res = res[["Count","Abundance"]] if abundance_matrix is not None else res[["Count"]]
-            return final_res
-        
-        metadata = self.get_metadata()
-        metadata = metadata.set_index("smplID")
+        else:
 
-        res[factor] = res.apply(lambda row: metadata.at[row.name,factor], axis=1)
+            res = pd.concat([s,count,iscope],axis=1)
+            
+        print(res)
+        return res
 
-        final_res = res[["Count","Abundance",factor]] if abundance_matrix is not None else res[["Count",factor]]
-        print(final_res)
-        return final_res
+
+    def get_production_list_from_bin_dataframe(self, serie: pd.Series) -> list:
+
+        list_of_cpd_produced = []
+
+        for label, value in serie.items():
+            if value > 0:
+                list_of_cpd_produced.append(label)
+
+        return list_of_cpd_produced
+
+
+    def get_iscope_production(self, bin_id) -> list:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["iscope"][bin_id]
 
 
     def get_sample_list(self, bin_id) -> list:
+        """Open JSON file in sve path to retrieve dictionnary containing all bins as keys and the list of sample as value. 
+
+        Args:
+            bin_id (str): bin_name (shiny call)
+
+        Returns:
+            list: List of sample where the bin is present.
+        """
         with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
 
@@ -196,6 +228,8 @@ class DataStorage:
     #     self.metadata = new_metadata
 
     def get_taxonomic_dataframe(self) -> pd.DataFrame:
+        if not self.HAS_TAXONOMIC_DATA:
+            return None
         if self.file_format == "hdf":
             return self.open_hdf5(key='/taxonomic_dataframe')
         else:
@@ -259,4 +293,23 @@ class DataStorage:
         else:
             return self.check_and_rename(original_file_path, add + 1)
         
+
+    def get_taxonomy_rank(self) -> list:
+
+        taxonomy = self.get_taxonomic_dataframe()
+        if taxonomy is None:
+            return ["Taxonomy not provided"]
         
+        taxonomy.drop(taxonomy.columns.values[0], axis=1, inplace=True)
+
+        return taxonomy.columns.tolist()
+        
+
+    def get_bin_list_from_taxonomic_rank(self, rank, choice):
+
+        taxonomy = self.get_taxonomic_dataframe()
+        taxonomy.drop(taxonomy.columns.values[0], axis=1, inplace=True)
+
+        mgs_col_label = taxonomy.columns.values[0]
+
+        return taxonomy.loc[taxonomy[rank] == choice][mgs_col_label].tolist()
