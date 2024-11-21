@@ -418,13 +418,22 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
 
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
-        serie_value = []
-        serie_index = []
+    """sums the count of metabolites produced in the sample's cscope.
 
-        for i in range(len(sample_cscope.columns)):
-            serie_index.append(sample_cscope.columns[i])
-            serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
-        return pd.Series(serie_value,index=serie_index,name=sample)
+    Args:
+        sample_cscope (pd.DataFrame): Sample cscope dataframe
+        sample (str): Sample ID
+
+    Returns:
+        pd.Series: Pandas serie with all metabolites columns sum
+    """
+    serie_value = []
+    serie_index = []
+
+    for i in range(len(sample_cscope.columns)):
+        serie_index.append(sample_cscope.columns[i])
+        serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
+    return pd.Series(serie_value,index=serie_index,name=sample)
 
 
 def multiprocess_retrieve_data(path):
@@ -1225,10 +1234,11 @@ def taxonomy_processing(taxonomy_filepath):
     Returns:
         pd.DataFrame: Pandas dataframe
     """
-    
 
     if taxonomy_filepath.endswith(".tsv"):
-        return open_tsv(taxonomy_filepath)
+        df = open_tsv(taxonomy_filepath)
+        df = df.rename(columns={df.columns[0]: 'mgs'})
+        return df
 
     if not taxonomy_filepath.endswith(".txt"):
         raise RuntimeError("Taxonomy file must be either a txt file or tsv file.")
@@ -1250,24 +1260,6 @@ def taxonomy_processing(taxonomy_filepath):
         df.loc[len(df)] = [mgs,k,p,c,o,f,g]
 
     return df
-
-
-def associate_bin_taxonomy(bin_list:list, taxonomic_df) -> list:
-
-    first_col_value = taxonomic_df.columns.values[0]
-    taxonomic_df.set_index(first_col_value,inplace=True)
-
-    column_value = taxonomic_df.columns.values[-1]
-
-    for i, bin in enumerate(bin_list):
-        
-        try:
-            bin_list[i] = bin + "/" + taxonomic_df.loc[bin].at[column_value]
-
-        except:
-            continue
-
-    return bin_list
 
 
 def iscope_production(dir_path: str, sample_info_dict: dict):
@@ -1304,6 +1296,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundanc
     Returns:
         pd.DataFrame: Pandas dataframe
     """
+    
     start = time.time()
 
     ##### Abundance normalisation, give percentage of abundance of bins in samples.

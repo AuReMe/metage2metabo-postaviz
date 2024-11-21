@@ -84,6 +84,10 @@ class DataStorage:
             if os.path.isfile(os.path.join(self.output_path,i)) and 'bin_dataframe_chunk' in i:
                 files.append(i)
 
+        if len(files) == 0:
+            print("No chunk of bin_dataframe has been found in directory.")
+            return None
+        
         all_df = []
 
         for file in files:
@@ -220,6 +224,32 @@ class DataStorage:
 
         return taxonomy_col
         
+
+    def associate_bin_taxonomy(self, bin_list:list) -> list:
+
+        taxonomic_df = self.get_taxonomic_dataframe()
+
+        first_col_value = taxonomic_df.columns.values[0]
+
+        taxo_df_indexed = taxonomic_df.set_index(first_col_value)
+
+        res = []
+
+        for bin in bin_list:
+            
+            taxonomy = taxo_df_indexed.loc[taxo_df_indexed.index == bin].values[0].tolist()
+
+            for i, value in enumerate(taxonomy):
+
+                if type(value) is not str:
+                    taxonomy[i] = ""
+
+            new_bin_name = bin + " "
+
+            res.append(new_bin_name + ";".join(taxonomy)) # .values return double list (in case of several lines selected which is not the case here)
+
+        return res
+
 
     def get_bin_list_from_taxonomic_rank(self, rank, choice):
 
