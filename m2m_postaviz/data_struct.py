@@ -3,28 +3,44 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 import os
+import pickle
+import sys
+from json import load
+
 
 class DataStorage:
 
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
+    SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
+    JSON_FILENAME = 'sample_info.json'
+    ABUNDANCE_FILE = 'abundance_file.tsv'
+    DF_KEYS = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", 'sample_info.json']
+    
+    BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
 
-    def __init__(self, save_path: str, file_format:str, hdf5_file: str, taxonomy_provided: bool, abundance_provided: bool):
+    def __init__(self, save_path: str):
 
-        self.file_format = file_format
+        loaded_files = self.load_files(save_path)
 
-        self.hdf5_file = hdf5_file
+        self.HAS_TAXONOMIC_DATA = loaded_files["taxonomic_dataframe_postaviz.tsv"]
 
-        self.HAS_TAXONOMIC_DATA = taxonomy_provided
-
-        self.HAS_ABUNDANCE_DATA = abundance_provided
+        self.HAS_ABUNDANCE_DATA = loaded_files["abundance_file.tsv"]
 
         if save_path is not None:
             self.output_path = save_path
-        else:
-            save_path = None
-            print("No save path provided, dataframe save option disabled.")
+
+        print(f'Taxonomy : {self.HAS_TAXONOMIC_DATA}\nAbundance : {self.HAS_ABUNDANCE_DATA}')
+
+
+    def open_pickle_file(self, file_path):
+        with open(file_path, "rb") as f:
+                obj = pickle.load(f)
+        return obj
+
 
     def open_tsv(self, key: str):
         """Return the dataframe corresponding to the key given as input.
@@ -35,88 +51,116 @@ class DataStorage:
         Returns:
             pd.Dataframe: Pandas dataframe
         """
-        dataframe_keys = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv", "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv"]
-        if not key in dataframe_keys:
-            print(key, "not in keys: ", dataframe_keys)
+        if not key in self.DF_KEYS:
+            print(key, "not in keys: ", self.DF_KEYS)
             return
         
         for root, dirname, filename in os.walk(self.output_path):
             if key in filename:
                 return pd.read_csv(os.path.join(root,key),sep="\t")
 
-    def open_hdf5(self, key: str):
-        """Read HDF5 file containing all relevants dataframes and return the dataframe corresponding to the key given as input.
 
-        Args:
-            key (str): Key of specific dataframe.
+    def read_parquet_with_pandas(self, path, col: list = None, condition: list = None) -> pd.DataFrame:
 
-        Returns:
-            Dataframe: Pandas dataframe or None if wrong key.
-        """
-        dataframe = None
-        print(f"Looking for key {key}...")
-        with pd.HDFStore(path=self.hdf5_file,mode='r') as storage:
-            for k in storage.keys():
-                # print(k)
-                if k == key:
-                    # print(f'{key} key called.')
-                    try:
-                        return storage[k]
+        kargs = {'path': path}
 
-                    except Exception as e:
-                        print(e)
-                        return None
+        if col is not None:
 
-        if dataframe is None:
-            print(f'No key {key} found in hdf5 file, None value returned.')
+            kargs['columns'] = col
 
-        return dataframe
+        if condition is not None:
+
+            kargs['filters'] = condition
+
+        df = pd.read_parquet(**kargs)
+
+        return df
+
+
+    def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+
+        files = []
+        for i in os.listdir(self.output_path):
+            if os.path.isfile(os.path.join(self.output_path,i)) and 'bin_dataframe_chunk' in i:
+                files.append(i)
+
+        if len(files) == 0:
+            print("No chunk of bin_dataframe has been found in directory.")
+            return None
+        
+        all_df = []
+
+        for file in files:
+
+            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=columns, condition=condition)
+
+            if len(df) == 0:
+                continue
+
+            all_df.append(df)
+
+        if len(all_df) == 0:
+            return None
+
+        return pd.concat(all_df)
+
+
+    def get_iscope_production(self, bin_id) -> list:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["iscope"][bin_id]
+
+
+    def get_bins_list(self) -> list:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["bins_list"]
+
+
+    def get_bins_count(self) -> int:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return sample_info["bins_count"]
+
+
+    def get_raw_abundance_file(self):
+        return self.open_tsv(key='abundance_file.tsv') if self.HAS_ABUNDANCE_DATA else None
+
 
     def get_global_production_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/global_production_dataframe')
-        else:
-            return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
+        return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
+
 
     def get_metabolite_production_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/metabolite_production_dataframe')
-        else:
-            return self.open_tsv(key="producers_dataframe_postaviz.tsv")
+        return self.open_tsv(key="producers_dataframe_postaviz.tsv")
         
+
     def get_main_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/main_dataframe')
-        else:
-            return self.open_tsv(key="main_dataframe_postaviz.tsv")
+        return self.open_tsv(key="main_dataframe_postaviz.tsv")
         
+
     def get_metadata(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/metadata')
-        else:
-            return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
+        return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
+
 
     def get_pcoa_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/pcoa_dataframe')
-        else:
-            return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
+        return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
 
 
     # def set_main_metadata(self, new_metadata):
     #     self.metadata = new_metadata
 
     def get_taxonomic_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/taxonomic_dataframe')
+        if not self.HAS_TAXONOMIC_DATA:
+            return None
         else:
             return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
     def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
-        if self.file_format == "hdf":
-            return self.open_hdf5(key='/normalised_abundance_dataframe')
-        else:
-            return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
+        return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
@@ -170,4 +214,82 @@ class DataStorage:
         else:
             return self.check_and_rename(original_file_path, add + 1)
         
+
+    def get_taxonomy_rank(self) -> list:
+
+        taxonomy_col = pd.read_csv(os.path.join(self.output_path, "taxonomic_dataframe_postaviz.tsv"),sep="\t").columns.tolist()
+
+        if taxonomy_col is None:
+            return ["Taxonomy not provided"]
+
+        return taxonomy_col
         
+
+    def associate_bin_taxonomy(self, bin_list:list) -> list:
+
+        taxonomic_df = self.get_taxonomic_dataframe()
+
+        first_col_value = taxonomic_df.columns.values[0]
+
+        taxo_df_indexed = taxonomic_df.set_index(first_col_value)
+
+        res = []
+
+        for bin in bin_list:
+            
+            taxonomy = taxo_df_indexed.loc[taxo_df_indexed.index == bin].values[0].tolist()
+
+            for i, value in enumerate(taxonomy):
+
+                if type(value) is not str:
+                    taxonomy[i] = ""
+
+            new_bin_name = bin + " "
+
+            res.append(new_bin_name + ";".join(taxonomy)) # .values return double list (in case of several lines selected which is not the case here)
+
+        return res
+
+
+    def get_bin_list_from_taxonomic_rank(self, rank, choice):
+
+        taxonomy = self.get_taxonomic_dataframe()
+
+        mgs_col_label = taxonomy.columns.values[0]
+
+        return taxonomy.loc[taxonomy[rank] == choice][mgs_col_label].tolist()
+    
+
+    def load_files(self, load_path):
+
+        all_files = {}
+
+        for root, dir ,filenames in os.walk(load_path):
+
+            for df_files in self.DF_KEYS:
+
+                if df_files in all_files:
+
+                    continue
+
+                if df_files in filenames:
+
+                    all_files[df_files] = True
+
+                else:
+
+                    all_files[df_files] = False
+
+                print(df_files, "IS \t", all_files[df_files])
+
+        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv", 'sample_info.json']
+
+        # Check if necessary files arent' True
+        for file in required_files:
+            if file in all_files and all_files[file] is True:
+                continue
+            else:
+                print(file)
+                raise RuntimeError('Required files are missing when directly loading from directory.')
+
+        return all_files

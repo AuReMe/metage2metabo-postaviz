@@ -35,7 +35,7 @@ def test_data_processing():
 
     # Loading dataframes into variables
 
-    sample_data = du.multiprocess_retrieve_data(TEST_DATA_CONTAINER)
+    sample_info, sample_data = du.multiprocess_retrieve_data(TEST_DATA_CONTAINER)
 
     metadata = du.open_tsv(metadata_file)
 

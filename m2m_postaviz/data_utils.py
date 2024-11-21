@@ -4,6 +4,7 @@ import os.path
 import tarfile
 import time
 import sys
+import pickle
 
 import numpy as np
 import pandas as pd
@@ -15,6 +16,18 @@ from functools import partial
 from skbio.stats.ordination import pcoa
 from scipy.spatial.distance import squareform,pdist
 from statsmodels.stats.multitest import multipletests
+
+
+def pickle_write(path, obj):
+    with open(path, "wb") as f:
+        pickle.dump(obj, f)
+
+
+def pickle_read(path):
+    with open(path, "rb") as f:
+        obj = pickle.load(f)
+    return obj
+
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -86,7 +99,6 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
         return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
-
 def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
@@ -105,12 +117,14 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
 
     # Checking if all column are INT type, if one is not its used as index, if more than 1 raise RuntimeERROR.
     str_filter = abundance_matrix.select_dtypes(include=["string","object","category"])
+
     if len(str_filter.columns) == 1:
         index_column = str_filter.columns.values[0]
         print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
+        
     elif len(str_filter.columns) > 1:
-        raise RuntimeError("More than one non-numeric columns.")
+        raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
     
     # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
@@ -404,13 +418,22 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
 
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
-        serie_value = []
-        serie_index = []
+    """sums the count of metabolites produced in the sample's cscope.
 
-        for i in range(len(sample_cscope.columns)):
-            serie_index.append(sample_cscope.columns[i])
-            serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
-        return pd.Series(serie_value,index=serie_index,name=sample)
+    Args:
+        sample_cscope (pd.DataFrame): Sample cscope dataframe
+        sample (str): Sample ID
+
+    Returns:
+        pd.Series: Pandas serie with all metabolites columns sum
+    """
+    serie_value = []
+    serie_index = []
+
+    for i in range(len(sample_cscope.columns)):
+        serie_index.append(sample_cscope.columns[i])
+        serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
+    return pd.Series(serie_value,index=serie_index,name=sample)
 
 
 def multiprocess_retrieve_data(path):
@@ -440,7 +463,34 @@ def multiprocess_retrieve_data(path):
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
 
-    return all_data
+    sample_info = {}
+    sample_info["bins_list"] = []
+    sample_info["bins_count"] = {}
+    sample_info["bins_sample_list"] = {}
+
+    for sample in all_data.keys():
+
+        dataframe = all_data[sample]["cscope"]
+        all_bins_in_sample = dataframe.index.tolist()
+
+        sample_info["bins_list"] = sample_info["bins_list"] + all_bins_in_sample
+
+        for bin in all_bins_in_sample:
+            
+            if not bin in sample_info["bins_count"]:
+                sample_info["bins_count"][bin] = 0
+            
+            sample_info["bins_count"][bin] += 1
+
+            if not bin in sample_info["bins_sample_list"]:
+                sample_info["bins_sample_list"][bin] = []
+            
+            sample_info["bins_sample_list"][bin].append(str(sample))
+
+    # Remove duplicate from list
+    sample_info["bins_list"] = list(dict.fromkeys(sample_info["bins_list"]))
+
+    return sample_info, all_data
 
 
 def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
@@ -490,7 +540,7 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe = check_for_files(save_path)
+    sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe = check_for_files(save_path)
     # main_dataframe, metadata, producers_dataframe, normalised_abundance_dataframe, taxonomy, total_production_dataframe, pcoa_dataframe = load_hdf5_datafames(save_path)
 
     if metadata is None: 
@@ -498,8 +548,10 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         metadata = open_tsv(metadata_path)
 
     if not bool(sample_data): 
-        print("Fetching sample's cscope...")
-        sample_data = multiprocess_retrieve_data(dir_path) 
+        print("Fetching sample's data...")
+        sample_info, sample_data = multiprocess_retrieve_data(dir_path)
+
+    sample_info = iscope_production(dir_path=dir_path, sample_info_dict=sample_info)
 
     if producers_dataframe is None:
         print("Building metabolite production dataframe...")
@@ -509,25 +561,28 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print("Building main dataframe...")
         main_dataframe = build_main_dataframe(sample_data)
 
-    if normalised_abundance_dataframe is None and abundance_path is not None:
-        try:
-            raw_abundance_file = open_tsv(abundance_path)
-            normalised_abundance_dataframe = relative_abundance_calc(raw_abundance_file, sample_data)
-        except Exception as e:
-            print("Abundance process went wrong.",e)
+    if normalised_abundance_dataframe is None:
+        if abundance_path is not None:
+            try:
+                abundance_file = open_tsv(abundance_path)
+                normalised_abundance_dataframe = relative_abundance_calc(abundance_file, sample_data)
+            except Exception as e:
+                print("Abundance process went wrong.",e)
+                abundance_file = None
+                normalised_abundance_dataframe = None
+        else:
+            abundance_file = None
             normalised_abundance_dataframe = None
 
-    if taxonomy is None and taxonomic_path is not None:
-        try:
-            raw_taxonomic_data = open_tsv(taxonomic_path)
-            taxonomy = taxonomic_data_long_format(
-                    raw_taxonomic_data, get_bin_list(sample_data), metadata.columns[1:],metadata
-                )
-        except Exception as e:
-            print("Taxonomy process went wrong.", e)
-            taxonomy = None
-    else:
-        taxonomy = None
+    if taxonomic_dataframe is None:
+        if taxonomic_path is not None:
+            try:
+                taxonomic_dataframe = taxonomy_processing(taxonomic_path)
+
+            except Exception as e:
+                taxonomic_dataframe = None
+        else:
+            taxonomic_dataframe = None
 
     if total_production_dataframe is None:
         print("Building global production dataframe...")
@@ -537,22 +592,17 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print("Running pcoa with main dataframe...")
         pcoa_dataframe = pcoa_alternative_method(main_dataframe, metadata)
 
-    try:
+    if not bin_dataframe_loaded:
+        print("Building bin dataframe...")
+        bin_dataframe_build(sample_info, sample_data, metadata, abundance_file, taxonomic_dataframe, save_path)
 
-        hdf5_file_path = save_dataframe_hdf_format(metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
-        file_format = "hdf"
+    save_all_dataframe(sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path, abundance_file)
+    file_format = "tsv"
 
-    except Exception as e:
-
-        hdf5_file_path = None
-        print(e,"\nSaving as TSV format instead")
-        save_all_dataframe(sample_data , metadata, main_dataframe, normalised_abundance_dataframe, taxonomy, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path)
-        file_format = "tsv"
-
-    taxonomy_provided = False if taxonomy is None else True
+    taxonomy_provided = False if taxonomic_dataframe is None else True
     abundance_provided = False if normalised_abundance_dataframe is None else True
 
-    return file_format, hdf5_file_path, taxonomy_provided, abundance_provided
+    return file_format, taxonomy_provided, abundance_provided
 
 
 def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
@@ -565,12 +615,12 @@ def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.Da
         total_production_df (Dataframe): total production dataframe
         savepath (str): path to save all files.
     """
-    filename = os.path.join(savepath,"postaviz_dataframes.h5")
-
     if savepath is None:
         print("save_path is None, data can't be saved into HDF5 format.")
         sys.exit(1)
     
+    filename = os.path.join(savepath,"postaviz_dataframes.h5")
+
     if not os.path.exists(savepath):
         try:
             os.makedirs(savepath)
@@ -637,12 +687,7 @@ def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.Da
 
     # store_sample.close()
 
-    if os.path.isfile(filename):
-        return filename
-    
-    else:
-        print('Error when creating HDF5 dataframe storage.')
-        sys.exit(1)
+    return
 
 
 def load_hdf5_datafames(path: str):
@@ -935,6 +980,7 @@ def get_significance_symbol(pval: float) -> str:
     else:
         return "***"
 
+
 def check_for_files(save_path = None):
     """Open dataframe produced from previous postaviz session in savepath directory.
 
@@ -948,30 +994,38 @@ def check_for_files(save_path = None):
     metadata = None
     main_dataframe = None
     producers_dataframe = None
+    sample_info = {}
     sample_data = {}
-    
     total_production_dataframe = None
-    long_taxonomic_dataframe = None
+    taxonomic_dataframe = None
     normalised_abundance_dataframe = None
+    abundance_file = None
     pcoa_dataframe = None
+    bin_dataframe = None
+    bin_dataframe_loaded = False
 
     if save_path is None or not is_valid_dir(save_path):
         print("save_path is none, ignoring load data function.")
-        return sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
-    
+        return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe
+
     for root, dirname, filename in os.walk(save_path):
 
         if "all_samples_dataframe_postaviz" in dirname:
             dirpath = os.path.join(root,"all_samples_dataframe_postaviz")
             for sample in os.listdir(dirpath):
-                if sample.endswith("_cscope.tsv"):
+                if sample.endswith("_cscope.pkl"):
                     try:
                         sample_name = sample.split("_", 1)[0]
                         sample_data[sample_name] = {}
-                        sample_data[sample_name]["cscope"] = open_tsv(os.path.join(dirpath, sample),True,True)
+                        sample_data[sample_name]["cscope"] = pd.read_pickle(os.path.join(dirpath, sample))
                     except Exception as e:
-                        print("Read tsv file: ",sample,"in", os.path.join(dirpath,sample)," failed.")
+                        print("Read pickle file: ",sample,"in", os.path.join(dirpath,sample)," failed.", "\n",e)
                         continue
+
+        if "sample_info.json" in filename:
+            sample_info_path = os.path.join(root,"sample_info.json")
+            with open(sample_info_path) as f:
+                sample_info = json.load(f)
 
         if "metadata_dataframe_postaviz.tsv" in filename:
             metadata = open_tsv(os.path.join(root, "metadata_dataframe_postaviz.tsv"))
@@ -986,18 +1040,33 @@ def check_for_files(save_path = None):
             total_production_dataframe = open_tsv(os.path.join(root, "total_production_dataframe_postaviz.tsv"))
 
         if "taxonomic_dataframe_postaviz.tsv" in filename:
-            long_taxonomic_dataframe = open_tsv(os.path.join(root, "taxonomic_dataframe_postaviz.tsv"))
+            taxonomic_dataframe = pd.read_csv(os.path.join(root, "taxonomic_dataframe_postaviz.tsv"), sep="\t", index_col=0)
 
         if "normalised_abundance_dataframe_postaviz.tsv" in filename:
             normalised_abundance_dataframe = open_tsv(os.path.join(root, "normalised_abundance_dataframe_postaviz.tsv"))
         
+        if "abundance_file.tsv" in filename:
+            abundance_file = pd.read_csv(os.path.join(root, "abundance_file.tsv"), sep="\t", index_col=0)
+        
         if "pcoa_dataframe_postaviz.tsv" in filename:
             pcoa_dataframe = open_tsv(os.path.join(root, "pcoa_dataframe_postaviz.tsv"))
 
-    return sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe
+        if "bin_dataframe_chunk_1.parquet.gzip" in filename:
+            bin_dataframe_loaded = True
+
+    return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe
 
 
-def save_all_dataframe(sample_data, metadata, main_dataframe, normalised_abundance_dataframe, long_taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, savepath):
+def save_all_dataframe(sample_info,
+                        sample_data,
+                        metadata,
+                        main_dataframe,
+                        normalised_abundance_dataframe,
+                        taxonomic_dataframe, producers_dataframe,
+                        total_production_dataframe,
+                        pcoa_dataframe,
+                        savepath,
+                        raw_abundance_file):
     """Save every dataframe to save_path input.
 
     Args:
@@ -1012,57 +1081,85 @@ def save_all_dataframe(sample_data, metadata, main_dataframe, normalised_abundan
         print("save_path is None, data will not be saved.")
         return
 
+    # Sample cscopes PICKLE
     data_dir = os.path.join(savepath,"all_samples_dataframe_postaviz")
 
-    if os.path.isdir(data_dir):
-        print(data_dir, "directory already exist in save_path.")
+    if not os.path.isdir(data_dir):
+        os.makedirs(data_dir)
+    
+    for sample in sample_data.keys():
+        try:
+            filename = str(sample+"_cscope.pkl")
+            file_path = os.path.join(data_dir,filename)
+            sample_data[sample]["cscope"].to_pickle(file_path)
+        except Exception as e:
+            print("Saving ERROR",e)
+
+    # Sample_info JSON
+    if os.path.isfile(os.path.join(savepath,"sample_info.json")):
+        print(os.path.join(savepath,"sample_info.json"), "directory already exist in save_path.")
         pass
     else:
-        os.makedirs(data_dir)
-        print("No existing directory for path: ", data_dir)
- 
-        for sample in sample_data.keys():
-            try:
-                filename = str(sample+"_cscope.tsv")
-                filename_path = os.path.join(data_dir,filename)
-                sample_data[sample]["cscope"].to_csv(filename_path,sep="\t")
-            except Exception as e:
-                print("Saving ERROR",e)
+        with open(os.path.join(savepath,"sample_info.json"), 'w') as f:
+            json.dump(sample_info, f)
     
+    # Main_dataframe
     if os.path.isfile(os.path.join(savepath,"main_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"main_dataframe_postaviz.tsv"), " file already exist.")
     else:
         if main_dataframe is not None: main_dataframe.to_csv(os.path.join(savepath,"main_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(main_dataframe) else False)
 
+    # Metadata_dataframe
     if os.path.isfile(os.path.join(savepath,"metadata_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"), " file already exist.")
     else:
         if metadata is not None: metadata.to_csv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
  
+    # Producers_dataframe
     if os.path.isfile(os.path.join(savepath,"producers_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"producers_dataframe_postaviz.tsv"), " file already exist.")
     else:
         if producers_dataframe is not None: producers_dataframe.to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(producers_dataframe) else False)
 
+    # Normalised abundance dataframe
     if os.path.isfile(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"), " file already exist")
     else:
         if normalised_abundance_dataframe is not None: normalised_abundance_dataframe.to_csv(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(normalised_abundance_dataframe) else False)
  
+    # Taxonomic dataframe
     if os.path.isfile(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), " file already exist")
     else:
-        if long_taxonomic_dataframe is not None: long_taxonomic_dataframe.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(long_taxonomic_dataframe) else False)
+        if taxonomic_dataframe is not None:
+            taxonomic_dataframe.index.name = "binID"
+            taxonomic_dataframe.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
  
+    # Total production dataframe
     if os.path.isfile(os.path.join(savepath,"total_production_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"), " file already exist")
     else:
         if total_production_dataframe is not None: total_production_dataframe.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(total_production_dataframe) else False)
 
+    # Pcoa dataframe
     if os.path.isfile(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv")):
         print(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"), " file already exist")
     else:
         if pcoa_dataframe is not None: pcoa_dataframe.to_csv(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(pcoa_dataframe) else False)
+
+    # Abundance dataframe
+    if os.path.isfile(os.path.join(savepath,"abundance_file.tsv")):
+        print(os.path.join(savepath,"abundance_file.tsv"), " file already exist")
+    else:
+        if raw_abundance_file is not None:
+            raw_abundance_file.index.name = "binID"
+            raw_abundance_file.to_csv(os.path.join(savepath,"abundance_file.tsv"),sep="\t", index= True)
+
+    # # Bin_dataframe ##### No longer use since bin_dataframe function save chunks of dataframe
+    # if bin_dataframe_loaded:
+    #     print(os.path.join(savepath,"bin_dataframe.parquet.gzip"), " file already exist")
+    # else:
+    #     bin_dataframe.to_parquet(os.path.join(savepath,"bin_dataframe.parquet.gzip"), compression='gzip')
 
     return
 
@@ -1123,3 +1220,214 @@ def serie_is_float(ser: pd.Series):
         return True
     
     return False
+
+
+def taxonomy_processing(taxonomy_filepath):
+    """Open taxonomy file en process it if in txt format.
+
+    Args:
+        taxonomy_filepath (str): TSV or TXT format
+
+    Raises:
+        RuntimeError: Wrong file's format
+
+    Returns:
+        pd.DataFrame: Pandas dataframe
+    """
+
+    if taxonomy_filepath.endswith(".tsv"):
+        df = open_tsv(taxonomy_filepath)
+        df = df.rename(columns={df.columns[0]: 'mgs'})
+        return df
+
+    if not taxonomy_filepath.endswith(".txt"):
+        raise RuntimeError("Taxonomy file must be either a txt file or tsv file.")
+    
+    with open(taxonomy_filepath, 'r') as f:
+        lines = f.readlines()
+
+    df = pd.DataFrame(columns=["mgs","kingdom","phylum","class","order","family","genus"])
+
+    del lines[0] # Delete header line
+
+    for row in lines:
+
+        mgs = row.split("\t")[0]
+        genus = row.split("\t")[1:]
+
+        k, p, c, o, f, g = genus[0].strip("\n").split(";")
+
+        df.loc[len(df)] = [mgs,k,p,c,o,f,g]
+
+    return df
+
+
+def iscope_production(dir_path: str, sample_info_dict: dict):
+
+    indiv_scope_path = "indiv_scopes/rev_iscope.tsv"
+    sample_info_dict["iscope"] = {}
+    # Takes first of like of sample where bin is present then get iscope production via file rev_iscope.tsv 
+    for bin in sample_info_dict["bins_sample_list"].keys():
+
+        if bin in sample_info_dict["iscope"]:
+            continue
+
+        sample_used = sample_info_dict["bins_sample_list"][bin][0]
+        file_path = os.path.join(os.path.join(dir_path, sample_used), indiv_scope_path)
+        df = open_tsv(file_path,True,True)
+        bin_row = df.loc[bin]
+
+        sample_info_dict["iscope"][bin] = bin_row.index.tolist()
+
+    return sample_info_dict
+
+
+def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundance_file = None, taxonomy_file = None, savepath = None):
+    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
+    the metadata and the taxonomic rank associated.
+
+    Args:
+        sample_info (dict): _description_
+        sample_data (dict): _description_
+        metadata (Dataframe): _description_
+        abundance_file (Dataframe, optional): _description_. Defaults to None.
+        taxonomy_file (Dataframe, optional): _description_. Defaults to None.
+
+    Returns:
+        pd.DataFrame: Pandas dataframe
+    """
+    
+    start = time.time()
+
+    ##### Abundance normalisation, give percentage of abundance of bins in samples.
+    if abundance_file is not None:
+
+        abundance_matrix_normalised = abundance_file.apply(lambda x: x / x.sum(), axis=0)
+
+    
+    ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present. 
+
+    sample_list = []
+    bin_list = []
+    for bin in sample_info["bins_sample_list"].keys():
+        sample_list += sample_info["bins_sample_list"][bin]
+        bin_list.append(bin)
+
+    #   Delete replicate in list
+    sample_unique_list = list(dict.fromkeys(sample_list))
+
+    ##### Create Generator to process data by chunks.
+    print("Making chunk of sample list...")
+
+    chunk_generator = chunks(sample_unique_list, 250)
+
+    ##### Loop throught generator
+
+    chunk_index = 0
+    for current_chunk in chunk_generator:
+        start_chunk = time.time()
+        chunk_index += 1
+        list_of_dataframe = []
+        logs = []
+
+    ##### Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
+
+        for sample in current_chunk:
+
+            try:
+                df = sample_data[sample]["cscope"]
+                rows = df.loc[df.index.isin(bin_list)]
+                rows.insert(0 , "smplID", sample)
+                rows.index.name = "binID"
+                list_of_dataframe.append(rows)
+
+            except:
+                logs.append(f'No dataframe named {sample} in sample_data dictionnary')
+
+        results = pd.concat(list_of_dataframe)
+        results.fillna(0,inplace=True)
+        print(f'Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size')
+
+        s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
+        s.name = "Production"
+        print(f'Chunk {chunk_index} production serie produced with {sys.getsizeof(s)/1000000000} Gb memory size of production serie')
+
+        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
+        count.name = "Count"
+        print(f'Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size')
+    # del sample_list
+    # del sample_unique_list
+    # del bin_list
+        results = pd.concat([results["smplID"],count,s],axis=1)
+        del count
+        del s
+
+        if abundance_file is not None:
+
+            abundance = results.apply(lambda row: abundance_matrix_normalised.at[row.name,row["smplID"]],axis=1)
+            abundance.name = "Abundance"
+
+            final_result = pd.concat([results,abundance], axis=1)
+            del results
+
+            final_result["Count_with_abundance"] = final_result["Count"] * final_result["Abundance"]
+
+        else:
+            
+            final_result = results
+            del results
+            
+        final_result = final_result.reset_index().merge(metadata, "inner", "smplID")
+
+
+        if taxonomy_file is not None:
+
+            ##### Checks if taxonomy file has default index which mean it is not indexed. TEMPORARY until found better way to deal with open/save from -t option OR load taxonomic_df option which return non indexed / indexed df
+            if not pd.Index(np.arange(0, len(taxonomy_file))).equals(taxonomy_file.index):
+                print("INDEXED !")
+                taxonomy_file = taxonomy_file.reset_index()
+
+            mgs_col_taxonomy = taxonomy_file.columns[0]
+
+            final_result = final_result.merge(taxonomy_file, "inner", left_on="binID", right_on=mgs_col_taxonomy)
+
+        ##### Save current chunks into parquet file
+
+        filename = 'bin_dataframe_chunk_'+str(chunk_index)+'.parquet.gzip'
+        filepath = os.path.join(savepath,filename)
+        if len(final_result) == 0:
+            print(f'Chunks {chunk_index} is empty !')
+
+        final_result.to_parquet(filepath, compression='gzip')
+
+        print(f'Chunk {chunk_index} done in {time.time() - start_chunk} with {sys.getsizeof(final_result) / 1000000000} Gb memory size.')
+        del final_result
+
+
+    print("Took: ", time.time() - start, "Before saving")
+
+    if len(logs) != 0:
+        with open(os.path.join(savepath,'bin_dataframe_logs.txt'),'w') as log_file:
+            for line in logs:
+                log_file.write("%s\n" % line)
+
+    return
+
+
+def get_production_list_from_bin_dataframe(serie: pd.Series) -> list:
+
+    list_of_cpd_produced = []
+
+    for label, value in serie.items():
+        if label == "smplID":
+            continue
+        if value > 0:
+            list_of_cpd_produced.append(label)
+
+    return list_of_cpd_produced
+
+
+def chunks(lst, n):
+    """Yield successive n-sized chunks from lst."""
+    for i in range(0, len(lst), n):
+        yield lst[i:i + n]

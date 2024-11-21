@@ -27,6 +27,7 @@ parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
 parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. If created if not valid. If not provided, save options disabled.")
+parser.add_argument("-l", "--load", help="Run postaviz from save directory")
 
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
@@ -41,6 +42,11 @@ data_table_filepath = os.path.join(TESTS_DIR, "table_test_postaviz.tar.gz")
 def main(args=None):
     arg_parser = parser.parse_args()
 
+    if arg_parser.load:
+
+        Data = DataStorage(arg_parser.load)
+        sh.run_shiny(Data)
+
     if arg_parser.test:
         
         if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
@@ -51,35 +57,34 @@ def main(args=None):
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
-        save_path = "test_path"
-        file_format, hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
+        save_path = "/home/lbrindel/postaviz_test_run/smpl100"
+        du.build_df(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
 
     elif arg_parser.dev:
         
-        dir_path = "/home/lbrindel/output/western_diet_samples/res_smpl1/"
+        dir_path = "/home/lbrindel/postaviz_data/res_smpl1/"
         # dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
         
-        metadata_path = "~/Downloads/western_diet_exp/metadata_drama.tsv"
-        abundance_path = "~/Downloads/western_diet_exp/specI.mat"
-        taxonomic_path = "~/Downloads/western_diet_exp/taxonomies.tsv"
+        metadata_path = "~/postaviz_data/all_data/postaviz_metadata_processed.tsv"
+        abundance_path = "~/postaviz_data/all_data/specI.mat"
+        taxonomic_path = "/home/lbrindel/Downloads/gtdbtk.summary_split.tsv"
 
         # save_path = "/home/lbrindel/output/TEST_BUILD/"
-        save_path = "/home/lbrindel/output/test_res_smpl1/"
+        save_path = "/home/lbrindel/postaviz_test_run/testou/"
         # save_path = "/home/lbrindel/output/full_run_postaviz/"
         
-        file_format, hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
+        du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
 
     else:
         
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata_path = arg_parser["metadata"]
-        # arg_parser["taxonomy"]
-        taxonomic_path = None
+        taxonomic_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        file_format, hdf5_file_path, taxonomy_provided, abundance_provided = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
+        file_format, taxonomy_provided, abundance_provided = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path=save_path)
 
-    Data = DataStorage(save_path, file_format, hdf5_file_path, taxonomy_provided, abundance_provided)
+    Data = DataStorage(save_path)
 
     sh.run_shiny(Data)
