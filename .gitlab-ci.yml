@@ -5,12 +5,12 @@ default:
     - small
 
 before_script:
-  - python -V
+  # - python -V
   - pip install tox
 
 stages:
   - test
-  - sonarqube-check
+
 
 test:
   stage: test
