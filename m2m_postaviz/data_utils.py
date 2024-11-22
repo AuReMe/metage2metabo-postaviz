@@ -540,8 +540,13 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print(dir_path, "Sample directory path is not a valid directory")
         sys.exit(1)
 
-    sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe = check_for_files(save_path)
-    # main_dataframe, metadata, producers_dataframe, normalised_abundance_dataframe, taxonomy, total_production_dataframe, pcoa_dataframe = load_hdf5_datafames(save_path)
+    if save_path is None:
+        sys.exit(1)
+
+    if not is_valid_dir(save_path):
+        os.makedirs(save_path)
+
+    sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded = check_for_files(save_path)
 
     if metadata is None: 
         print("Open metadata dataframe.")
@@ -596,117 +601,9 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
         print("Building bin dataframe...")
         bin_dataframe_build(sample_info, sample_data, metadata, abundance_file, taxonomic_dataframe, save_path)
 
-    save_all_dataframe(sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path, abundance_file)
-    file_format = "tsv"
+    save_all_dataframe(sample_info, metadata, main_dataframe, normalised_abundance_dataframe, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path, abundance_file)
 
-    taxonomy_provided = False if taxonomic_dataframe is None else True
-    abundance_provided = False if normalised_abundance_dataframe is None else True
-
-    return file_format, taxonomy_provided, abundance_provided
-
-
-def save_dataframe_hdf_format(metadata, main_dataframe, norm_abundance_df: pd.DataFrame = None, long_taxo_df: pd.DataFrame = None, producers_dataframe: pd.DataFrame = None, total_production_df: pd.DataFrame = None, pcoa_dataframe: pd.DataFrame = None, savepath: str = None):
-    """Save every dataframe to save_path input.
-
-    Args:
-        all_data (dict): all_sample dataframe, metadata, main_dataframe and producer_dataframe
-        norm_abundance_df (Dataframe): abundance dataframe normalised
-        long_taxo_df (Dataframe): taxonomic dataframe in long format
-        total_production_df (Dataframe): total production dataframe
-        savepath (str): path to save all files.
-    """
-    if savepath is None:
-        print("save_path is None, data can't be saved into HDF5 format.")
-        sys.exit(1)
-    
-    filename = os.path.join(savepath,"postaviz_dataframes.h5")
-
-    if not os.path.exists(savepath):
-        try:
-            os.makedirs(savepath)
-        except FileExistsError:
-            pass
-    
-    if os.path.isfile(filename):
-        print(f"Removing existing files at {filename}")
-        try:
-            os.remove(filename)
-        except OSError:
-            pass
-
-    pd.set_option('io.hdf.default.format', 'table')
-    
-    store = pd.HDFStore(filename)
-    
-    if norm_abundance_df is not None:
-        store['normalised_abundance_dataframe'] = norm_abundance_df
-    else:
-        print("Unable to save normalised_abundance_dataframe")
-    
-    if total_production_df is not None:
-        store['global_production_dataframe'] = total_production_df
-    else:
-        print("Unable to save global_production_dataframe")
-    
-    if producers_dataframe is not None:
-        store['metabolite_production_dataframe'] = producers_dataframe
-    else:
-        print("Unable to save metabolite_production_dataframe")
-    
-    if pcoa_dataframe is not None:
-        store['pcoa_dataframe'] = pcoa_dataframe
-    else:
-        print("Unable to save pcoa_dataframe")
-    
-    if long_taxo_df is not None:
-        store['taxonomic_dataframe'] = long_taxo_df
-    else:
-        print("Unable to save taxonomic_dataframe")
-    
-    if main_dataframe is not None:
-        store['main_dataframe'] = main_dataframe
-    else:
-        print("Unable to save main_dataframe")
-        
-    if metadata is not None:
-        store['metadata'] = metadata
-    else:
-        print("Unable to save metadata")
-    
-    store.close()
-
-    #### Usage of sample data disabled for now. ####
-
-    # store_sample = pd.HDFStore(os.path.join(savepath,"postaviz_samples.h5"))
-
-    # import warnings
-    # warnings.filterwarnings("ignore")
-
-    # for sample in global_data["sample_data"].keys():
-    #     store_sample[sample] = global_data["sample_data"][sample]["cscope"]
-
-    # store_sample.close()
-
-    return
-
-
-def load_hdf5_datafames(path: str):
-    keys = ["main_dataframe", "metadata", "metabolite_production_dataframe", "normalised_abundance_dataframe", "long_taxonomic_data", "global_production_dataframe", "pcoa_dataframe"]
-    results = []
-
-    with pd.HDFStore(path=os.path.join(path,"postaviz_dataframes.h5"),mode='r') as storage:
-        print("Loading following dataframes... ", storage.keys())
-
-        for k in keys:
-
-            try:
-                results.append(storage[k])
-
-            except KeyError as e:
-                print(e)
-                results.append(None)
-
-    return results
+    return 
 
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
@@ -1001,12 +898,11 @@ def check_for_files(save_path = None):
     normalised_abundance_dataframe = None
     abundance_file = None
     pcoa_dataframe = None
-    bin_dataframe = None
     bin_dataframe_loaded = False
 
     if save_path is None or not is_valid_dir(save_path):
         print("save_path is none, ignoring load data function.")
-        return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe
+        return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded
 
     for root, dirname, filename in os.walk(save_path):
 
@@ -1054,11 +950,10 @@ def check_for_files(save_path = None):
         if "bin_dataframe_chunk_1.parquet.gzip" in filename:
             bin_dataframe_loaded = True
 
-    return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded, bin_dataframe
+    return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded
 
 
 def save_all_dataframe(sample_info,
-                        sample_data,
                         metadata,
                         main_dataframe,
                         normalised_abundance_dataframe,
@@ -1080,20 +975,6 @@ def save_all_dataframe(sample_info,
     if savepath is None:
         print("save_path is None, data will not be saved.")
         return
-
-    # Sample cscopes PICKLE
-    data_dir = os.path.join(savepath,"all_samples_dataframe_postaviz")
-
-    if not os.path.isdir(data_dir):
-        os.makedirs(data_dir)
-    
-    for sample in sample_data.keys():
-        try:
-            filename = str(sample+"_cscope.pkl")
-            file_path = os.path.join(data_dir,filename)
-            sample_data[sample]["cscope"].to_pickle(file_path)
-        except Exception as e:
-            print("Saving ERROR",e)
 
     # Sample_info JSON
     if os.path.isfile(os.path.join(savepath,"sample_info.json")):
@@ -1154,12 +1035,6 @@ def save_all_dataframe(sample_info,
         if raw_abundance_file is not None:
             raw_abundance_file.index.name = "binID"
             raw_abundance_file.to_csv(os.path.join(savepath,"abundance_file.tsv"),sep="\t", index= True)
-
-    # # Bin_dataframe ##### No longer use since bin_dataframe function save chunks of dataframe
-    # if bin_dataframe_loaded:
-    #     print(os.path.join(savepath,"bin_dataframe.parquet.gzip"), " file already exist")
-    # else:
-    #     bin_dataframe.to_parquet(os.path.join(savepath,"bin_dataframe.parquet.gzip"), compression='gzip')
 
     return
 
@@ -1428,6 +1303,6 @@ def get_production_list_from_bin_dataframe(serie: pd.Series) -> list:
 
 
 def chunks(lst, n):
-    """Yield successive n-sized chunks from lst."""
+    """Yield successive n-sized chunks from list."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]

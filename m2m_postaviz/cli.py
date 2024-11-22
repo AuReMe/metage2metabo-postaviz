@@ -83,7 +83,7 @@ def main(args=None):
         taxonomic_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        file_format, taxonomy_provided, abundance_provided = du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path=save_path)
+        du.build_df(dir_path, metadata_path, abundance_path, taxonomic_path, save_path=save_path)
 
     Data = DataStorage(save_path)
 
