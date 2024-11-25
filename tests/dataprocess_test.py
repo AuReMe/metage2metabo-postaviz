@@ -26,24 +26,31 @@ def test_data_processing():
         print("Palleja test directory exist.")
         TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
 
+    TMP_DIR = os.path.join(TEST_DATA_CONTAINER,"test_save_dir")
+
+    if not os.path.isdir(TMP_DIR):
+        os.makedirs(TMP_DIR)
+
     metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
     taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
     abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
 
-    # with warnings.catch_warnings():
-    #     warnings.simplefilter("ignore")
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    # Loading dataframes into variables
+        du.build_df(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
+
+    Data = DataStorage(TMP_DIR)
 
     sample_info, sample_data = du.multiprocess_retrieve_data(TEST_DATA_CONTAINER)
 
-    metadata = du.open_tsv(metadata_file)
+    metadata = Data.get_metadata()
 
-    main_dataframe = du.build_main_dataframe(sample_data)
+    main_dataframe = Data.get_main_dataframe()
 
-    metabolite_production_dataframe = du.producers_by_compounds_and_samples_multi(sample_data, metadata)
+    metabolite_production_dataframe = Data.get_metabolite_production_dataframe()
 
-    global_production_dataframe = du.total_production_by_sample(main_dataframe, metadata, du.relative_abundance_calc(du.open_tsv(abundance_file),sample_data))
+    global_production_dataframe = Data.get_global_production_dataframe()
 
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.

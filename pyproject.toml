@@ -79,9 +79,3 @@ packages = ['m2m_postaviz']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
 package-data = {'m2m_postaviz' = ['postaviz_test_data/table_test_postaviz.tar.gz', 'postaviz_test_data/taxonomic_database.tsv']}
 
-[[runners]]
-cache_dir = "/cache"
-[runners.docker]
-disable_cache = false
-cache_dir = ""
-volumes = ['/cache']

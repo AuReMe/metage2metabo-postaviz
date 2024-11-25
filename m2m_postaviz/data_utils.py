@@ -99,7 +99,7 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
         return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
-def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -> pd.DataFrame:
+def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
     Args:
@@ -112,6 +112,15 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
     Returns:
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
+    
+    if "normalised_abundance_dataframe_postaviz.tsv" in os.listdir(save_path) and "abundance_file.tsv" in os.listdir(save_path):
+        print("normalised_abundance_dataframe already exist in save directory.")
+        return
+
+    print("Building main dataframe weighted with abundance...")
+
+    abundance_matrix = open_tsv(abundance_path)
+
     smpl_norm_abundance = []
     smpl_norm_index = []
 
@@ -122,6 +131,7 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
         index_column = str_filter.columns.values[0]
         print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
+        abundance_matrix.index.name = "binID"
         
     elif len(str_filter.columns) > 1:
         raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
@@ -144,12 +154,19 @@ def relative_abundance_calc(abundance_matrix: pd.DataFrame, sample_data: dict) -
         smpl_norm_abundance.append(sample_matrix)
         smpl_norm_index.append(str(sample))
 
-    normalized_abundance = pd.concat(smpl_norm_abundance,axis=1)
-    normalized_abundance.fillna(0, inplace=True)
-    normalized_abundance = normalized_abundance.T
-    normalized_abundance.index.name = "smplID"
+    main_dataframe_abundance_weigthed = pd.concat(smpl_norm_abundance,axis=1)
+    main_dataframe_abundance_weigthed.fillna(0, inplace=True)
+    main_dataframe_abundance_weigthed = main_dataframe_abundance_weigthed.T
+    main_dataframe_abundance_weigthed.index.name = "smplID"
 
-    return normalized_abundance
+    main_dataframe_abundance_weigthed.to_csv(os.path.join(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+    abundance_matrix.to_csv(os.path.join(save_path,"abundance_file.tsv"),sep="\t")
+    
+    abundance_matrix_normalised.to_csv(os.path.join(save_path,"abundance_file_normalised.tsv"),sep="\t")
+
+    print("Abundance dataframes done and saved.")
+
+    return
 
 
 def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
@@ -395,16 +412,24 @@ def retrieve_all_sample_data(sample, path):
     return cscope_dataframe, sample
 
 
-def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFrame):
+def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
 
-    if not bool(all_data):
+    if "producers_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("producers dataframe already in save directory.")
+        return
+
+    if not bool(sample_data):
         raise Exception("Sample data empty.")
 
+    metadata = open_tsv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"))
+
     cpu_available = cpu_count() - 1
+
     if not type(cpu_available) == int or cpu_available < 1:
         cpu_available = 1
+
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(all_data[sample]["cscope"], sample) for sample in all_data.keys()])
+    all_producers = pool.starmap(individual_producers_processing,[(sample_data[sample]["cscope"], sample) for sample in sample_data.keys()])
     pool.close()
     pool.join()
 
@@ -414,7 +439,9 @@ def producers_by_compounds_and_samples_multi(all_data: dict, metadata: pd.DataFr
     res.reset_index(inplace=True)
     res = res.merge(metadata,'inner',"smplID")
 
-    return res
+    res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
+
+    return
 
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
@@ -433,6 +460,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     for i in range(len(sample_cscope.columns)):
         serie_index.append(sample_cscope.columns[i])
         serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
+
     return pd.Series(serie_value,index=serie_index,name=sample)
 
 
@@ -505,7 +533,14 @@ def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame
     return row
 
 
-def build_main_dataframe(sample_data: dict):
+def build_main_dataframe(sample_data: dict, save_path):
+
+    if "main_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("main dataframe already in save directory.")
+        return
+
+    print("Building main dataframe...")
+
     all_series = []
     for sample in sample_data.keys():
         current_sample_df = sample_data[sample]["cscope"]
@@ -519,8 +554,12 @@ def build_main_dataframe(sample_data: dict):
     results.fillna(0,inplace=True)
     results = results.astype(int)
     results.index.name = "smplID"
+
+    results.to_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"),sep="\t")
     
-    return results
+    print("Main dataframe done and saved.")
+
+    return
 
 
 def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
@@ -546,64 +585,47 @@ def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic
     if not is_valid_dir(save_path):
         os.makedirs(save_path)
 
-    sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded = check_for_files(save_path)
+    metadata_processing(metadata_path, save_path)
 
-    if metadata is None: 
-        print("Open metadata dataframe.")
-        metadata = open_tsv(metadata_path)
+    sample_info, sample_data = multiprocess_retrieve_data(dir_path)
 
-    if not bool(sample_data): 
-        print("Fetching sample's data...")
-        sample_info, sample_data = multiprocess_retrieve_data(dir_path)
+    # sample_info = iscope_production(dir_path=dir_path, sample_info_dict=sample_info)
 
-    sample_info = iscope_production(dir_path=dir_path, sample_info_dict=sample_info)
+    producers_by_compounds_and_samples_multi(sample_data, save_path) 
 
-    if producers_dataframe is None:
-        print("Building metabolite production dataframe...")
-        producers_dataframe = producers_by_compounds_and_samples_multi(sample_data,metadata) 
+    build_main_dataframe(sample_data, save_path)
 
-    if main_dataframe is None:
-        print("Building main dataframe...")
-        main_dataframe = build_main_dataframe(sample_data)
+    relative_abundance_calc(sample_data, abundance_path, save_path)
 
-    if normalised_abundance_dataframe is None:
-        if abundance_path is not None:
-            try:
-                abundance_file = open_tsv(abundance_path)
-                normalised_abundance_dataframe = relative_abundance_calc(abundance_file, sample_data)
-            except Exception as e:
-                print("Abundance process went wrong.",e)
-                abundance_file = None
-                normalised_abundance_dataframe = None
-        else:
-            abundance_file = None
-            normalised_abundance_dataframe = None
+    taxonomy_processing(taxonomic_path, save_path)
 
-    if taxonomic_dataframe is None:
-        if taxonomic_path is not None:
-            try:
-                taxonomic_dataframe = taxonomy_processing(taxonomic_path)
+    total_production_by_sample(save_path, abundance_path)
 
-            except Exception as e:
-                taxonomic_dataframe = None
-        else:
-            taxonomic_dataframe = None
+    build_pcoa_dataframe(save_path)
 
-    if total_production_dataframe is None:
-        print("Building global production dataframe...")
-        total_production_dataframe = total_production_by_sample(main_dataframe, metadata, normalised_abundance_dataframe)
+    bin_dataframe_build(sample_info, sample_data, abundance_path, taxonomic_path, save_path)
 
-    if pcoa_dataframe is None:
-        print("Running pcoa with main dataframe...")
-        pcoa_dataframe = pcoa_alternative_method(main_dataframe, metadata)
+    # Sample_info JSON
 
-    if not bin_dataframe_loaded:
-        print("Building bin dataframe...")
-        bin_dataframe_build(sample_info, sample_data, metadata, abundance_file, taxonomic_dataframe, save_path)
+    if os.path.isfile(os.path.join(save_path,"sample_info.json")):
+        print(os.path.join(save_path,"sample_info.json"), "directory already exist in save_path.")
 
-    save_all_dataframe(sample_info, metadata, main_dataframe, normalised_abundance_dataframe, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, save_path, abundance_file)
+    else:
+        with open(os.path.join(save_path,"sample_info.json"), 'w') as f:
+            json.dump(sample_info, f)
 
     return 
+
+
+def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
+
+    if "metadata_dataframe_postaviz.tsv" in os.listdir(save_path):
+        return
+    else:
+        metadata = open_tsv(metadata_path)
+        metadata.to_csv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
+
+    return
 
 
 def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
@@ -677,28 +699,42 @@ def add_factor_column(metadata, serie_id, factor_id):
     return new_col
 
 
-def total_production_by_sample(main_dataframe: pd.DataFrame, metadata_dataframe: pd.DataFrame, abundance_matrix: pd.DataFrame = None):
-    boolean_production_df = main_dataframe.copy()
+def total_production_by_sample(save_path, abundance_path: str = None):
 
-    if not is_indexed_by_id(boolean_production_df):
-        boolean_production_df.set_index("smplID",inplace=True,drop=True)
-    boolean_production_df["Total_production"] = boolean_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
-    results = pd.DataFrame(boolean_production_df["Total_production"])
+    if "total_production_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("total_production_dataframe_postaviz already in save directory")
+        return
+    
+    print("Building total production dataframe...")
 
-    if abundance_matrix is not None:
-        abundance_production_df = abundance_matrix.copy()
-        if not is_indexed_by_id(boolean_production_df):
-            abundance_production_df.set_index("smplID",inplace=True,drop=True)
-        abundance_production_df["Total_abundance_weighted"] = abundance_production_df.apply(lambda row: row.to_numpy().sum(), axis=1)
-        abundance_production_df = abundance_production_df["Total_abundance_weighted"]
+    main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
+    metadata_dataframe = open_tsv(os.path.join(save_path, "metadata_dataframe_postaviz.tsv"))
 
-        results = pd.concat([results,abundance_production_df], axis=1)
+    if not is_indexed_by_id(main_dataframe):
+        main_dataframe.set_index("smplID",inplace=True,drop=True)
+
+    main_dataframe["Total_production"] = main_dataframe.apply(lambda row: row.to_numpy().sum(), axis=1)
+    results = pd.DataFrame(main_dataframe["Total_production"])
+
+    if abundance_path is not None:
+        abundance_dataframe = open_tsv(os.path.join(save_path, "normalised_abundance_dataframe_postaviz.tsv"))
+
+        if not is_indexed_by_id(abundance_dataframe):
+            abundance_dataframe.set_index("smplID",inplace=True,drop=True)
+
+        abundance_dataframe["Total_abundance_weighted"] = abundance_dataframe.apply(lambda row: row.to_numpy().sum(), axis=1)
+        abundance_dataframe = abundance_dataframe["Total_abundance_weighted"]
+
+        results = pd.concat([results,abundance_dataframe], axis=1)
 
     results.reset_index(inplace=True)
     results = results.merge(metadata_dataframe,'inner','smplID')
-    # results["smplID"] = results["smplID"].astype("category")
 
-    return results
+    results.to_csv(os.path.join(save_path, "total_production_dataframe_postaviz.tsv"),sep="\t", index=False)
+
+    print("Total production dataframe done and saved.")
+
+    return
 
 
 def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1, input2 = None, multipletests: bool = False, multipletests_method: str = "bonferroni"):
@@ -878,168 +914,9 @@ def get_significance_symbol(pval: float) -> str:
         return "***"
 
 
-def check_for_files(save_path = None):
-    """Open dataframe produced from previous postaviz session in savepath directory.
-
-    Args:
-        save_path (str): save_path directory path
-
-    Returns:
-        Tuple: Tuple of dataframe (dict, dataframe, dataframe, dataframe)
-    """
-    
-    metadata = None
-    main_dataframe = None
-    producers_dataframe = None
-    sample_info = {}
-    sample_data = {}
-    total_production_dataframe = None
-    taxonomic_dataframe = None
-    normalised_abundance_dataframe = None
-    abundance_file = None
-    pcoa_dataframe = None
-    bin_dataframe_loaded = False
-
-    if save_path is None or not is_valid_dir(save_path):
-        print("save_path is none, ignoring load data function.")
-        return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded
-
-    for root, dirname, filename in os.walk(save_path):
-
-        if "all_samples_dataframe_postaviz" in dirname:
-            dirpath = os.path.join(root,"all_samples_dataframe_postaviz")
-            for sample in os.listdir(dirpath):
-                if sample.endswith("_cscope.pkl"):
-                    try:
-                        sample_name = sample.split("_", 1)[0]
-                        sample_data[sample_name] = {}
-                        sample_data[sample_name]["cscope"] = pd.read_pickle(os.path.join(dirpath, sample))
-                    except Exception as e:
-                        print("Read pickle file: ",sample,"in", os.path.join(dirpath,sample)," failed.", "\n",e)
-                        continue
-
-        if "sample_info.json" in filename:
-            sample_info_path = os.path.join(root,"sample_info.json")
-            with open(sample_info_path) as f:
-                sample_info = json.load(f)
-
-        if "metadata_dataframe_postaviz.tsv" in filename:
-            metadata = open_tsv(os.path.join(root, "metadata_dataframe_postaviz.tsv"))
-
-        if "main_dataframe_postaviz.tsv" in filename:
-            main_dataframe = open_tsv(os.path.join(root, "main_dataframe_postaviz.tsv"))
-
-        if "producers_dataframe_postaviz.tsv" in filename:
-            producers_dataframe = open_tsv(os.path.join(root, "producers_dataframe_postaviz.tsv"))
-
-        if "total_production_dataframe_postaviz.tsv" in filename:
-            total_production_dataframe = open_tsv(os.path.join(root, "total_production_dataframe_postaviz.tsv"))
-
-        if "taxonomic_dataframe_postaviz.tsv" in filename:
-            taxonomic_dataframe = pd.read_csv(os.path.join(root, "taxonomic_dataframe_postaviz.tsv"), sep="\t", index_col=0)
-
-        if "normalised_abundance_dataframe_postaviz.tsv" in filename:
-            normalised_abundance_dataframe = open_tsv(os.path.join(root, "normalised_abundance_dataframe_postaviz.tsv"))
-        
-        if "abundance_file.tsv" in filename:
-            abundance_file = pd.read_csv(os.path.join(root, "abundance_file.tsv"), sep="\t", index_col=0)
-        
-        if "pcoa_dataframe_postaviz.tsv" in filename:
-            pcoa_dataframe = open_tsv(os.path.join(root, "pcoa_dataframe_postaviz.tsv"))
-
-        if "bin_dataframe_chunk_1.parquet.gzip" in filename:
-            bin_dataframe_loaded = True
-
-    return sample_info, sample_data, metadata, main_dataframe, normalised_abundance_dataframe, abundance_file, taxonomic_dataframe, producers_dataframe, total_production_dataframe, pcoa_dataframe, bin_dataframe_loaded
 
 
-def save_all_dataframe(sample_info,
-                        metadata,
-                        main_dataframe,
-                        normalised_abundance_dataframe,
-                        taxonomic_dataframe, producers_dataframe,
-                        total_production_dataframe,
-                        pcoa_dataframe,
-                        savepath,
-                        raw_abundance_file):
-    """Save every dataframe to save_path input.
-
-    Args:
-        all_data (dict): all_sample dataframe, metadata, main_dataframe and producer_dataframe
-        norm_abundance_df (Dataframe): abundance dataframe normalised
-        long_taxo_df (Dataframe): taxonomic dataframe in long format
-        total_production_df (Dataframe): total production dataframe
-        savepath (str): path to save all files.
-    """
-
-    if savepath is None:
-        print("save_path is None, data will not be saved.")
-        return
-
-    # Sample_info JSON
-    if os.path.isfile(os.path.join(savepath,"sample_info.json")):
-        print(os.path.join(savepath,"sample_info.json"), "directory already exist in save_path.")
-        pass
-    else:
-        with open(os.path.join(savepath,"sample_info.json"), 'w') as f:
-            json.dump(sample_info, f)
-    
-    # Main_dataframe
-    if os.path.isfile(os.path.join(savepath,"main_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"main_dataframe_postaviz.tsv"), " file already exist.")
-    else:
-        if main_dataframe is not None: main_dataframe.to_csv(os.path.join(savepath,"main_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(main_dataframe) else False)
-
-    # Metadata_dataframe
-    if os.path.isfile(os.path.join(savepath,"metadata_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"), " file already exist.")
-    else:
-        if metadata is not None: metadata.to_csv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
- 
-    # Producers_dataframe
-    if os.path.isfile(os.path.join(savepath,"producers_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"producers_dataframe_postaviz.tsv"), " file already exist.")
-    else:
-        if producers_dataframe is not None: producers_dataframe.to_csv(os.path.join(savepath,"producers_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(producers_dataframe) else False)
-
-    # Normalised abundance dataframe
-    if os.path.isfile(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"), " file already exist")
-    else:
-        if normalised_abundance_dataframe is not None: normalised_abundance_dataframe.to_csv(os.path.join(savepath,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(normalised_abundance_dataframe) else False)
- 
-    # Taxonomic dataframe
-    if os.path.isfile(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), " file already exist")
-    else:
-        if taxonomic_dataframe is not None:
-            taxonomic_dataframe.index.name = "binID"
-            taxonomic_dataframe.to_csv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
- 
-    # Total production dataframe
-    if os.path.isfile(os.path.join(savepath,"total_production_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"), " file already exist")
-    else:
-        if total_production_dataframe is not None: total_production_dataframe.to_csv(os.path.join(savepath,"total_production_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(total_production_dataframe) else False)
-
-    # Pcoa dataframe
-    if os.path.isfile(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv")):
-        print(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"), " file already exist")
-    else:
-        if pcoa_dataframe is not None: pcoa_dataframe.to_csv(os.path.join(savepath,"pcoa_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(pcoa_dataframe) else False)
-
-    # Abundance dataframe
-    if os.path.isfile(os.path.join(savepath,"abundance_file.tsv")):
-        print(os.path.join(savepath,"abundance_file.tsv"), " file already exist")
-    else:
-        if raw_abundance_file is not None:
-            raw_abundance_file.index.name = "binID"
-            raw_abundance_file.to_csv(os.path.join(savepath,"abundance_file.tsv"),sep="\t", index= True)
-
-    return
-
-
-def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame) -> pd.DataFrame:
+def build_pcoa_dataframe(save_path) -> pd.DataFrame:
     """Comptute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
 
     Args:
@@ -1049,10 +926,19 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     Returns:
         pd.DataFrame: Pcoa dataframe with sample ID as index, PC1 and PC2 results and all metadata.
     """
+
+    if "pcoa_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("Pcoa dataframe already in save directory.")
+        return
+
+    main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
+
+    metadata = open_tsv(os.path.join(save_path, "metadata_dataframe_postaviz.tsv"))
+
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
 
-    if  is_indexed_by_id(metadata):
+    if is_indexed_by_id(metadata):
         metadata = metadata.reset_index("smplID")
 
     dmatrix = main_dataframe.to_numpy()
@@ -1067,7 +953,9 @@ def pcoa_alternative_method(main_dataframe: pd.DataFrame, metadata: pd.DataFrame
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 
-    return df_pcoa
+    df_pcoa.to_csv(os.path.join(save_path,"pcoa_dataframe_postaviz.tsv"),sep="\t")
+
+    return
 
 
 def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
@@ -1097,8 +985,8 @@ def serie_is_float(ser: pd.Series):
     return False
 
 
-def taxonomy_processing(taxonomy_filepath):
-    """Open taxonomy file en process it if in txt format.
+def taxonomy_processing(taxonomy_filepath, save_path):
+    """Open taxonomy file and process it if in txt format.
 
     Args:
         taxonomy_filepath (str): TSV or TXT format
@@ -1110,10 +998,19 @@ def taxonomy_processing(taxonomy_filepath):
         pd.DataFrame: Pandas dataframe
     """
 
+    if "taxonomic_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("Taxonomic dataframe already exist in save directory.")
+        return
+
+    print("Building taxonomic dataframe...")
+
     if taxonomy_filepath.endswith(".tsv"):
+
         df = open_tsv(taxonomy_filepath)
         df = df.rename(columns={df.columns[0]: 'mgs'})
-        return df
+        df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
+
+        return
 
     if not taxonomy_filepath.endswith(".txt"):
         raise RuntimeError("Taxonomy file must be either a txt file or tsv file.")
@@ -1134,7 +1031,12 @@ def taxonomy_processing(taxonomy_filepath):
 
         df.loc[len(df)] = [mgs,k,p,c,o,f,g]
 
-    return df
+
+    df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
+
+    print("Taxonomic dataframe done and saved.")
+
+    return
 
 
 def iscope_production(dir_path: str, sample_info_dict: dict):
@@ -1157,7 +1059,7 @@ def iscope_production(dir_path: str, sample_info_dict: dict):
     return sample_info_dict
 
 
-def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundance_file = None, taxonomy_file = None, savepath = None):
+def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = None, taxonomy_path = None, savepath = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
     the metadata and the taxonomic rank associated.
 
@@ -1166,20 +1068,38 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundanc
         sample_data (dict): _description_
         metadata (Dataframe): _description_
         abundance_file (Dataframe, optional): _description_. Defaults to None.
-        taxonomy_file (Dataframe, optional): _description_. Defaults to None.
+        taxonomy_path (Dataframe, optional): _description_. Defaults to None.
 
     Returns:
         pd.DataFrame: Pandas dataframe
     """
     
+    if "bin_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
+        print("Chunk of bin_dataframe already in save directory")
+        return
+
+    print("Building bin dataframe...")
+
     start = time.time()
 
+    metadata = open_tsv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"))
+
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
-    if abundance_file is not None:
+    if abundance_path is not None:
 
-        abundance_matrix_normalised = abundance_file.apply(lambda x: x / x.sum(), axis=0)
+        abundance_file_normalised = pd.read_csv(os.path.join(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
 
-    
+    if taxonomy_path is not None:
+
+        taxonomy_file = open_tsv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"))
+
+        ##### Checks if taxonomy file has default index which mean it is not indexed. TEMPORARY until found better way to deal with open/save from -t option OR load taxonomic_df option which return non indexed / indexed df
+
+        if not pd.Index(np.arange(0, len(taxonomy_file))).equals(taxonomy_file.index):
+                taxonomy_file = taxonomy_file.reset_index()
+
+        mgs_col_taxonomy = taxonomy_file.columns[0]
+
     ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present. 
 
     sample_list = []
@@ -1230,16 +1150,14 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundanc
         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
         count.name = "Count"
         print(f'Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size')
-    # del sample_list
-    # del sample_unique_list
-    # del bin_list
+
         results = pd.concat([results["smplID"],count,s],axis=1)
         del count
         del s
 
-        if abundance_file is not None:
+        if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
 
-            abundance = results.apply(lambda row: abundance_matrix_normalised.at[row.name,row["smplID"]],axis=1)
+            abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
             abundance.name = "Abundance"
 
             final_result = pd.concat([results,abundance], axis=1)
@@ -1247,22 +1165,14 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundanc
 
             final_result["Count_with_abundance"] = final_result["Count"] * final_result["Abundance"]
 
-        else:
+        else: # Seems quite useless but felt cute might deleted later.
             
             final_result = results
             del results
             
         final_result = final_result.reset_index().merge(metadata, "inner", "smplID")
 
-
-        if taxonomy_file is not None:
-
-            ##### Checks if taxonomy file has default index which mean it is not indexed. TEMPORARY until found better way to deal with open/save from -t option OR load taxonomic_df option which return non indexed / indexed df
-            if not pd.Index(np.arange(0, len(taxonomy_file))).equals(taxonomy_file.index):
-                print("INDEXED !")
-                taxonomy_file = taxonomy_file.reset_index()
-
-            mgs_col_taxonomy = taxonomy_file.columns[0]
+        if taxonomy_path is not None: # If taxonomy is provided, merge the dataframe with the taxonomic_dataframe.
 
             final_result = final_result.merge(taxonomy_file, "inner", left_on="binID", right_on=mgs_col_taxonomy)
 
@@ -1270,6 +1180,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, metadata, abundanc
 
         filename = 'bin_dataframe_chunk_'+str(chunk_index)+'.parquet.gzip'
         filepath = os.path.join(savepath,filename)
+
         if len(final_result) == 0:
             print(f'Chunks {chunk_index} is empty !')
 

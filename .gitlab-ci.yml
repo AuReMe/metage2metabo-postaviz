@@ -5,8 +5,8 @@ default:
     - small
 
 before_script:
-  # - python -V
-  # - pip install tox
+  - python -V
+  - pip install tox
 
 stages:
   - test
