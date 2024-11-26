@@ -38,7 +38,7 @@ def test_data_processing():
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
-        du.build_df(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
+        du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
 
     Data = DataStorage(TMP_DIR)
 

@@ -18,11 +18,6 @@ from scipy.spatial.distance import squareform,pdist
 from statsmodels.stats.multitest import multipletests
 
 
-def pickle_write(path, obj):
-    with open(path, "wb") as f:
-        pickle.dump(obj, f)
-
-
 def pickle_read(path):
     with open(path, "rb") as f:
         obj = pickle.load(f)
@@ -41,16 +36,6 @@ def is_valid_dir(dirpath):
         return True
     else:
         return False
-
-
-def get_bin_list(sample_data, mode: str = "cscope"):
-    bin_list = {}
-    for sample in sample_data.keys():
-        if is_indexed_by_id(sample_data[sample][mode]):
-            bin_list[sample] = sample_data[sample][mode].index.to_list()
-        else:
-            bin_list[sample] = sample_data[sample][mode]["smplID"].to_list()
-    return bin_list
 
 
 def extract_tarfile(tar_file, outdir):
@@ -169,149 +154,6 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
     return
 
 
-def sum_squash_table(abundance_table: pd.DataFrame, sample_id: str):
-    """
-    Return a dataframe with a unique row containing the sum of all metabolite produced
-    by the different bin in a sample. In other word, transform a cpd production df by bin to a cpd production df by sample.
-    Args:
-        abundance_table (pd.DataFrame): Compound/Bin abundance table
-        sample_id (str): Name of the sample
-
-    Returns:
-        Dataframe: Dataframe
-    """
-    # Prend la nouvelle matrice d'abondance du sample
-    results = abundance_table.apply(lambda col: col.sum(), axis=0)
-    results.name = sample_id
-    return results
-
-
-def get_metadata(sample_id: str, metadata: pd.DataFrame):
-    return tuple(
-        [metadata.loc[metadata["smplID"] == sample_id].values.tolist()[0], metadata.loc[metadata["smplID"] == sample_id].columns.to_list()]
-    )
-
-
-def taxonomy_groupby(
-    metadata: pd.DataFrame,
-    current_sample: str,
-    bin_id_by_sample: dict,
-    taxonomic_dataframe: pd.DataFrame,
-    target_rank: str = "s",
-    taxonomic_choice: list = [],
-):
-    """Generate a taxonomic count dataframe from a sample id, his dataframe and the rank choosen. Return only the selected taxonomic choice.
-
-    Args:
-        current_sample (str): Sample's id
-        taxonomic_dataframe (pd.DataFrame): The taxonomic dataframe
-        target_rank (str, optional): Selected rank in shiny's input. Defaults to "Genus".
-        taxonomic_choice (list, optional): The list of taxonomic selection from shiny's input to keep in the returned Dataframe. Defaults to [].
-
-    Returns:
-        Dataframe: Pandas dataframe containing the selected taxonomic choice and rank.
-    """
-    df = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(bin_id_by_sample[current_sample])]
-    for choice in taxonomic_choice:
-        if choice not in df[target_rank].unique():
-            taxonomic_choice.remove(choice)
-            print(choice, " Removed.")
-
-    df = df[["mgs", target_rank]]
-    df = df.groupby([target_rank]).count()
-    df = df.reset_index()
-    df.columns = [target_rank, "Count"]
-    df = df.loc[df[target_rank].isin(taxonomic_choice)]
-    value, label = get_metadata(current_sample, metadata)
-    for i in range(len(label)):
-        df.insert(0, label[i], value[i])
-    return df
-
-
-def taxonomic_dataframe_from_input(
-    taxonomic_rank: str, bin_id_by_sample: dict, taxonomic_choice: list, taxonomic_dataframe: pd.DataFrame, metadata: pd.DataFrame
-):
-    results = []
-    taxonomic_choice = list(taxonomic_choice)
-    if len(taxonomic_choice) == 0:
-        print("The taxonomic choice list is empty")
-        return
-    for sample in bin_id_by_sample.keys():
-        results.append(taxonomy_groupby(metadata, sample, bin_id_by_sample, taxonomic_dataframe, taxonomic_rank, taxonomic_choice))
-    final_results = pd.concat(results, join="outer", ignore_index=True)
-    return final_results
-
-
-def get_taxonomy_size(sample_data: pd.DataFrame, taxonomic_dataframe: pd.DataFrame, only_metabolic_model_size: bool = False):
-    """Return the numbers of different species in one sample.
-
-    Args:
-        sample_data (pd.DataFrame): dataframe of one sample.
-        taxonomic_dataframe (pd.DataFrame): taxonomic dataframe of all samples.
-        only_metabolic_model_size (bool, optional): Return only the number of individual in the sample. Defaults to False.
-
-    Returns:
-        int: Number of individual or number of different species.
-    """
-    if only_metabolic_model_size:
-        taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["smplID"])]
-        return len(taxonomy_size)
-    taxonomy_size = taxonomic_dataframe.loc[taxonomic_dataframe["mgs"].isin(sample_data["smplID"])]
-    taxonomy_size = taxonomy_size[["mgs", "Genus"]]
-    taxonomy_size = taxonomy_size.groupby(["Genus"]).count()
-    taxonomy_size = taxonomy_size.reset_index()
-    return len(taxonomy_size)
-
-
-def add_row(df: pd.DataFrame, row: list):
-    df.loc[len(df)] = row
-
-
-def get_threshold_value(df: pd.DataFrame, threshold: int = 0, transpose: bool = False) -> dict:
-    """Take a matrix with percentage as value instead of a count and return only value above threshold.
-    value must be row indexed and sample in columns.
-
-    Args:
-        df (pd.DataFrame): Dataframe to extract values from.
-        threshold (int, optional): The threshold used to extract value (by default all percentage above but not equal 0 are exctrated). Defaults to 0.
-        transpose (bool, optional): True if the dataframe needs to be transpose (when value in columns and sample in rows). Defaults to False.
-
-    Returns:
-        dict: A dictionary, for which key correspond to a sample and value in a nested list of value above threshold and their index. return{sample1 : [[value1,value2],[index_value1,index_value2]]}
-    """
-    if transpose:
-        df = df.T
-    results = {}
-    for sample in df:
-        res = df.loc[df[sample] > 1]
-        res = res[sample]
-        results[sample] = res
-    return results
-
-
-def get_files(file_name: str, path: str, with_directory_name: bool = True):
-    """Retrieve files from the name within the directory path given in CLI.
-
-    Args:
-        file_name (str): Name of the file
-        path (str): directory path (-d from cli) from which os.walk begin the search.
-        with_directory_name (bool, optional): If True, also return the directory name containing the file. Defaults to True.
-
-    Returns:
-        _type_: _description_
-    """
-    result = []
-    for root, dirs, files in os.walk(path):
-        if file_name in files:
-            if with_directory_name:
-                result.append(
-                    [os.path.join(root, file_name), os.path.basename(os.path.dirname(os.path.dirname(os.path.join(root, file_name))))]
-                )
-            else:
-                result.append(os.path.join(root, file_name))
-    return result
-
-
 def open_added_value(file_name, path):
     for root, dirs, files in os.walk(path):
         if file_name in files:
@@ -357,13 +199,6 @@ def is_indexed_by_id(df: pd.DataFrame):
         return True
     else:
         return False
-
-
-def get_columns_index(df: pd.DataFrame, key_list):
-    index_list = [0]
-    for k in key_list:
-        index_list.append(df.columns.get_loc(k))
-    return index_list
 
 
 def sbml_to_classic(compounds_list):
@@ -521,18 +356,6 @@ def multiprocess_retrieve_data(path):
     return sample_info, all_data
 
 
-def melt_df_multi(dataframe: pd.DataFrame) -> pd.DataFrame:
-    dataframe.reset_index(inplace=True)
-    return dataframe.melt("smplID",var_name="Compound",value_name="Value")
-
-
-def multiply_production_abundance(row: pd.Series, abundance_matrix: pd.DataFrame, sample_id):
-    row = row.astype(float)
-    abundance_value = abundance_matrix.at[row.name, sample_id]
-    row *= abundance_value
-    return row
-
-
 def build_main_dataframe(sample_data: dict, save_path):
 
     if "main_dataframe_postaviz.tsv" in os.listdir(save_path):
@@ -562,18 +385,17 @@ def build_main_dataframe(sample_data: dict, save_path):
     return
 
 
-def build_df(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
+def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
     """
-    Extract community scopes present in directory from CLI then build a single dataframe from the metabolites produced by each comm_scopes.
+    Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
+    in save_path given in CLI.
 
     Args:
-        dir_path (str): Directory path containing comm scopes
-        metadata (tsv file): tsv file containing the metadata of the scopes. The number of row must be equal to the number of comm_scopes given in dir_path.
+        dir_path (str): Directory path with all samples directory produced by Metage2metabo
+        metadata (tsv file): A TSV metadata file.
 
     Returns:
-        global_data: dict
-        sample_data: dict
-        abundance_data: pandas dataframe
+        None
     """
     if not is_valid_dir(dir_path):
         print(dir_path, "Sample directory path is not a valid directory")
@@ -638,65 +460,6 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
             if with_quantity:
                 results[model] += value
     return pd.Series(results)
-
-
-def taxonomy_matrix_build(taxonomic_df: pd.DataFrame, binlist_by_id: dict):
-    rank = "s"
-    id_col = "mgs"
-    all_series = {}
-
-    for sample in binlist_by_id.keys():
-        res = taxonomic_df.loc[taxonomic_df[id_col].isin(binlist_by_id[sample])][rank]
-        all_series[sample] = list_to_boolean_serie(res)
-
-    matrix = pd.DataFrame(all_series)
-    matrix.fillna(0, inplace=True)
-    matrix = matrix.T
-    matrix.index.name = "smplID"
-    matrix.reset_index(inplace=True)
-    # !!! NAME OF ID isnt SMPLID !!! CAN LEAD TO DRAMA
-    return matrix
-
-
-def taxonomic_data_long_format(taxonomic_df: pd.DataFrame, binlist_by_id: dict, metadata_label: list, metadata: pd.DataFrame):
-    """
-    Produce long format taxonomic dataframe for plot purpose.
-    Returns:
-        Dataframe: Dataframe in long format
-    """
-
-    df = taxonomy_matrix_build(taxonomic_df, binlist_by_id)
-
-    if is_indexed_by_id(df):
-        df.reset_index()
-
-    df = df.melt("smplID", var_name="Taxa", value_name="Quantity")
-    brand_new_df = {}
-
-    # Assign all metadata a new columns in df.
-    for factor in metadata_label:
-        brand_new_df[factor] = add_factor_column(metadata, df["smplID"], factor)
-    df = df.assign(**brand_new_df)
-    df = df.astype(str)
-    df["smplID"] = df["smplID"].astype("category")
-    df["Quantity"] = df["Quantity"].astype(float)
-    df["Nb_taxon"] = df["smplID"].apply(lambda row: search_long_format(row, df))
-
-    return df
-
-
-def search_long_format(id_value, df):
-    value = df.loc[(df["smplID"] == id_value) & (df["Quantity"] != 0)]["Taxa"].unique()
-    return len(value)
-
-
-def add_factor_column(metadata, serie_id, factor_id):
-    if not is_indexed_by_id(metadata):
-        metadata = metadata.set_index("smplID", drop=True)
-    new_col = []
-    for value in serie_id:
-        new_col.append(str(metadata.at[value, factor_id]))
-    return new_col
 
 
 def total_production_by_sample(save_path, abundance_path: str = None):
@@ -912,8 +675,6 @@ def get_significance_symbol(pval: float) -> str:
         return "**"
     else:
         return "***"
-
-
 
 
 def build_pcoa_dataframe(save_path) -> pd.DataFrame:
