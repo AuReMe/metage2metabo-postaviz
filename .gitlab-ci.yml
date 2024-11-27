@@ -22,8 +22,9 @@ test:
     paths:
       - htmlcov/
     reports:
-      junit: toxtests.xml
-      coverage: coverage.xml
+      junit: 
+      - toxtests.xml
+      - coverage.xml
 
 
 sonarqube-check:
