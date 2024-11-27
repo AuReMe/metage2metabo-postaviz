@@ -23,6 +23,7 @@ test:
       - htmlcov/
     reports:
       junit: toxtests.xml
+      coverage: coverage.xml
 
 
 sonarqube-check:
