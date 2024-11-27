@@ -15,10 +15,12 @@ stages:
 test:
   stage: test
   script:
+    - python -V
+    - pip install tox
     - tox -e clean,py39,report
   artifacts:
-    paths:
-      - htmlcov/
+    # paths:
+    #   - htmlcov/
     reports:
       junit: toxtests.xml
 
