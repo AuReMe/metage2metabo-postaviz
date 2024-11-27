@@ -19,8 +19,8 @@ test:
     - pip install tox
     - tox -e clean,py39,report
   artifacts:
-    # paths:
-    #   - htmlcov/
+    paths:
+      - htmlcov/
     reports:
       junit: toxtests.xml
 
