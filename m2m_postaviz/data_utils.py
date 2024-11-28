@@ -241,6 +241,15 @@ def retrieve_all_sample_data(sample, path):
 
 
 def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
+    """Create and save a dataframe which sum all the compounds produced by each bins in sample cscope for each sample. 
+
+    Args:
+        sample_data (dict): Sample's cscope.
+        save_path (_type_): Save path given in CLI.
+
+    Raises:
+        Exception: Empty sample directory (-d given in CLI).
+    """
 
     if "producers_dataframe_postaviz.tsv" in os.listdir(save_path):
         print("producers dataframe already in save directory.")
@@ -350,6 +359,14 @@ def multiprocess_retrieve_data(path):
 
 
 def build_main_dataframe(sample_data: dict, save_path):
+    """Create and save the main dataframe. Samples in rows and compounds in columns.
+    It takes the compounds production in each samples cscope and return a pandas Series with 1 produced or 0 absent for each compounds.
+    Merge all the series returned into a dataframe. 
+
+    Args:
+        sample_data (dict): Samples's cscope.
+        save_path (_type_): Save path given in CLI.
+    """
 
     if "main_dataframe_postaviz.tsv" in os.listdir(save_path):
         print("main dataframe already in save directory.")
@@ -456,7 +473,17 @@ def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
 
 
 def total_production_by_sample(save_path, abundance_path: str = None):
+    """Create and save the total production dataframe. This dataframe contain all samples in row and all compounds in columns.
+    For each samples the compounds produced by each bins is add up to get the estimated total production of compound by samples
+    and the number of bins who produced those compounds.
 
+    If the abundance is provided, each production (1) of bins is multiplied by their abundance in their sample which gives an
+    estimated production of compounds weighted by the abundance of the bin producer.
+
+    Args:
+        save_path (_type_): Save path given in CLI
+        abundance_path (str, optional): Abundance file path fiven in CLI. Defaults to None.
+    """
     if "total_production_dataframe_postaviz.tsv" in os.listdir(save_path):
         print("total_production_dataframe_postaviz already in save directory")
         return
