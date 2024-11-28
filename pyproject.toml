@@ -17,7 +17,8 @@ dependencies = [
   'plotly',
   'shiny',
   'shinywidgets',
-  'scikit-bio'
+  'scikit-bio',
+  'pyarrow'
 ]
 
 [project.scripts]
@@ -78,3 +79,4 @@ target-version = ["py38"]
 packages = ['m2m_postaviz']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
 package-data = {'m2m_postaviz' = ['postaviz_test_data/table_test_postaviz.tar.gz', 'postaviz_test_data/taxonomic_database.tsv']}
+
