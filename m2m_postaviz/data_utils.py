@@ -4,7 +4,6 @@ import os.path
 import tarfile
 import time
 import sys
-import pickle
 
 import numpy as np
 import pandas as pd
@@ -16,12 +15,6 @@ from functools import partial
 from skbio.stats.ordination import pcoa
 from scipy.spatial.distance import squareform,pdist
 from statsmodels.stats.multitest import multipletests
-
-
-def pickle_read(path):
-    with open(path, "rb") as f:
-        obj = pickle.load(f)
-    return obj
 
 
 def is_valid_dir(dirpath):

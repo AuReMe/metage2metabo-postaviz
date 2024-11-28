@@ -17,14 +17,13 @@ test:
   script:
     - python -V
     - pip install tox
-    - tox -e clean,py39,report
+    - tox run -e clean,py39,report
   artifacts:
     paths:
       - htmlcov/
-    reports:
-      junit: 
-      - toxtests.xml
       - coverage.xml
+    reports:
+      junit: toxtests.xml
 
 
 sonarqube-check:
