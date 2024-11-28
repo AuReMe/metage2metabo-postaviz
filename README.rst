@@ -29,13 +29,11 @@ Dependencies
 - scikit-bio
 - shiny
 - shinywidgets
-- pytables (Optional)
+- pyarrow
 
 ::
 
-    pip install pandas
-    pip install padmet
-    pip install scipy
+    pip install -r requirement.txt
 
 
 Documentation
@@ -50,7 +48,7 @@ Development
 
 To run all the tests run::
 
-    tox
+    tox run -e clean,(pyXXX),report
 
 Note, to combine the coverage data from all the tox environments run:
 
@@ -68,3 +66,34 @@ Note, to combine the coverage data from all the tox environments run:
       - ::
 
             PYTEST_ADDOPTS=--cov-append tox
+
+Important
+===========
+
+In metadata file the first column must be the sample identification. Preferably named "smplID".
+
+In taxonomy file the first column must be the metagenomes (mgs). Preferably named "mgs".
+
+Utilisation
+===========
+
+m2m_postaviz can be run in two ways :
+
+::
+
+    m2m_postaviz -d Metage2metabo/samples/scopes/directory/path
+                -m metadata/file/path
+                -a abundance/file/path
+                -t taxonomy/file/path
+                -o save/path
+
+This way is required as least one time to produce all dataframe and save them in -o save/path.
+
+Once the dataframes are produced. Shiny will automatically run from the save/path given in -o option.
+You can interrupt the process if you want and run postaviz with -l load option.
+
+::
+
+    m2m_postaviz -l save/directory/path
+
+Which will directly launch shiny and skip dataprocessing.
