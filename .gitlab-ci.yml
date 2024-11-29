@@ -22,6 +22,7 @@ test:
     paths:
       - htmlcov/
       - coverage.xml
+    coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
     reports:
       junit: toxtests.xml
 
