@@ -18,11 +18,11 @@ test:
     - python -V
     - pip install tox
     - tox run -e clean,py39,report
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
       - htmlcov/
       - coverage.xml
-    coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
     reports:
       junit: toxtests.xml
 
