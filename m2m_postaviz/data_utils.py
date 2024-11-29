@@ -144,8 +144,6 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
 
     print("Abundance dataframes done and saved.")
 
-    return
-
 
 def open_added_value(file_name, path):
     for root, dirs, files in os.walk(path):
@@ -278,8 +276,6 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
 
     res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 
-    return
-
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     """sums the count of metabolites produced in the sample's cscope.
@@ -392,8 +388,6 @@ def build_main_dataframe(sample_data: dict, save_path):
     
     print("Main dataframe done and saved.")
 
-    return
-
 
 def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
     """
@@ -446,8 +440,6 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, t
         with open(os.path.join(save_path,"sample_info.json"), 'w') as f:
             json.dump(sample_info, f)
 
-    return 
-
 
 def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
 
@@ -457,18 +449,31 @@ def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
         metadata = open_tsv(metadata_path)
         metadata.to_csv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
 
-    return
 
+def list_to_series(model_list: list, with_quantity: bool = True):
+    """Transform a list a compounds into a serie with the list as Serie.index and value to 1 (or more).
 
-def list_to_boolean_serie(model_list: list, with_quantity: bool = True):
+    Args:
+        model_list (list): List of compounds
+        with_quantity (bool, optional): Instead of removing duplicate in list, add 1 to the value for each in list. Defaults to True.
+
+    Returns:
+        pd.Series: Pandas Series
+    """
     results = {}
     value = 1
+
     for model in model_list:
+
         if model not in results.keys():
+
             results[model] = value
         else:
+
             if with_quantity:
+
                 results[model] += value
+
     return pd.Series(results)
 
 
@@ -816,8 +821,6 @@ def taxonomy_processing(taxonomy_filepath, save_path):
     df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
 
     print("Taxonomic dataframe done and saved.")
-
-    return
 
 
 def iscope_production(dir_path: str, sample_info_dict: dict):

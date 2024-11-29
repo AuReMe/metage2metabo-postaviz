@@ -5,52 +5,54 @@ import warnings
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
+# From this test file, get to the test directory then the POSTAVIZ dir.
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODULE_DIR = os.path.dirname(BASE_DIR)
+
+# From Postaviz directory go the m2m_postaviz then postaviz test_data.
+SOURCE_DIR = os.path.join(MODULE_DIR, "m2m_postaviz")
+TEST_DIR = os.path.join(SOURCE_DIR, "postaviz_test_data")
+
+# If test_data dir doest not contain 'palleja' directory who contain the test data then extract tarfile.
+if not os.path.isdir(os.path.join(TEST_DIR, "palleja/")):
+    # Extracting
+    du.extract_tarfile(os.path.join(TEST_DIR, "table_test_postaviz.tar.gz"), TEST_DIR)
+    # Load path of newly extracted dir into variable
+    TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
+
+else:
+    print("Palleja test directory exist.")
+    TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
+
+TMP_DIR = os.path.join(TEST_DATA_CONTAINER,"test_save_dir")
+
+if not os.path.isdir(TMP_DIR):
+    os.makedirs(TMP_DIR)
+
+metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
+taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
+abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
+
+
+
 def test_data_processing():
 
-    # From this test file, get to the test directory then the POSTAVIZ dir.
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    MODULE_DIR = os.path.dirname(BASE_DIR)
-
-    # From Postaviz directory go the m2m_postaviz then postaviz test_data.
-    SOURCE_DIR = os.path.join(MODULE_DIR, "m2m_postaviz")
-    TEST_DIR = os.path.join(SOURCE_DIR, "postaviz_test_data")
-
-    # If test_data dir doest not contain 'palleja' directory who contain the test data then extract tarfile.
-    if not os.path.isdir(os.path.join(TEST_DIR, "palleja/")):
-        # Extracting
-        du.extract_tarfile(os.path.join(TEST_DIR, "table_test_postaviz.tar.gz"), TEST_DIR)
-        # Load path of newly extracted dir into variable
-        TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
-
-    else:
-        print("Palleja test directory exist.")
-        TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
-
-    TMP_DIR = os.path.join(TEST_DATA_CONTAINER,"test_save_dir")
-
-    if not os.path.isdir(TMP_DIR):
-        os.makedirs(TMP_DIR)
-
-    metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
-    taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
-    abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
-
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-
-        du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
-
-    Data = DataStorage(TMP_DIR)
+    data = DataStorage(TMP_DIR)
 
     sample_info, sample_data = du.multiprocess_retrieve_data(TEST_DATA_CONTAINER)
 
-    metadata = Data.get_metadata()
+    metadata = data.get_metadata()
 
-    main_dataframe = Data.get_main_dataframe()
+    main_dataframe = data.get_main_dataframe()
 
-    metabolite_production_dataframe = Data.get_metabolite_production_dataframe()
+    metabolite_production_dataframe = data.get_metabolite_production_dataframe()
 
-    global_production_dataframe = Data.get_global_production_dataframe()
+    global_production_dataframe = data.get_global_production_dataframe()
 
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.
@@ -99,3 +101,26 @@ def test_data_processing():
 
 """
 
+def test_query_parquet():
+
+    data = DataStorage(TMP_DIR)
+
+    taxonomic_rank_input = "c"
+
+    taxonomic_rank_unique_input = "Fusobacteriia"
+
+    list_of_bin_in_rank = data.get_bin_list_from_taxonomic_rank(taxonomic_rank_input, taxonomic_rank_unique_input)
+    
+    query = [("binID", "in", list_of_bin_in_rank)]
+
+    df = data.get_bin_dataframe(condition=query)
+
+    # Testing dataframe. 5 bins in query
+
+    assert isinstance(df,pd.DataFrame), "bin_dataframe is not an instance of pandas dataframe."
+
+    assert df.empty == False, "bin_dataframe is empty."
+
+    assert all(df['c'].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
+
+    

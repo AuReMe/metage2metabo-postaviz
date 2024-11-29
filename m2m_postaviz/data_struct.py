@@ -33,13 +33,7 @@ class DataStorage:
         if save_path is not None:
             self.output_path = save_path
 
-        print(f'Taxonomy : {self.HAS_TAXONOMIC_DATA}\nAbundance : {self.HAS_ABUNDANCE_DATA}')
-
-
-    def open_pickle_file(self, file_path):
-        with open(file_path, "rb") as f:
-                obj = pickle.load(f)
-        return obj
+        print(f'Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}')
 
 
     def open_tsv(self, key: str):
@@ -52,7 +46,7 @@ class DataStorage:
             pd.Dataframe: Pandas dataframe
         """
         if not key in self.DF_KEYS:
-            print(key, "not in keys: ", self.DF_KEYS)
+            print(key, "not in keys: \n", self.DF_KEYS)
             return
         
         for root, dirname, filename in os.walk(self.output_path):
