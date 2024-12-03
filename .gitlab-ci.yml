@@ -10,9 +10,10 @@ before_script:
 
 stages:
   - test
+  - quality
 
 
-test:
+coverage test:
   stage: test
   script:
     - python -V
@@ -28,6 +29,8 @@ test:
 
 
 sonarqube-check:
+  stage: quality
+  needs: ["coverage test"]
   image: 
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
@@ -39,9 +42,14 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script: 
-    - sonar-scanner
+    - tox run -e sonar
   allow_failure: true
   only:
     - merge_requests
     - main
     - develop
+  artifacts:
+  paths:
+    - pylint-report.txt
+    - coverage.xml
+
