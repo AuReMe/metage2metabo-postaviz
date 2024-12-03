@@ -4,9 +4,14 @@ default:
   tags:
     - small
 
+variables:
+  HOME: "$CI_BUILDS_DIR"
+
+
 before_script:
-  # - python -V
-  # - pip install tox
+  - export PATH="${PATH}:${HOME}/.local/bin"
+  - python -V
+  - pip install tox
 
 stages:
   - test
