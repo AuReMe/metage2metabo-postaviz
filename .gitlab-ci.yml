@@ -21,8 +21,6 @@ stages:
 coverage test:
   stage: test
   script:
-    - python -V
-    - pip install tox
     - tox run -e clean,py39,report
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
@@ -47,8 +45,6 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script: 
-    - python -V
-    - pip install tox
     - tox run -e sonar
   allow_failure: true
   only:
