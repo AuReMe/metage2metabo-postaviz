@@ -1,17 +1,17 @@
-image: python:3.9
+image: python:3.12
 
 default:
   tags:
     - small
 
-# variables:
-#   HOME: "$CI_BUILDS_DIR"
+variables:
+  HOME: "$CI_BUILDS_DIR"
 
 
-# before_script:
-#   - export PATH="${PATH}:${HOME}/.local/bin"
-#   - python -V
-#   - pip install tox
+before_script:
+  - export PATH="${PATH}:${HOME}/.local/bin"
+  - python -V
+  - pip install tox
 
 stages:
   - test
@@ -21,7 +21,7 @@ stages:
 coverage test:
   stage: test
   script:
-    - tox run -e clean,py39,report
+    - tox run -e clean,py39,py312,report
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
