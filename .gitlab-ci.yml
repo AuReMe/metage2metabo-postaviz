@@ -49,7 +49,7 @@ sonarqube-check:
     - main
     - develop
   artifacts:
-  paths:
-    - pylint-report.txt
-    - coverage.xml
+    paths:
+      - pylint-report.txt
+      - coverage.xml
 
