@@ -4,14 +4,14 @@ default:
   tags:
     - small
 
-variables:
-  HOME: "$CI_BUILDS_DIR"
+# variables:
+#   HOME: "$CI_BUILDS_DIR"
 
 
-before_script:
-  - export PATH="${PATH}:${HOME}/.local/bin"
-  - python -V
-  - pip install tox
+# before_script:
+#   - export PATH="${PATH}:${HOME}/.local/bin"
+#   - python -V
+#   - pip install tox
 
 stages:
   - test
@@ -47,6 +47,8 @@ sonarqube-check:
     paths:
       - .sonar/cache
   script: 
+    - python -V
+    - pip install tox
     - tox run -e sonar
   allow_failure: true
   only:
