@@ -9,11 +9,12 @@ before_script:
   # - pip install tox
 
 stages:
+  - test
   - quality
 
 
 coverage test:
-  stage: quality
+  stage: test
   script:
     - python -V
     - pip install tox
