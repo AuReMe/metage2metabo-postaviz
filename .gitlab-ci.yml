@@ -18,7 +18,7 @@ stages:
   - quality
 
 
-coverage test:
+coverage:
   stage: test
   script:
     - tox run -e clean,py39,py312,report
@@ -33,7 +33,7 @@ coverage test:
 
 sonarqube-check:
   stage: quality
-  needs: [coverage test]
+  needs: ["coverage"]
   image: 
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
