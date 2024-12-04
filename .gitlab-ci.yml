@@ -33,7 +33,7 @@ coverage test:
 
 sonarqube-check:
   stage: quality
-  # needs: ["coverage test"]
+  needs: ["coverage test"]
   image: 
     name: sonarsource/sonar-scanner-cli:latest
     entrypoint: [""]
@@ -50,7 +50,7 @@ sonarqube-check:
   only:
     - merge_requests
     - main
-    - develop
+    # - develop
   artifacts:
     paths:
       - pylint-report.txt
