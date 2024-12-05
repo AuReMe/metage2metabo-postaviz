@@ -19,7 +19,7 @@ variables:
 before_script:
   - export PATH="${PATH}:${HOME}/.local/bin"
   - python3 -V
-  - python3 -m pip install tox --user
+  - python3 -m pip3 install tox --user
 
 stages:
   - test
