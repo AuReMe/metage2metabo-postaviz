@@ -1,9 +1,12 @@
 import pandas as pd
 import os
 import warnings
+import plotly.express as px
+import plotly
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
+from m2m_postaviz import shiny_module as sm
 
 # From this test file, get to the test directory then the POSTAVIZ dir.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -53,7 +56,6 @@ def test_data_processing():
     metabolite_production_dataframe = data.get_metabolite_production_dataframe()
 
     global_production_dataframe = data.get_global_production_dataframe()
-
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.
     assert any(global_production_dataframe["Total_abundance_weighted"].notna()),"Nan value in global_production dataframe[Total_abundance_w]"
@@ -124,3 +126,98 @@ def test_query_parquet():
     assert all(df['c'].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
 
     
+def test_shiny_module():
+
+    data = DataStorage(TMP_DIR)
+
+    # Test for bins exploration tab
+
+    production_histplot, production_boxplot, df, timing, abundance_plot = sm.bin_exploration_processing(data,
+                                                                                                        "Group",
+                                                                                                        ["Control","Treatment"],
+                                                                                                        "c",
+                                                                                                        "Clostridia",
+                                                                                                        True, "Days")
+    
+    # Object type check.
+
+    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+
+    assert isinstance(production_boxplot, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
+
+    assert isinstance(df, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+
+    assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
+
+    # Object is empty check.
+
+    assert production_histplot != tuple(), "Production histogram is empty."
+
+    assert production_boxplot != tuple(), "Production boxplot is empty."
+
+    assert abundance_plot != tuple(), "Abundance barplot is empty."
+
+
+    # Test for custom PCOA
+
+    with warnings.catch_warnings():
+
+        warnings.simplefilter("ignore")
+
+        custom_pcoa_category_factor = sm.make_pcoa(data, "Group", ["Control","Treatment"], True, "Days")
+
+        custom_pcoa_integer_factor = sm.make_pcoa(data, "Days", [0, 180], False, "Group")
+
+    assert custom_pcoa_category_factor != tuple(), "Custom pcoa function returned empty plot"
+
+    assert custom_pcoa_integer_factor != tuple(), "Custom pcoa function returned empty plot"
+
+    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+
+    assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
+
+    assert isinstance(reactive_total_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
+
+
+def test_statistic_method():
+    
+    data = DataStorage(TMP_DIR)
+
+    # total_production_dataframe = data.get_global_production_dataframe()
+
+    # producers_dataframe = data.get_metabolite_production_dataframe()
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+
+        # Return None
+        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "None", "Days", True, "simes-hochberg", True)
+        assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should've return None with user_input1 == None."
+
+        # Return Wilcoxon/Man-whitney dataframe
+        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Group", "Days", True, "simes-hochberg", True)
+        assert total_production_test_dataframe["Method"].unique() == "Wilcoxon", "global_production_statistical_dataframe function should've return dataframe with Wilcoxon test method"
+
+        # Return Correlation dataframe
+        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Days", "Group", True, "simes-hochberg", True)
+        assert total_production_test_dataframe["Method"].unique() == "pearson", "global_production_statistical_dataframe function should've return dataframe with Pearson test method"
+
+        # Return Wilcoxon/Man-whitney dataframe
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "None", True, "simes-hochberg", True)
+        assert metabolites_production_test_dataframe["Method"].unique() == "Mann-Whitney", "metabolites_production_statistical_dataframe function should've return dataframe with Mann-Whitney test method"
+        
+        # Return Correlation dataframe        
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "None", True, "simes-hochberg", True )
+        assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
+
+        # Return Wilcoxon/Man-whitney dataframe
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", True, "simes-hochberg", True )
+        assert metabolites_production_test_dataframe["Method"].unique() == "Wilcoxon", "metabolites_production_statistical_dataframe function should've return dataframe with Wilcoxon test method"
+
+        # Return Correlation dataframe
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Group", True, "simes-hochberg", True )
+        assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
+
+    assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
+
+    assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."

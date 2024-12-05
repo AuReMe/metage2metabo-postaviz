@@ -169,21 +169,6 @@ class DataStorage:
 
         return query
 
-    def get_factor_by_id(self, sample_id, factor):
-        query = self.metadata.loc[self.metadata["smplID"] == sample_id][factor]
-        print("get_factor : ", sample_id, factor, "found : ", query)
-        return query
-
-    def factorize_metadata(self):
-        for factor in self.get_metadata_label():
-            self.metadata[factor] = self.metadata[factor].astype("category")
-
-    def weird_way_to_do_it(self, id_value: str, metadata_col: str, metadata: pd.DataFrame):
-        if self.is_indexed(metadata):
-            metadata.reset_index(inplace=True)
-        result = metadata.loc[metadata["smplID"] == id_value][metadata_col].values[0]
-        return result
-
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path
         final_file_path = path_to_save + "/" + file_name + "." + extension

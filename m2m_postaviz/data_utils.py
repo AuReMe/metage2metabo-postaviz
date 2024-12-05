@@ -531,7 +531,7 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
 
     Args:
         dataframe (pd.DataFrame): Dataframe to test.
-        y_value (_type_): list of columns labels to separata into several dataframe. Must be of lenght 1 at least. 
+        y_value (_type_): list of columns labels to separate into several dataframe. Must be at least of lenght 1. 
         input1 (_type_): First user's input.
         input2 (_type_, optional): Second user's input. Defaults to None.
 

@@ -390,38 +390,7 @@ def run_shiny(data: DataStorage):
         @reactive.extended_task
         async def make_custom_pcoa(column, choices, abundance, color):
             
-            if abundance:
-                df = data.get_normalised_abundance_dataframe()
-            else:
-                df = data.get_main_dataframe()
-
-            metadata = data.get_metadata()
-
-            if du.is_indexed_by_id(df):
-                df.reset_index(inplace=True)
-
-            if du.is_indexed_by_id(metadata):
-                metadata.reset_index(inplace=True)
-
-            if du.serie_is_float(metadata[column]):
-
-                selected_sample = metadata.loc[(metadata[column] >= choices[0]) & (metadata[column] <= choices[1])]["smplID"]
-                df = df.loc[df["smplID"].isin(selected_sample)]
-                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
-
-            else:
-
-                selected_sample = metadata.loc[metadata[column].isin(choices)]["smplID"]
-                df = df.loc[df["smplID"].isin(selected_sample)]
-                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
-
-            plot_df = du.pcoa_alternative_method(df, metadata)
-
-            fig = px.scatter(plot_df, x="PC1", y="PC2",
-                             color= color  
-                             )
-
-            return fig
+            return sm.make_pcoa(data, column, choices, abundance, color)
 
         @render_widget
         def pcoa_custom_plot():
@@ -538,81 +507,12 @@ def run_shiny(data: DataStorage):
         @render.data_frame
         def producer_test_dataframe():
 
-            y1, x1, x2 = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
-
-            if len(y1) == 0:
-                return
-            
-            if x1 == "None":
-                return 
-
-            multipletests_correction = input.multiple_correction_metabo_plot()
-
-            if multipletests_correction:
-                multipletests_method = input.multiple_test_method_metabo()
-            else:
-                multipletests_method = "hs"
-
-            if x2 == "None":
-
-                df = data.get_metabolite_production_dataframe()[[*y1,x1]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    correlation_results = []
-
-                    for y_value in y1:
-
-                        correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), x1))
-
-                    return pd.concat(correlation_results)
-
-               
-                res = du.preprocessing_for_statistical_tests(df, y1, x1, multipletests = multipletests_correction, multipletests_method = multipletests_method)
-                all_dataframe["metabolites_production_test_dataframe"] = res
-
-                return res
-            
-            if x1 != x2:
-
-                df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]): # First input is Float type
-
-                    if du.serie_is_float(df[x2]): # Second input is Float type
-
-                        correlation_results = []
-
-                        for y_value in y1:
-
-                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x1+" "+y_value)))
-                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x2+" "+y_value)))
-
-                        return pd.concat(correlation_results)
-
-                    else: # Second input is not Float type
-
-                        correlation_results = []
-
-                        for y_value in y1:
-
-                            for x2_unique_value in df[x2].unique():
-                          
-                                factor_array = df.loc[df[x2] == x2_unique_value][x1]
-                                value_array = df.loc[df[x2] == x2_unique_value][y_value]
-
-                                correlation_results.append(du.correlation_test(value_array.to_numpy(), factor_array.to_numpy(), str(x2_unique_value)+" "+y_value))
-
-                        return pd.concat(correlation_results)
-                    
-                else:   
-
-                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2, multipletests = multipletests_correction, multipletests_method = multipletests_method)
-                    all_dataframe["metabolites_production_test_dataframe"] = res
-
-                return res
+            return sm.metabolites_production_statistical_dataframe(data, list(input.box_inputy1()),
+                                                                 input.box_inputx1(), input.box_inputx2(),
+                                                                 input.multiple_correction_metabo_plot(),
+                                                                 input.multiple_test_method_metabo(),
+                                                                 False
+                                                                 )
                 
         @render_widget
         def producer_plot():
@@ -649,79 +549,11 @@ def run_shiny(data: DataStorage):
         @render.data_frame
         def production_test_dataframe():
 
-            x1, x2 = input.prod_inputx1(), input.prod_inputx2()
-            
-            # No input selected
-            if x1 == "None":
-                return 
-            
-            multipletests_correction = input.multiple_correction_global_plot()
-
-            if multipletests_correction:
-                multipletests_method = input.multiple_test_method_global()
-            else:
-                multipletests_method = "hs"
-
-            with_normalised_data = input.prod_norm()
-
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
-
-            df = data.get_global_production_dataframe()
-            
-            # At least first axis selected
-            if x2 == "None":
-                df = df[[column_value,x1]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-
-                    return res
-                    
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multipletests_correction, multipletests_method=multipletests_method)
-                all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-            
-            # Both axis have been selected and are not equal.
-            if x1 != x2:
-
-                df = df[[column_value,x1,x2]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    if du.serie_is_float(df[x2]):
-
-                        # Double cor
-                        res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-                        res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
-                        return pd.concat([res1,res2])
-                    
-                    else:
-
-                        # cor filtered by second categorical factor .loc
-                        all_results = []
-                        for unique_x2_value in df[x2].unique():
-
-                            value_array = df.loc[df[x2] == unique_x2_value][column_value]
-                            factor_array = df.loc[df[x2] == unique_x2_value][x1]
-
-                            all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
-
-                        return pd.concat(all_results)
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multipletests_correction, multipletests_method=multipletests_method)
-                all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-            
-            return
+            return sm.global_production_statistical_dataframe(data, input.prod_inputx1(),
+                                                              input.prod_inputx2(),
+                                                              input.multiple_correction_global_plot(),
+                                                              input.multiple_test_method_global(),
+                                                              input.prod_norm())
         
         @render.text
         @reactive.event(input.export_global_production_test_button)
@@ -773,52 +605,8 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def total_production_plot():
-
-            with_normalised_data = input.prod_norm()
-
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
-
-            df = data.get_global_production_dataframe()
             
-
-            inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
-        
-            if inputx1 == "None":
-
-                all_dataframe["global_production_plot_dataframe"] = df
-                return px.box(df, y=column_value, title=f"Total production.")
-            
-            elif inputx2 == "None" or inputx1 == inputx2:
-
-                df = df[[column_value,inputx1]]
-                drop_count = len(df)
-                df = df.dropna()
-
-                if drop_count - len(df) > 0:
-                    ui.notification_show(f'{drop_count - len(df)} lines dropped(NaN values).',duration=8,close_button=True,type="warning")
-
-                all_dataframe["global_production_plot_dataframe"] = df
-
-                if du.has_only_unique_value(df, inputx1):
-
-                    return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
-                
-                else:
-                    
-                    fig = px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
-                    return fig
-                
-            else:
-
-                df = df[[column_value,inputx1,inputx2]]
-                df = df.dropna()
-                all_dataframe["global_production_plot_dataframe"] = df
-                has_unique_value = du.has_only_unique_value(df, inputx1, inputx2)
-
-                return px.bar(df,x=inputx1,y=column_value,color=inputx2) if has_unique_value else px.box(df,x=inputx1,y=column_value,color=inputx2)
+            return sm.render_reactive_total_production_plot(data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
         @render.data_frame
         def metadata_table():
