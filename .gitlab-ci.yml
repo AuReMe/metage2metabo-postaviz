@@ -53,7 +53,8 @@ sonarqube-check:
   #   paths:
   #     - .sonar/cache
   script: 
-    - python3 -m pip3 install tox --user
+    - python -m ensurepip --default-pip
+    - python3 -m pip install tox --user
     - tox run -e sonar
   allow_failure: true
   only:
