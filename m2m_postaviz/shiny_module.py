@@ -1,22 +1,22 @@
-from m2m_postaviz.data_struct import DataStorage
-from m2m_postaviz import data_utils as du
+import time
 
+import pandas as pd
+import plotly.express as px
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 
-import time
-import pandas as pd
-import plotly.express as px
+from m2m_postaviz import data_utils as du
+from m2m_postaviz.data_struct import DataStorage
 
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
-    """Takes inputs from shiny application to return 3 ploty objects: 
+    """Takes inputs from shiny application to return 3 ploty objects:
     - hist plot of the unique production of metabolites by bins selected weighted by abundance or not.
     - box plot of production of metabolites by bin selected.
     - bar plot of the abundance of each bin by samples.
 
-    Each plot can be customised by the metadata from the input selected by user. 
+    Each plot can be customised by the metadata from the input selected by user.
 
     A pre-processing is needed first to get only the bins of interest from the chunks of bins_dataframe from hard drive.
 
@@ -61,32 +61,32 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     if len(filtered_list_of_bin) == 0:
         print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
-    
+
     filter_condition=[("binID", "in", filtered_list_of_bin)]
     if factor != "None" and len(factor_choice) > 0:
         filter_condition.append((factor, "in", factor_choice))
 
     df = data.get_bin_dataframe(condition=filter_condition)
-    
+
     unique_sample_in_df = df["smplID"].unique()
 
     new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
 
     for sample in unique_sample_in_df:
-        
-        tmp_df = df.loc[df["smplID"] == sample][['binID','smplID','Production']]
+
+        tmp_df = df.loc[df["smplID"] == sample][["binID","smplID","Production"]]
         all_production = tmp_df["Production"].values
 
         tmp_production = []
 
         for prod_list in all_production:
-            
+
             tmp_production += list(prod_list)
 
         unique_production_count = len(set(tmp_production))
         new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
 
-    df = df.merge(new_serie_production, how='inner', on="smplID")
+    df = df.merge(new_serie_production, how="inner", on="smplID")
 
     df.sort_index(inplace=True)
 
@@ -94,9 +94,9 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     # If only one bin selected do not make boxplot.
 
-    if len(filtered_list_of_bin) > 1: 
+    if len(filtered_list_of_bin) > 1:
         fig3 = px.box(df, x="smplID", y="Count_with_abundance" if with_abundance else "Count", color="smplID" if color =="None" else color, hover_data="binID")
-        
+
     else:
         fig3 = None
 
@@ -106,13 +106,13 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
-    
+
             x1, x2 = user_input1, user_input2
-            
+
             # No input selected
             if x1 == "None":
-                return 
-            
+                return
+
             multipletests_correction = multiple_test_correction
 
             if multipletests_correction:
@@ -128,7 +128,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                 column_value = "Total_production"
 
             df = data.get_global_production_dataframe()
-            
+
             # At least first axis selected
             if x2 == "None":
                 df = df[[column_value,x1]]
@@ -139,12 +139,12 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                     res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
 
                     return res
-                    
+
                 res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multipletests_correction, multipletests_method=multipletests_method)
                 # all_dataframe["global_production_test_dataframe"] = res
 
                 return res
-            
+
             # Both axis have been selected and are not equal.
             if x1 != x2:
 
@@ -159,7 +159,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                         res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
                         res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
                         return pd.concat([res1,res2])
-                    
+
                     else:
 
                         # cor filtered by second categorical factor .loc
@@ -177,7 +177,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                 # all_dataframe["global_production_test_dataframe"] = res
 
                 return res
-            
+
             return
 
 
@@ -186,9 +186,9 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
     if len(y1) == 0:
         return
-    
+
     if x1 == "None":
-        return 
+        return
 
     if multiple_test_correction:
         correction_method = correction_method
@@ -210,12 +210,12 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
             return pd.concat(correlation_results)
 
-        
+
         res = du.preprocessing_for_statistical_tests(df, y1, x1, multipletests = multiple_test_correction, multipletests_method= correction_method)
         # all_dataframe["metabolites_production_test_dataframe"] = res
 
         return res
-    
+
     if x1 != x2:
 
         df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
@@ -241,15 +241,15 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
                 for y_value in y1:
 
                     for x2_unique_value in df[x2].unique():
-                    
+
                         factor_array = df.loc[df[x2] == x2_unique_value][x1]
                         value_array = df.loc[df[x2] == x2_unique_value][y_value]
 
                         correlation_results.append(du.correlation_test(value_array.to_numpy(), factor_array.to_numpy(), str(x2_unique_value)+" "+y_value))
 
                 return pd.concat(correlation_results)
-            
-        else:   
+
+        else:
 
             res = du.preprocessing_for_statistical_tests(df, y1, x1, x2, multipletests = multiple_test_correction, multipletests_method= correction_method)
             # all_dataframe["metabolites_production_test_dataframe"] = res
@@ -258,7 +258,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
 
 def make_pcoa(data: DataStorage, column, choices, abundance, color):
-            
+
     if abundance:
         df = data.get_normalised_abundance_dataframe()
     else:
@@ -287,7 +287,7 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     plot_df = run_pcoa(df, metadata)
 
     fig = px.scatter(plot_df, x="PC1", y="PC2",
-                        color= color  
+                        color= color
                         )
 
     return fig
@@ -320,8 +320,8 @@ def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str
     pcoa_result = pcoa(square_df,number_of_dimensions=2)
     coordinate = pcoa_result.samples
 
-    df_pcoa = coordinate[['PC1','PC2']]
-    df_pcoa['smplID'] = main_dataframe.index.to_numpy()
+    df_pcoa = coordinate[["PC1","PC2"]]
+    df_pcoa["smplID"] = main_dataframe.index.to_numpy()
 
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
@@ -337,12 +337,12 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         column_value = "Total_production"
 
     df = data.get_global_production_dataframe()
-    
+
     if user_input1 == "None":
 
         # all_dataframe["global_production_plot_dataframe"] = df
-        return px.box(df, y=column_value, title=f"Total production.")
-    
+        return px.box(df, y=column_value, title="Total production.")
+
     elif user_input2 == "None" or user_input1 == user_input2:
 
         df = df[[column_value,user_input1]]
@@ -352,12 +352,12 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         if du.has_only_unique_value(df, user_input1):
 
             return px.bar(df, x=user_input1 , y=column_value, color=user_input1, title=f"Total compound production filtered by {user_input1}")
-        
+
         else:
-            
+
             fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Total compound production filtered by {user_input1}")
             return fig
-        
+
     else:
 
         df = df[[column_value,user_input1,user_input2]]
