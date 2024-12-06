@@ -19,6 +19,8 @@ variables:
 before_script:
   - export PATH="${PATH}:${HOME}/.local/bin"
   - python3 -V
+  - python3 -m ensurepip --default-pip --user
+  - python3 -m pip install tox --user
 
 stages:
   - test
@@ -28,7 +30,6 @@ stages:
 coverage:
   stage: test
   script:
-    - python3 -m pip install tox --user
     - tox run -e clean,py39,py312,report
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
@@ -53,8 +54,6 @@ sonarqube-check:
   #   paths:
   #     - .sonar/cache
   script: 
-    - python3 -m ensurepip --default-pip --user
-    - python3 -m pip install tox --user
     - tox run -e sonar
   allow_failure: true
   only:

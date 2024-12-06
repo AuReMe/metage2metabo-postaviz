@@ -283,10 +283,16 @@ def run_shiny(data: DataStorage):
 
         @render.text
         def bin_size_text():
+            """Display the number of bins within the selection of user's input.
+            If only one bin is in selection, then display in how many samples this bin is present.
 
+            Returns:
+                str: str to display inside an output text UI.
+            """
             rank_choice, rank_unique_choice = input.rank_choice(), input.rank_unique_choice()
 
             if rank_choice == "mgs":
+                
                 rank_unique_choice = rank_unique_choice.split(" ")[0]
 
             if rank_choice == "all":
@@ -517,34 +523,7 @@ def run_shiny(data: DataStorage):
         @render_widget
         def producer_plot():
 
-            compound_input, first_input, second_input = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
-
-            if len(compound_input) == 0:
-                return
-
-            producer_data = data.get_metabolite_production_dataframe()
-            producer_data = producer_data.set_index("smplID")
-
-            if first_input == "None":
-                df = producer_data[[*compound_input]]
-                all_dataframe["metabolites_production_plot_dataframe"] = df
-                return px.box(df,y=compound_input)
-
-            if second_input == "None" or first_input == second_input:
-                df = producer_data[[*compound_input,first_input]]
-                df = df.dropna()
-                all_dataframe["metabolites_production_plot_dataframe"] = df
-                has_unique_value = du.has_only_unique_value(df, first_input)
-
-
-                return px.bar(df,x=first_input,y=compound_input,color=first_input) if has_unique_value else px.box(df,x=first_input,y=compound_input,color=first_input)
-
-            df = producer_data[[*compound_input,first_input,second_input]]
-            df = df.dropna()
-            all_dataframe["metabolites_production_plot_dataframe"] = df
-            has_unique_value = du.has_only_unique_value(df, first_input, second_input)
-
-            return px.bar(df, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compound_input,color=second_input, boxmode="group")
+            return sm.render_reactive_metabolites_production_plot(data, list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2(), False)
 
         @render.data_frame
         def production_test_dataframe():

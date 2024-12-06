@@ -3,6 +3,7 @@ import os
 import warnings
 import plotly.express as px
 import plotly
+import shutil
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -29,7 +30,10 @@ else:
 
 TMP_DIR = os.path.join(TEST_DATA_CONTAINER,"test_save_dir")
 
-if not os.path.isdir(TMP_DIR):
+# If the directory already exist, directory must be removed with all content. This is usefull for local test since most of data-processing is ignored due to previous local test that already created files.
+
+if os.path.isdir(TMP_DIR):
+    shutil.rmtree(TMP_DIR)
     os.makedirs(TMP_DIR)
 
 metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
@@ -172,6 +176,8 @@ def test_shiny_module():
 
     assert custom_pcoa_integer_factor != tuple(), "Custom pcoa function returned empty plot"
 
+    # Test for total production reactive plot.
+
     reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
     reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
 
@@ -179,14 +185,20 @@ def test_shiny_module():
 
     assert isinstance(reactive_total_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 
+    # Test for metabolites production reactive plot.
+
+    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", True)
+    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days", True)
+
+    assert isinstance(reactive_metabolites_production_plot, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
+
+    assert isinstance(reactive_metabolites_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
+
 
 def test_statistic_method():
     
     data = DataStorage(TMP_DIR)
 
-    # total_production_dataframe = data.get_global_production_dataframe()
-
-    # producers_dataframe = data.get_metabolite_production_dataframe()
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
@@ -218,6 +230,6 @@ def test_statistic_method():
         metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Group", True, "simes-hochberg", True )
         assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
-    assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
+    # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
-    assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
+    # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."

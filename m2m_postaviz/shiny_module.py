@@ -366,3 +366,34 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         has_unique_value = du.has_only_unique_value(df, user_input1, user_input2)
 
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
+
+
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, user_input2, with_abundance):
+
+    if len(compounds_input) == 0:
+        return
+
+    producer_data = data.get_metabolite_production_dataframe()
+    producer_data = producer_data.set_index("smplID")
+
+    if user_input1 == "None":
+        df = producer_data[[*compounds_input]]
+        # all_dataframe["metabolites_production_plot_dataframe"] = df
+        return px.box(df,y=compounds_input)
+
+    if user_input2 == "None" or user_input1 == user_input2:
+        df = producer_data[[*compounds_input,user_input1]]
+        df = df.dropna()
+        # all_dataframe["metabolites_production_plot_dataframe"] = df
+        has_unique_value = du.has_only_unique_value(df, user_input1)
+
+
+        return px.bar(df,x=user_input1,y=compounds_input,color=user_input1) if has_unique_value else px.box(df,x=user_input1,y=compounds_input,color=user_input1)
+
+    df = producer_data[[*compounds_input,user_input1,user_input2]]
+    df = df.dropna()
+    # all_dataframe["metabolites_production_plot_dataframe"] = df
+    has_unique_value = du.has_only_unique_value(df, user_input1, user_input2)
+
+    return px.bar(df, x=user_input1, y=compounds_input,color=user_input2) if has_unique_value else px.box(df, x=user_input1, y=compounds_input,color=user_input2, boxmode="group")
+
