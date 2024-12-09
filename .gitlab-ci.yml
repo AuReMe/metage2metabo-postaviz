@@ -17,9 +17,9 @@ variables:
 
 
 before_script:
-  # - export PATH="${PATH}:${HOME}/.local/bin"
+  - export PATH="${PATH}:${HOME}/.local/bin"
   - python3 -V
-  # - python3 -m ensurepip --default-pip --user
+  - python3 -m ensurepip --default-pip --user
   - python3 -m pip install tox
 
 stages:
