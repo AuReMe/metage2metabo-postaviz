@@ -1,28 +1,28 @@
+import warnings
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from ontosunburst.ontosunburst import ontosunburst as ontos
 from shiny import App
+from shiny import reactive
 from shiny import render
 from shiny import run_app
 from shiny import ui
-from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
-import warnings
-import pandas as pd
-from ontosunburst.ontosunburst import ontosunburst as ontos
-import time
 
-import m2m_postaviz.shiny_module as sm
 import m2m_postaviz.data_utils as du
+import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 
+
 def run_shiny(data: DataStorage):
-    
+
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
 
     list_of_cpd = data.get_compound_list()
-    
+
     factor_list = data.get_factors()
     factor_list.insert(0, "None")
 
@@ -67,9 +67,9 @@ def run_shiny(data: DataStorage):
             ui.layout_column_wrap(
 
                 ui.card(output_widget("producer_plot"),full_screen=True),
-         
+
                 ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
-                
+
             ),
         ),
         full_screen=True
@@ -107,7 +107,7 @@ def run_shiny(data: DataStorage):
                                                                                                      selected="bonferroni",)),
 
                 ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),                
+                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
                 ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
@@ -173,13 +173,13 @@ def run_shiny(data: DataStorage):
                 ui.layout_sidebar(
                     ui.sidebar(
 
-                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width='400px'),
+                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width="400px"),
                         ui.output_ui("rank_unique_choice"),
 
-                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
                         ui.output_ui("bin_factor_unique"),
 
-                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width="400px"),
 
                         ui.input_checkbox("with_bin_abundance", "Weigh the producibility value by the relative abundance of the producer instead of using {0,1} values."),
 
@@ -187,11 +187,11 @@ def run_shiny(data: DataStorage):
 
                         ui.output_text("bin_size_text"),
                         ui.output_text("iscope_info"),
-                        
+
                         ui.output_ui("bin_sample_select"),
                     width=400,
                     gap=35,
-                    bg='lightgrey'
+                    bg="lightgrey"
                 ),
                 ui.card(output_widget("bin_unique_count_histplot"),full_screen=True),
                 ui.card(output_widget("bin_boxplot_count"),full_screen=True),
@@ -236,9 +236,9 @@ def run_shiny(data: DataStorage):
                 return ui.TagList(
                 ui.input_selectize("bin_factor_unique", "Select", choices=[], multiple=True, remove_button=True)
                 )
-            
+
             df = data.get_metadata()
-            
+
             choices = df[factor_choice].unique().tolist()
 
             return ui.TagList(
@@ -249,12 +249,12 @@ def run_shiny(data: DataStorage):
         def rank_unique_choice():
 
             rank_choice = input.rank_choice()
-            
+
             if rank_choice == "all":
 
                 return ui.TagList(
                 ui.input_selectize("rank_unique_choice", "Select", choices=[], multiple=False,)
-                )                
+                )
 
             if rank_choice == "mgs":
 
@@ -292,7 +292,7 @@ def run_shiny(data: DataStorage):
             rank_choice, rank_unique_choice = input.rank_choice(), input.rank_unique_choice()
 
             if rank_choice == "mgs":
-                
+
                 rank_unique_choice = rank_unique_choice.split(" ")[0]
 
             if rank_choice == "all":
@@ -338,7 +338,7 @@ def run_shiny(data: DataStorage):
             bin_input = input.bin_choice().split("/")[0]
 
             df = run_exploration.result()[2]
-            
+
             if not du.is_indexed_by_id(df):
                 df.set_index("smplID", inplace=True)
 
@@ -358,10 +358,10 @@ def run_shiny(data: DataStorage):
             for i, cpd in enumerate(cscope_prod):
                 reference_set[i] = cpd[:-3]
 
-            interest_set = pd.Series( (cpd for cpd in res) )
+            interest_set = pd.Series( cpd for cpd in res )
 
 
-            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology='metacyc')
+            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology="metacyc")
             return fig
 
         @render_widget
@@ -395,7 +395,7 @@ def run_shiny(data: DataStorage):
         @ui.bind_task_button(button_id="run_custom_pcoa")
         @reactive.extended_task
         async def make_custom_pcoa(column, choices, abundance, color):
-            
+
             return sm.make_pcoa(data, column, choices, abundance, color)
 
         @render_widget
@@ -415,12 +415,12 @@ def run_shiny(data: DataStorage):
                             ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
                                                selected=value.unique().tolist(),
                                                multiple=True,
-                                               options={"plugins": ['clear_button']}),)
+                                               options={"plugins": ["clear_button"]}),)
             else:
 
                 return ui.TagList(
                             ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
-        
+
         @render_widget
         def pcoa_plot():
             # Get all parameters.
@@ -460,18 +460,18 @@ def run_shiny(data: DataStorage):
                             ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
                                                selected=value.unique().tolist(),
                                                multiple=True,
-                                               options={"plugins": ['clear_button']}),)
+                                               options={"plugins": ["clear_button"]}),)
             else:
 
                 return ui.TagList(
                             ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
-        
+
         @render_widget
         def taxonomic_boxplot():
 
             if not data.HAS_TAXONOMIC_DATA:
                 return
-            
+
             df = data.get_taxonomic_dataframe()
             x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
 
@@ -480,7 +480,7 @@ def run_shiny(data: DataStorage):
 
             if x1 == "None":
                 return px.box(df, y="Nb_taxon")
-            
+
             if x2 == "None":
                 fig = px.box(
                     df,
@@ -490,7 +490,7 @@ def run_shiny(data: DataStorage):
                 )
 
                 return fig
-            
+
             else:
 
                 conditionx2 = df[x2].unique()
@@ -519,7 +519,7 @@ def run_shiny(data: DataStorage):
                                                                  input.multiple_test_method_metabo(),
                                                                  False
                                                                  )
-                
+
         @render_widget
         def producer_plot():
 
@@ -533,7 +533,7 @@ def run_shiny(data: DataStorage):
                                                               input.multiple_correction_global_plot(),
                                                               input.multiple_test_method_global(),
                                                               input.prod_norm())
-        
+
         @render.text
         @reactive.event(input.export_global_production_test_button)
         def export_global_production_test_dataframe():
@@ -545,7 +545,7 @@ def run_shiny(data: DataStorage):
                     log = "Unable to find any dataframe to save."
 
             return log
-        
+
         @render.text
         @reactive.event(input.export_metabolites_test_button)
         def export_metabolites_test_dataframe_txt():
@@ -584,14 +584,14 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def total_production_plot():
-            
+
             return sm.render_reactive_total_production_plot(data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
         @render.data_frame
         def metadata_table():
             df = data.get_metadata()
             return df
-        
+
         @render.text()
         @reactive.event(input.dtype_change)
         def update_metadata_log():
@@ -620,7 +620,7 @@ def run_shiny(data: DataStorage):
                 text = f"Cannot perform changes, {e}"
 
             return text
-        
+
         @render.text
         def no_taxonomy():
             return "No taxonomic data provided."

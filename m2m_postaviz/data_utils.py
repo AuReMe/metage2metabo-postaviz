@@ -1,31 +1,33 @@
 import json
 import os
 import os.path
+import sys
 import tarfile
 import time
-import sys
+from functools import partial
+from multiprocessing import Pool
+from multiprocessing import cpu_count
+from typing import Optional
 
 import numpy as np
 import pandas as pd
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
-from multiprocessing import Pool
-from multiprocessing import cpu_count
-from functools import partial
+from scipy.spatial.distance import pdist
+from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
-from scipy.spatial.distance import squareform,pdist
 from statsmodels.stats.multitest import multipletests
 
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
-    
+
     Args:
         dirpath (str): path of directory
     Returns:
         bool: True if dir exists, False otherwise
     """
-    if os.path.isdir(dirpath) == True:
+    if os.path.isdir(dirpath):
         return True
     else:
         return False
@@ -42,7 +44,7 @@ def extract_tarfile(tar_file, outdir):
 
 def benchmark_decorator(func):
     def wrapper(*args, **kwargs):
-        results = list()
+        results = []
         n_repeats = 3
         for i in range(n_repeats):
             time_start = time.perf_counter()
@@ -72,7 +74,7 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
 
     if input2 == "None":
         return True if nb_row == len(dataframe[input1].unique()) else False
-        
+
     else:
         return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
@@ -90,7 +92,7 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
     Returns:
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
-    
+
     if "normalised_abundance_dataframe_postaviz.tsv" in os.listdir(save_path) and "abundance_file.tsv" in os.listdir(save_path):
         print("normalised_abundance_dataframe already exist in save directory.")
         return
@@ -110,22 +112,22 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
         print(index_column, "column used as index")
         abundance_matrix.set_index(index_column,drop=True,inplace=True)
         abundance_matrix.index.name = "binID"
-        
+
     elif len(str_filter.columns) > 1:
         raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
-    
+
     # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
-    # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix. 
+    # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix.
     for sample in sample_data.keys():
 
         sample_matrix = sample_data[sample]["cscope"].copy()
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
-        
-        sample_matrix = sample_matrix.apply(lambda row: row * abundance_matrix_normalised.at[row.name, sample], axis=1)
+
+        sample_matrix = sample_matrix.apply(lambda row: row * abundance_matrix_normalised.at[row.name, sample], axis=1)  # noqa: B023
         sample_matrix = sample_matrix.apply(lambda col: col.to_numpy().sum(), axis=0)
         sample_matrix.name = sample
 
@@ -139,14 +141,14 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
 
     main_dataframe_abundance_weigthed.to_csv(os.path.join(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
     abundance_matrix.to_csv(os.path.join(save_path,"abundance_file.tsv"),sep="\t")
-    
+
     abundance_matrix_normalised.to_csv(os.path.join(save_path,"abundance_file_normalised.tsv"),sep="\t")
 
     print("Abundance dataframes done and saved.")
 
 
 def open_added_value(file_name, path):
-    for root, dirs, files in os.walk(path):
+    for root, _dirs, files in os.walk(path):
         if file_name in files:
             added_file = sbml_to_classic(open_json(os.path.join(root, file_name))["addedvalue"])
             return added_file
@@ -179,7 +181,7 @@ def open_tsv(file_name: str, convert_cpd_id: bool = False, rename_columns: bool 
 
 
 def get_scopes(file_name, path) -> pd.DataFrame:
-    for root, dirs, files in os.walk(path):
+    for root, _dirs, files in os.walk(path):
         if file_name in files:
             scope_matrix = open_tsv(os.path.join(root, file_name), convert_cpd_id=True, rename_columns=True)
             return scope_matrix
@@ -202,14 +204,14 @@ def sbml_to_classic(compounds_list):
 
 
 def contribution_processing(file_opened: dict):
-    for key in file_opened.keys():
+    for key in file_opened.keys():  # noqa: PLC0206
         for second_key in file_opened[key].keys():
             file_opened[key][second_key] = sbml_to_classic(file_opened[key][second_key])
     return file_opened
 
 
 def get_contributions(file_name, path):
-    for root, dirs, files in os.walk(path):
+    for root, _dirs, files in os.walk(path):
         if file_name in files:
             contributions_file = open_json(os.path.join(root, file_name))
             contributions_file = contribution_processing(contributions_file)
@@ -239,7 +241,7 @@ def retrieve_all_sample_data(sample, path):
 
 
 def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
-    """Create and save a dataframe which sum all the compounds produced by each bins in sample cscope for each sample. 
+    """Create and save a dataframe which sum all the compounds produced by each bins in sample cscope for each sample.
 
     Args:
         sample_data (dict): Sample's cscope.
@@ -260,7 +262,7 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
 
     cpu_available = cpu_count() - 1
 
-    if not type(cpu_available) == int or cpu_available < 1:
+    if type(cpu_available) is not int or cpu_available < 1:
         cpu_available = 1
 
     pool = Pool(cpu_available)
@@ -272,7 +274,7 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
     res.fillna(0,inplace=True)
     res.index.name = "smplID"
     res.reset_index(inplace=True)
-    res = res.merge(metadata,'inner',"smplID")
+    res = res.merge(metadata,"inner","smplID")
 
     res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 
@@ -299,7 +301,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
 
 def multiprocess_retrieve_data(path):
     """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
-    dataframe. 
+    dataframe.
 
     Args:
         path (str): Path of directory
@@ -310,17 +312,17 @@ def multiprocess_retrieve_data(path):
     retrieve_data = partial(retrieve_all_sample_data, path=path)
 
     nb_cpu = cpu_count() - 1
-    if not type(nb_cpu) == int or nb_cpu < 1:
+    if type(nb_cpu) is not int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
-    results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])
-    
+    results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])  # noqa: C416
+
     pool.close()
     pool.join()
 
     all_data = {}
     for df, smpl in results_list:
-        if not df is None: 
+        if df is not None:
             all_data[smpl] = {}
             all_data[smpl]["cscope"] = df
 
@@ -337,15 +339,15 @@ def multiprocess_retrieve_data(path):
         sample_info["bins_list"] = sample_info["bins_list"] + all_bins_in_sample
 
         for bin in all_bins_in_sample:
-            
-            if not bin in sample_info["bins_count"]:
+
+            if bin not in sample_info["bins_count"]:
                 sample_info["bins_count"][bin] = 0
-            
+
             sample_info["bins_count"][bin] += 1
 
-            if not bin in sample_info["bins_sample_list"]:
+            if bin not in sample_info["bins_sample_list"]:
                 sample_info["bins_sample_list"][bin] = []
-            
+
             sample_info["bins_sample_list"][bin].append(str(sample))
 
     # Remove duplicate from list
@@ -357,7 +359,7 @@ def multiprocess_retrieve_data(path):
 def build_main_dataframe(sample_data: dict, save_path):
     """Create and save the main dataframe. Samples in rows and compounds in columns.
     It takes the compounds production in each samples cscope and return a pandas Series with 1 produced or 0 absent for each compounds.
-    Merge all the series returned into a dataframe. 
+    Merge all the series returned into a dataframe.
 
     Args:
         sample_data (dict): Samples's cscope.
@@ -375,7 +377,7 @@ def build_main_dataframe(sample_data: dict, save_path):
         current_sample_df = sample_data[sample]["cscope"]
         serie_index = current_sample_df.columns.values
         serie_data = []
-        for i in range(len(serie_index)):
+        for _i in range(len(serie_index)):
             serie_data.append(1)
         all_series.append(pd.Series(data=serie_data,index=serie_index,name=sample))
 
@@ -385,11 +387,11 @@ def build_main_dataframe(sample_data: dict, save_path):
     results.index.name = "smplID"
 
     results.to_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"),sep="\t")
-    
+
     print("Main dataframe done and saved.")
 
 
-def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, taxonomic_path: str = None, save_path: str = None):
+def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None):
     """
     Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
     in save_path given in CLI.
@@ -417,7 +419,7 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, t
 
     # sample_info = iscope_production(dir_path=dir_path, sample_info_dict=sample_info)
 
-    producers_by_compounds_and_samples_multi(sample_data, save_path) 
+    producers_by_compounds_and_samples_multi(sample_data, save_path)
 
     build_main_dataframe(sample_data, save_path)
 
@@ -437,7 +439,7 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: str = None, t
         print(os.path.join(save_path,"sample_info.json"), "directory already exist in save_path.")
 
     else:
-        with open(os.path.join(save_path,"sample_info.json"), 'w') as f:
+        with open(os.path.join(save_path,"sample_info.json"), "w") as f:
             json.dump(sample_info, f)
 
 
@@ -477,7 +479,7 @@ def list_to_series(model_list: list, with_quantity: bool = True):
     return pd.Series(results)
 
 
-def total_production_by_sample(save_path, abundance_path: str = None):
+def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
     """Create and save the total production dataframe. This dataframe contain all samples in row and all compounds in columns.
     For each samples the compounds produced by each bins is add up to get the estimated total production of compound by samples
     and the number of bins who produced those compounds.
@@ -492,7 +494,7 @@ def total_production_by_sample(save_path, abundance_path: str = None):
     if "total_production_dataframe_postaviz.tsv" in os.listdir(save_path):
         print("total_production_dataframe_postaviz already in save directory")
         return
-    
+
     print("Building total production dataframe...")
 
     main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
@@ -516,7 +518,7 @@ def total_production_by_sample(save_path, abundance_path: str = None):
         results = pd.concat([results,abundance_dataframe], axis=1)
 
     results.reset_index(inplace=True)
-    results = results.merge(metadata_dataframe,'inner','smplID')
+    results = results.merge(metadata_dataframe,"inner","smplID")
 
     results.to_csv(os.path.join(save_path, "total_production_dataframe_postaviz.tsv"),sep="\t", index=False)
 
@@ -531,7 +533,7 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
 
     Args:
         dataframe (pd.DataFrame): Dataframe to test.
-        y_value (_type_): list of columns labels to separate into several dataframe. Must be at least of lenght 1. 
+        y_value (_type_): list of columns labels to separate into several dataframe. Must be at least of lenght 1.
         input1 (_type_): First user's input.
         input2 (_type_, optional): Second user's input. Defaults to None.
 
@@ -546,23 +548,23 @@ def preprocessing_for_statistical_tests(dataframe: pd.DataFrame, y_value, input1
             all_results.append(wilcoxon_man_whitney(dataframe[[y, input1]], y, input1, None, multipletests, multipletests_method))
         else:
             all_results.append(wilcoxon_man_whitney(dataframe[[y, input1, input2]], y , input1, input2, multipletests, multipletests_method))
-            
+
     return pd.concat(all_results)
 
 
-def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: str = None, multiple_correction: bool = False, correction_method: str = "hs"):
-    """ 
+def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_factor: Optional[str] = None, multiple_correction: bool = False, correction_method: str = "hs"):
+    """
     Takes one dataframe with only one value column y and return a dataframe of statistical tests.
     First all sub arrays by the first input then the second input are made and convert to numpy array.
     Then Wilcoxon or Mann Whitney test are run on each pair without doublon.
     If pairs array have the same lenght -> Wilcoxon, if not -> Mann Whitney
-    
+
     Args:
     dataframe (pd.Dataframe): Pandas dataframe
     y (str): Column label containing the values to test.
     first_factor (str): Column label of the first user's input.
     second_factor (str): Column label of the second user's input. Default to None
-    
+
 
     Returns:
         Dataframe: Dataframe of test's results.
@@ -593,12 +595,12 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
         results = pd.DataFrame(columns=["Compound", "Axis", "Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
 
     # Test each pairs avoiding useless duplicates and Array of lenght <= 1.
-    for name in sub_dataframes.keys():
+    for name in sub_dataframes.keys():  # noqa: PLC0206
 
         if second_factor is None: # One input selected
 
-            for name2 in sub_dataframes.keys():
-                
+            for name2 in sub_dataframes.keys():  # noqa: PLC0206
+
                 if name == name2:
                     continue
 
@@ -632,12 +634,12 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                                               "Factor2": name2, "Sample size2": len(sub_dataframes[name2]),
                                                 "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method}
 
-        else: # Two inputs selected 
+        else: # Two inputs selected
 
             for name2 in sub_dataframes[name].keys():
-                
+
                 for name3 in sub_dataframes[name].keys():
-                    
+
                     if name2 == name3:
                         continue
 
@@ -665,7 +667,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
                         symbol = "**"
                     else:
                         symbol = "***"
-                    
+
                     results.loc[len(results)] = {"Compound": y, "Axis": name,
                                                 "Factor1": str(second_factor+": "+str(name2)), "Sample size1": len(sub_dataframes[name][name2]),
                                                 "Factor2": str(second_factor+": "+str(name3)), "Sample size2": len(sub_dataframes[name][name3]),
@@ -675,7 +677,7 @@ def wilcoxon_man_whitney(dataframe: pd.DataFrame, y, first_factor: str, second_f
 
         pvals_before_correction = results["Pvalue"].to_numpy()
         reject, pvals_after_correction, _, __ = multipletests(pvals_before_correction, method = correction_method)
-        
+
         results["Pvalue corrected"] = pvals_after_correction
         results["Significance corrected"] = results["Pvalue corrected"].apply(lambda x:get_significance_symbol(x))
         results["Correction method"] = correction_method
@@ -733,8 +735,8 @@ def build_pcoa_dataframe(save_path) -> pd.DataFrame:
     pcoa_result = pcoa(square_df,number_of_dimensions=2)
     coordinate = pcoa_result.samples
 
-    df_pcoa = coordinate[['PC1','PC2']]
-    df_pcoa['smplID'] = main_dataframe.index.to_numpy()
+    df_pcoa = coordinate[["PC1","PC2"]]
+    df_pcoa["smplID"] = main_dataframe.index.to_numpy()
 
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
@@ -745,7 +747,7 @@ def build_pcoa_dataframe(save_path) -> pd.DataFrame:
 
 
 def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
-    
+
     if method == "pearson":
         res = stats.pearsonr(value_array, factor_array)
     else:
@@ -767,7 +769,7 @@ def serie_is_float(ser: pd.Series):
 
     if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
         return True
-    
+
     return False
 
 
@@ -793,15 +795,15 @@ def taxonomy_processing(taxonomy_filepath, save_path):
     if taxonomy_filepath.endswith(".tsv"):
 
         df = open_tsv(taxonomy_filepath)
-        df = df.rename(columns={df.columns[0]: 'mgs'})
+        df = df.rename(columns={df.columns[0]: "mgs"})
         df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
 
         return
 
     if not taxonomy_filepath.endswith(".txt"):
         raise RuntimeError("Taxonomy file must be either a txt file or tsv file.")
-    
-    with open(taxonomy_filepath, 'r') as f:
+
+    with open(taxonomy_filepath) as f:
         lines = f.readlines()
 
     df = pd.DataFrame(columns=["mgs","kingdom","phylum","class","order","family","genus"])
@@ -827,7 +829,7 @@ def iscope_production(dir_path: str, sample_info_dict: dict):
 
     indiv_scope_path = "indiv_scopes/rev_iscope.tsv"
     sample_info_dict["iscope"] = {}
-    # Takes first of like of sample where bin is present then get iscope production via file rev_iscope.tsv 
+    # Takes first of like of sample where bin is present then get iscope production via file rev_iscope.tsv
     for bin in sample_info_dict["bins_sample_list"].keys():
 
         if bin in sample_info_dict["iscope"]:
@@ -857,7 +859,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
     Returns:
         pd.DataFrame: Pandas dataframe
     """
-    
+
     if "bin_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
         print("Chunk of bin_dataframe already in save directory")
         return
@@ -884,7 +886,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
 
         mgs_col_taxonomy = taxonomy_file.columns[0]
 
-    ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present. 
+    ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
 
     sample_list = []
     bin_list = []
@@ -920,20 +922,20 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
                 rows.index.name = "binID"
                 list_of_dataframe.append(rows)
 
-            except:
-                logs.append(f'No dataframe named {sample} in sample_data dictionnary')
+            except Exception as e:
+                logs.append(f"No dataframe named {sample} in sample_data dictionnary\n{e}")
 
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
-        print(f'Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size')
+        print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
 
         s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
         s.name = "Production"
-        print(f'Chunk {chunk_index} production serie produced with {sys.getsizeof(s)/1000000000} Gb memory size of production serie')
+        print(f"Chunk {chunk_index} production serie produced with {sys.getsizeof(s)/1000000000} Gb memory size of production serie")
 
         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
         count.name = "Count"
-        print(f'Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size')
+        print(f"Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size")
 
         results = pd.concat([results["smplID"],count,s],axis=1)
         del count
@@ -950,10 +952,10 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
             final_result["Count_with_abundance"] = final_result["Count"] * final_result["Abundance"]
 
         else: # Seems quite useless but felt cute might deleted later.
-            
+
             final_result = results
             del results
-            
+
         final_result = final_result.reset_index().merge(metadata, "inner", "smplID")
 
         if taxonomy_path is not None: # If taxonomy is provided, merge the dataframe with the taxonomic_dataframe.
@@ -962,24 +964,24 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
 
         ##### Save current chunks into parquet file
 
-        filename = 'bin_dataframe_chunk_'+str(chunk_index)+'.parquet.gzip'
+        filename = "bin_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
         filepath = os.path.join(savepath,filename)
 
         if len(final_result) == 0:
-            print(f'Chunks {chunk_index} is empty !')
+            print(f"Chunks {chunk_index} is empty !")
 
-        final_result.to_parquet(filepath, compression='gzip')
+        final_result.to_parquet(filepath, compression="gzip")
 
-        print(f'Chunk {chunk_index} done in {time.time() - start_chunk} with {sys.getsizeof(final_result) / 1000000000} Gb memory size.')
+        print(f"Chunk {chunk_index} done in {time.time() - start_chunk} with {sys.getsizeof(final_result) / 1000000000} Gb memory size.")
         del final_result
 
 
     print("Took: ", time.time() - start, "Before saving")
 
     if len(logs) != 0:
-        with open(os.path.join(savepath,'bin_dataframe_logs.txt'),'w') as log_file:
+        with open(os.path.join(savepath,"bin_dataframe_logs.txt"),"w") as log_file:
             for line in logs:
-                log_file.write("%s\n" % line)
+                log_file.write(f"{line}\n")
 
     return
 
