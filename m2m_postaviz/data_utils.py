@@ -433,6 +433,8 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     bin_dataframe_build(sample_info, sample_data, abundance_path, taxonomic_path, save_path)
 
+    cpd_dataframe_build(sample_info, sample_data, abundance_path, taxonomic_path, save_path)
+
     # Sample_info JSON
 
     if os.path.isfile(os.path.join(save_path,"sample_info.json")):
@@ -1003,3 +1005,127 @@ def chunks(lst, n):
     """Yield successive n-sized chunks from list."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
+
+
+def cpd_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = None, taxonomy_path = None, savepath = None):
+    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
+    the metadata and the taxonomic rank associated.
+
+    Args:
+        sample_info (dict): _description_
+        sample_data (dict): _description_
+        metadata (Dataframe): _description_
+        abundance_file (Dataframe, optional): _description_. Defaults to None.
+        taxonomy_path (Dataframe, optional): _description_. Defaults to None.
+
+    Returns:
+        pd.DataFrame: Pandas dataframe
+    """
+
+    if "cpd_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
+        print("Chunk of cpd_dataframe already in save directory")
+        return
+
+    print("Building cpd dataframe...")
+
+    start = time.time()
+
+    metadata = open_tsv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"))
+
+    ##### Abundance normalisation, give percentage of abundance of bins in samples.
+    if abundance_path is not None:
+
+        abundance_file_normalised = pd.read_csv(os.path.join(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
+
+    if taxonomy_path is not None:
+
+        taxonomy_file = open_tsv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"))
+
+        ##### Checks if taxonomy file has default index which mean it is not indexed. TEMPORARY until i find a better way to deal with open/save from -t option OR load taxonomic_df option which return non indexed / indexed df
+
+        if not pd.Index(np.arange(0, len(taxonomy_file))).equals(taxonomy_file.index):
+                taxonomy_file = taxonomy_file.reset_index()
+
+        mgs_col_taxonomy = taxonomy_file.columns[0]
+
+    ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
+
+    sample_list = []
+    bin_list = []
+    for bin in sample_info["bins_sample_list"].keys():
+        sample_list += sample_info["bins_sample_list"][bin]
+        bin_list.append(bin)
+
+    #   Delete replicate in list
+    sample_unique_list = list(dict.fromkeys(sample_list))
+
+    ##### Create Generator to process data by chunks.
+    print("Making chunk of sample list...")
+
+    chunk_generator = chunks(sample_unique_list, 250)
+
+    ##### Loop throught generator
+
+    chunk_index = 0
+    for current_chunk in chunk_generator:
+        start_chunk = time.time()
+        chunk_index += 1
+        list_of_dataframe = []
+
+    ##### Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
+
+        for sample in current_chunk:
+
+            try:
+                df = sample_data[sample]["cscope"]
+                rows = df.loc[df.index.isin(bin_list)]
+                rows.insert(0 , "smplID", sample)
+                rows.index.name = "binID"
+                list_of_dataframe.append(rows)
+
+            except Exception as e:
+                print(f"No dataframe named {sample} in sample_data dictionnary\n{e}")
+
+        results = pd.concat(list_of_dataframe)
+        results.fillna(0,inplace=True)
+        print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
+
+        # s = results.apply(lambda row: du.get_production_list_from_bin_dataframe(row), axis=1)
+        # s.name = "Production"
+        # print(f"Chunk {chunk_index} production serie produced with {sys.getsizeof(s)/1000000000} Gb memory size of production serie")
+
+        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
+        count.name = "Count"
+        print(f"Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size")
+
+        results = results.assign(Count=count)
+
+        if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
+
+            abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
+            abundance.name = "Abundance"
+
+            count_with_abundance = count * abundance
+
+            results = results.assign(Count_with_abundance = count_with_abundance)
+
+        ##### Save current chunks into parquet file
+
+        filename = "cpd_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
+        filepath = os.path.join(savepath,filename)
+
+        if len(results) == 0:
+            print(f"Chunks {chunk_index} is empty !")
+
+        results.to_parquet(filepath, compression="gzip")
+
+        print(f"Chunk {chunk_index} done in {time.time() - start_chunk} with {sys.getsizeof(results) / 1000000000} Gb memory size.")
+        print(results)
+        del results
+
+
+    print("Took: ", time.time() - start, "Before saving")
+
+    return
+
+
