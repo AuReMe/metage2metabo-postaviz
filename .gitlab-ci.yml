@@ -19,8 +19,8 @@ variables:
 before_script:
   - export PATH="${PATH}:${HOME}/.local/bin"
   - python3 -V
-  - python3 -m ensurepip --default-pip --user
-  - python3 -m pip install tox
+  # - python3 -m ensurepip --default-pip --user
+  - python3 -m pip install tox --user
 
 stages:
   - test
@@ -44,7 +44,7 @@ sonarqube-check:
   stage: quality
   needs: ["coverage"]
   image: 
-    name: sonarsource/sonar-scanner-cli:latest
+    name: sonarsource/sonar-scanner-cli:5.0.1
     entrypoint: [""]
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
