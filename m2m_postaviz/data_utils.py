@@ -296,7 +296,7 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
     res.fillna(0,inplace=True)
     res.index.name = "smplID"
     res.reset_index(inplace=True)
-    # res = res.merge(metadata,"inner","smplID")
+    res = res.merge(metadata,"inner","smplID")
 
     res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 

@@ -180,9 +180,9 @@ class DataStorage:
 
         dfi = pd.concat(iscope_dataframe).reset_index()
 
-        dfi[compound] = compound
+        # dfi[compound] = compound
 
-        dfi.rename(columns={compound: "iscope"},inplace=True)
+        # dfi.rename(columns={compound: "iscope"},inplace=True)
 
         # df = pd.merge(dfc,dfi,on=["binID","smplID"])
 
