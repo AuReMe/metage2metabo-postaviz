@@ -135,6 +135,60 @@ class DataStorage:
         return df
 
 
+    def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
+        
+        cpd_conditon = [(compound, "=", 1.0)]
+        col = ["binID", "smplID", compound]
+
+        files = []
+        for i in os.listdir(self.output_path):
+            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
+                files.append(i)
+
+        if len(files) == 0:
+            print("No chunk of cpd_dataframe has been found in directory.")
+            return None
+
+        cscope_dataframe = []
+        iscope_dataframe = []
+
+        # Get separate dataframe for each cpd.
+
+        for file in files:
+
+            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
+
+            if len(df) == 0:
+                continue
+
+            if "cpd_cscope" in file:
+
+                cscope_dataframe.append(df)
+
+            if "cpd_iscope" in file:
+
+                iscope_dataframe.append(df)
+
+        if len(cscope_dataframe) == 0:
+            return None
+
+        dfc = pd.concat(cscope_dataframe).reset_index()
+
+        # dfc[compound] = compound
+
+        # dfc.rename(columns={compound: "cscope"},inplace=True)
+
+        dfi = pd.concat(iscope_dataframe).reset_index()
+
+        dfi[compound] = compound
+
+        dfi.rename(columns={compound: "iscope"},inplace=True)
+
+        # df = pd.merge(dfc,dfi,on=["binID","smplID"])
+
+        return dfc, dfi
+
+
     def get_iscope_production(self, bin_id) -> list:
         with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
