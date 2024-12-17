@@ -48,7 +48,7 @@ def main(args=None):
         sh.run_shiny(Data)
 
     if arg_parser.test:
-        
+
         if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
             print("No data_test/ directory found. \nExtract test data tarfile...")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
@@ -61,10 +61,10 @@ def main(args=None):
         du.build_dataframes(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
 
     elif arg_parser.dev:
-        
+
         dir_path = "/home/lbrindel/postaviz_data/res_smpl1/"
         # dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
-        
+
         metadata_path = "~/postaviz_data/all_data/postaviz_metadata_processed.tsv"
         abundance_path = "~/postaviz_data/all_data/specI.mat"
         taxonomic_path = "/home/lbrindel/Downloads/gtdbtk.summary_split.tsv"
@@ -72,11 +72,11 @@ def main(args=None):
         # save_path = "/home/lbrindel/output/TEST_BUILD/"
         save_path = "/home/lbrindel/postaviz_test_run/testou/"
         # save_path = "/home/lbrindel/output/full_run_postaviz/"
-        
+
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
 
     else:
-        
+
         arg_parser = vars(parser.parse_args())
         dir_path = arg_parser["dir"]
         metadata_path = arg_parser["metadata"]

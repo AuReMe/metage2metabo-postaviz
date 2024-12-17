@@ -1,23 +1,36 @@
-image: python:3.9
+image: python:3.12
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_BRANCH
+
 
 default:
   tags:
     - small
 
+variables:
+  HOME: "$CI_BUILDS_DIR"
+
+
 before_script:
-  # - python -V
-  # - pip install tox
+  - export PATH="${PATH}:${HOME}/.local/bin"
+  - python3 -V
+  # - python3 -m ensurepip --default-pip --user
+  - python3 -m pip install tox --user
 
 stages:
   - test
+  - quality
 
 
-test:
+coverage:
   stage: test
   script:
-    - python -V
-    - pip install tox
-    - tox run -e clean,py39,report
+    - tox run -e clean,py39,py312,report
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
@@ -28,20 +41,27 @@ test:
 
 
 sonarqube-check:
+  stage: quality
+  needs: ["coverage"]
   image: 
-    name: sonarsource/sonar-scanner-cli:latest
+    name: sonarsource/sonar-scanner-cli:5.0.1
     entrypoint: [""]
   variables:
     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
     GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
-  cache:
-    key: "${CI_JOB_NAME}"
-    paths:
-      - .sonar/cache
+  # cache:
+  #   key: "${CI_JOB_NAME}"
+  #   paths:
+  #     - .sonar/cache
   script: 
-    - sonar-scanner
+    - tox run -e sonar
   allow_failure: true
   only:
     - merge_requests
     - main
-    - develop
+    # - develop
+  artifacts:
+    paths:
+      - pylint-report.txt
+      - coverage.xml
+

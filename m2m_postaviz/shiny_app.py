@@ -1,30 +1,28 @@
+import warnings
+
+import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from ontosunburst.ontosunburst import ontosunburst as ontos
 from shiny import App
+from shiny import reactive
 from shiny import render
 from shiny import run_app
 from shiny import ui
-from shiny import reactive
 from shinywidgets import output_widget
 from shinywidgets import render_widget
-import warnings
-import pandas as pd
-from ontosunburst.ontosunburst import ontosunburst as ontos
-import time
 
 import m2m_postaviz.data_utils as du
+import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 
-# from profilehooks import profile
-# from pympler.asizeof import asizeof
 
 def run_shiny(data: DataStorage):
-    
+
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
 
     list_of_cpd = data.get_compound_list()
-    
+
     factor_list = data.get_factors()
     factor_list.insert(0, "None")
 
@@ -41,8 +39,6 @@ def run_shiny(data: DataStorage):
     bins_count = data.get_bins_count()
 
     all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
-
-    current_bin_dataframe = None
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
@@ -71,9 +67,9 @@ def run_shiny(data: DataStorage):
             ui.layout_column_wrap(
 
                 ui.card(output_widget("producer_plot"),full_screen=True),
-         
+
                 ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
-                
+
             ),
         ),
         full_screen=True
@@ -111,7 +107,7 @@ def run_shiny(data: DataStorage):
                                                                                                      selected="bonferroni",)),
 
                 ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),                
+                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
                 ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
                 ui.output_text_verbatim("export_global_production_test_dataframe", True),
                 width=350,
@@ -177,13 +173,13 @@ def run_shiny(data: DataStorage):
                 ui.layout_sidebar(
                     ui.sidebar(
 
-                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width='400px'),
+                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width="400px"),
                         ui.output_ui("rank_unique_choice"),
 
-                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
                         ui.output_ui("bin_factor_unique"),
 
-                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width='400px'),
+                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width="400px"),
 
                         ui.input_checkbox("with_bin_abundance", "Weigh the producibility value by the relative abundance of the producer instead of using {0,1} values."),
 
@@ -191,11 +187,11 @@ def run_shiny(data: DataStorage):
 
                         ui.output_text("bin_size_text"),
                         ui.output_text("iscope_info"),
-                        
+
                         ui.output_ui("bin_sample_select"),
                     width=400,
                     gap=35,
-                    bg='lightgrey'
+                    bg="lightgrey"
                 ),
                 ui.card(output_widget("bin_unique_count_histplot"),full_screen=True),
                 ui.card(output_widget("bin_boxplot_count"),full_screen=True),
@@ -240,9 +236,9 @@ def run_shiny(data: DataStorage):
                 return ui.TagList(
                 ui.input_selectize("bin_factor_unique", "Select", choices=[], multiple=True, remove_button=True)
                 )
-            
+
             df = data.get_metadata()
-            
+
             choices = df[factor_choice].unique().tolist()
 
             return ui.TagList(
@@ -253,12 +249,12 @@ def run_shiny(data: DataStorage):
         def rank_unique_choice():
 
             rank_choice = input.rank_choice()
-            
+
             if rank_choice == "all":
 
                 return ui.TagList(
                 ui.input_selectize("rank_unique_choice", "Select", choices=[], multiple=False,)
-                )                
+                )
 
             if rank_choice == "mgs":
 
@@ -287,10 +283,16 @@ def run_shiny(data: DataStorage):
 
         @render.text
         def bin_size_text():
+            """Display the number of bins within the selection of user's input.
+            If only one bin is in selection, then display in how many samples this bin is present.
 
+            Returns:
+                str: str to display inside an output text UI.
+            """
             rank_choice, rank_unique_choice = input.rank_choice(), input.rank_unique_choice()
 
             if rank_choice == "mgs":
+
                 rank_unique_choice = rank_unique_choice.split(" ")[0]
 
             if rank_choice == "all":
@@ -336,7 +338,7 @@ def run_shiny(data: DataStorage):
             bin_input = input.bin_choice().split("/")[0]
 
             df = run_exploration.result()[2]
-            
+
             if not du.is_indexed_by_id(df):
                 df.set_index("smplID", inplace=True)
 
@@ -356,10 +358,10 @@ def run_shiny(data: DataStorage):
             for i, cpd in enumerate(cscope_prod):
                 reference_set[i] = cpd[:-3]
 
-            interest_set = pd.Series( (cpd for cpd in res) )
+            interest_set = pd.Series( cpd for cpd in res )
 
 
-            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology='metacyc')
+            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology="metacyc")
             return fig
 
         @render_widget
@@ -373,80 +375,8 @@ def run_shiny(data: DataStorage):
         @ui.bind_task_button(button_id="run_custom_pcoa")
         @reactive.extended_task
         async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
-            start_timer = time.time()
 
-            if rank == "mgs":
-                rank_choice = rank_choice.split(" ")[0]
-
-            if rank == "all":
-                list_of_bin_in_rank = list_of_bins
-
-            else:
-                list_of_bin_in_rank = data.get_bin_list_from_taxonomic_rank(rank, rank_choice)
-
-            #### Taxonomic dataframe can contain MORE information and MORE bin than the data who can be a subset of the whole data. Filtering is needed.
-
-            if rank == "all":
-
-                filtered_list_of_bin = list_of_bin_in_rank
-
-            else:
-
-                filtered_list_of_bin = []
-
-                for x in list_of_bin_in_rank:
-                    if x in list_of_bins:
-                        filtered_list_of_bin.append(x)
-
-            if len(filtered_list_of_bin) == 0:
-                print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
-            
-            filter_condition=[("binID", "in", filtered_list_of_bin)]
-            if factor != "None" and len(factor_choice) > 0:
-                filter_condition.append((factor, "in", factor_choice))
-
-            df = data.get_bin_dataframe(condition=filter_condition)
-            
-            unique_sample_in_df = df["smplID"].unique()
-
-            new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
-
-            for sample in unique_sample_in_df:
-                
-                tmp_df = df.loc[df["smplID"] == sample][['binID','smplID','Production']]
-                all_production = tmp_df["Production"].values
-
-                tmp_production = []
-
-                for prod_list in all_production:
-                    
-                    tmp_production += list(prod_list)
-
-                unique_production_count = len(set(tmp_production))
-                new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
-
-            df = df.merge(new_serie_production, how='inner', on="smplID")
-            
-            # if factor == "None":
-            #     df.sort_index(inplace=True)
-            # else:
-            #     df.sort_values(by=factor,inplace=True)
-
-            df.sort_index(inplace=True)
-
-            max_count_range = df["Count"].max() + df["Count"].max() * 0.01
-            min_count_range = df["Count"].min() - df["Count"].min() * 0.02
-
-            fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
-
-            if len(filtered_list_of_bin) > 1: # If only one bin selected do not make boxplot.
-                fig3 = px.box(df, x="smplID", y="Count_with_abundance" if with_abundance else "Count", color="smplID" if color =="None" else color, hover_data="binID")
-            else:
-                fig3 = None
-
-            fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
-
-            return fig1, fig2, df, time.time() - start_timer, fig3
+            return sm.bin_exploration_processing(data, factor, factor_choice, rank, rank_choice, with_abundance, color)
 
         @reactive.effect
         @reactive.event(input.run_bin_exploration, ignore_none=True)
@@ -465,39 +395,8 @@ def run_shiny(data: DataStorage):
         @ui.bind_task_button(button_id="run_custom_pcoa")
         @reactive.extended_task
         async def make_custom_pcoa(column, choices, abundance, color):
-            
-            if abundance:
-                df = data.get_normalised_abundance_dataframe()
-            else:
-                df = data.get_main_dataframe()
 
-            metadata = data.get_metadata()
-
-            if du.is_indexed_by_id(df):
-                df.reset_index(inplace=True)
-
-            if du.is_indexed_by_id(metadata):
-                metadata.reset_index(inplace=True)
-
-            if du.serie_is_float(metadata[column]):
-
-                selected_sample = metadata.loc[(metadata[column] >= choices[0]) & (metadata[column] <= choices[1])]["smplID"]
-                df = df.loc[df["smplID"].isin(selected_sample)]
-                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
-
-            else:
-
-                selected_sample = metadata.loc[metadata[column].isin(choices)]["smplID"]
-                df = df.loc[df["smplID"].isin(selected_sample)]
-                metadata = metadata.loc[metadata["smplID"].isin(selected_sample)]
-
-            plot_df = du.pcoa_alternative_method(df, metadata)
-
-            fig = px.scatter(plot_df, x="PC1", y="PC2",
-                             color= color  
-                             )
-
-            return fig
+            return sm.make_pcoa(data, column, choices, abundance, color)
 
         @render_widget
         def pcoa_custom_plot():
@@ -516,12 +415,12 @@ def run_shiny(data: DataStorage):
                             ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
                                                selected=value.unique().tolist(),
                                                multiple=True,
-                                               options={"plugins": ['clear_button']}),)
+                                               options={"plugins": ["clear_button"]}),)
             else:
 
                 return ui.TagList(
                             ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
-        
+
         @render_widget
         def pcoa_plot():
             # Get all parameters.
@@ -561,18 +460,18 @@ def run_shiny(data: DataStorage):
                             ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
                                                selected=value.unique().tolist(),
                                                multiple=True,
-                                               options={"plugins": ['clear_button']}),)
+                                               options={"plugins": ["clear_button"]}),)
             else:
 
                 return ui.TagList(
                             ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
-        
+
         @render_widget
         def taxonomic_boxplot():
 
             if not data.HAS_TAXONOMIC_DATA:
                 return
-            
+
             df = data.get_taxonomic_dataframe()
             x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
 
@@ -581,7 +480,7 @@ def run_shiny(data: DataStorage):
 
             if x1 == "None":
                 return px.box(df, y="Nb_taxon")
-            
+
             if x2 == "None":
                 fig = px.box(
                     df,
@@ -591,7 +490,7 @@ def run_shiny(data: DataStorage):
                 )
 
                 return fig
-            
+
             else:
 
                 conditionx2 = df[x2].unique()
@@ -614,191 +513,27 @@ def run_shiny(data: DataStorage):
         @render.data_frame
         def producer_test_dataframe():
 
-            y1, x1, x2 = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
+            return sm.metabolites_production_statistical_dataframe(data, list(input.box_inputy1()),
+                                                                 input.box_inputx1(), input.box_inputx2(),
+                                                                 input.multiple_correction_metabo_plot(),
+                                                                 input.multiple_test_method_metabo(),
+                                                                 False
+                                                                 )
 
-            if len(y1) == 0:
-                return
-            
-            if x1 == "None":
-                return 
-
-            multipletests_correction = input.multiple_correction_metabo_plot()
-
-            if multipletests_correction:
-                multipletests_method = input.multiple_test_method_metabo()
-            else:
-                multipletests_method = "hs"
-
-            if x2 == "None":
-
-                df = data.get_metabolite_production_dataframe()[[*y1,x1]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    correlation_results = []
-
-                    for y_value in y1:
-
-                        correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), x1))
-
-                    return pd.concat(correlation_results)
-
-               
-                res = du.preprocessing_for_statistical_tests(df, y1, x1, multipletests = multipletests_correction, multipletests_method = multipletests_method)
-                all_dataframe["metabolites_production_test_dataframe"] = res
-
-                return res
-            
-            if x1 != x2:
-
-                df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]): # First input is Float type
-
-                    if du.serie_is_float(df[x2]): # Second input is Float type
-
-                        correlation_results = []
-
-                        for y_value in y1:
-
-                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x1+" "+y_value)))
-                            correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x2+" "+y_value)))
-
-                        return pd.concat(correlation_results)
-
-                    else: # Second input is not Float type
-
-                        correlation_results = []
-
-                        for y_value in y1:
-
-                            for x2_unique_value in df[x2].unique():
-                          
-                                factor_array = df.loc[df[x2] == x2_unique_value][x1]
-                                value_array = df.loc[df[x2] == x2_unique_value][y_value]
-
-                                correlation_results.append(du.correlation_test(value_array.to_numpy(), factor_array.to_numpy(), str(x2_unique_value)+" "+y_value))
-
-                        return pd.concat(correlation_results)
-                    
-                else:   
-
-                    res = du.preprocessing_for_statistical_tests(df, y1, x1, x2, multipletests = multipletests_correction, multipletests_method = multipletests_method)
-                    all_dataframe["metabolites_production_test_dataframe"] = res
-
-                return res
-                
         @render_widget
         def producer_plot():
 
-            compound_input, first_input, second_input = list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2()
-
-            if len(compound_input) == 0:
-                return
-
-            producer_data = data.get_metabolite_production_dataframe()
-            producer_data = producer_data.set_index("smplID")
-
-            if first_input == "None":
-                df = producer_data[[*compound_input]]
-                all_dataframe["metabolites_production_plot_dataframe"] = df
-                return px.box(df,y=compound_input)
-
-            if second_input == "None" or first_input == second_input:
-                df = producer_data[[*compound_input,first_input]]
-                df = df.dropna()
-                all_dataframe["metabolites_production_plot_dataframe"] = df
-                has_unique_value = du.has_only_unique_value(df, first_input)
-
-
-                return px.bar(df,x=first_input,y=compound_input,color=first_input) if has_unique_value else px.box(df,x=first_input,y=compound_input,color=first_input)
-
-            df = producer_data[[*compound_input,first_input,second_input]]
-            df = df.dropna()
-            all_dataframe["metabolites_production_plot_dataframe"] = df
-            has_unique_value = du.has_only_unique_value(df, first_input, second_input)
-
-            return px.bar(df, x=first_input, y=compound_input,color=second_input) if has_unique_value else px.box(df, x=first_input, y=compound_input,color=second_input, boxmode="group")
+            return sm.render_reactive_metabolites_production_plot(data, list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2(), False)
 
         @render.data_frame
         def production_test_dataframe():
 
-            x1, x2 = input.prod_inputx1(), input.prod_inputx2()
-            
-            # No input selected
-            if x1 == "None":
-                return 
-            
-            multipletests_correction = input.multiple_correction_global_plot()
+            return sm.global_production_statistical_dataframe(data, input.prod_inputx1(),
+                                                              input.prod_inputx2(),
+                                                              input.multiple_correction_global_plot(),
+                                                              input.multiple_test_method_global(),
+                                                              input.prod_norm())
 
-            if multipletests_correction:
-                multipletests_method = input.multiple_test_method_global()
-            else:
-                multipletests_method = "hs"
-
-            with_normalised_data = input.prod_norm()
-
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
-
-            df = data.get_global_production_dataframe()
-            
-            # At least first axis selected
-            if x2 == "None":
-                df = df[[column_value,x1]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-
-                    return res
-                    
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multipletests_correction, multipletests_method=multipletests_method)
-                all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-            
-            # Both axis have been selected and are not equal.
-            if x1 != x2:
-
-                df = df[[column_value,x1,x2]]
-                df = df.dropna()
-
-                if du.serie_is_float(df[x1]):
-
-                    if du.serie_is_float(df[x2]):
-
-                        # Double cor
-                        res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-                        res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
-                        return pd.concat([res1,res2])
-                    
-                    else:
-
-                        # cor filtered by second categorical factor .loc
-                        all_results = []
-                        for unique_x2_value in df[x2].unique():
-
-                            value_array = df.loc[df[x2] == unique_x2_value][column_value]
-                            factor_array = df.loc[df[x2] == unique_x2_value][x1]
-
-                            all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
-
-                        return pd.concat(all_results)
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multipletests_correction, multipletests_method=multipletests_method)
-                all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-            
-            return
-        
         @render.text
         @reactive.event(input.export_global_production_test_button)
         def export_global_production_test_dataframe():
@@ -810,7 +545,7 @@ def run_shiny(data: DataStorage):
                     log = "Unable to find any dataframe to save."
 
             return log
-        
+
         @render.text
         @reactive.event(input.export_metabolites_test_button)
         def export_metabolites_test_dataframe_txt():
@@ -850,57 +585,13 @@ def run_shiny(data: DataStorage):
         @render_widget
         def total_production_plot():
 
-            with_normalised_data = input.prod_norm()
-
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
-
-            df = data.get_global_production_dataframe()
-            
-
-            inputx1 , inputx2 = input.prod_inputx1(), input.prod_inputx2()
-        
-            if inputx1 == "None":
-
-                all_dataframe["global_production_plot_dataframe"] = df
-                return px.box(df, y=column_value, title=f"Total production.")
-            
-            elif inputx2 == "None" or inputx1 == inputx2:
-
-                df = df[[column_value,inputx1]]
-                drop_count = len(df)
-                df = df.dropna()
-
-                if drop_count - len(df) > 0:
-                    ui.notification_show(f'{drop_count - len(df)} lines dropped(NaN values).',duration=8,close_button=True,type="warning")
-
-                all_dataframe["global_production_plot_dataframe"] = df
-
-                if du.has_only_unique_value(df, inputx1):
-
-                    return px.bar(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
-                
-                else:
-                    
-                    fig = px.box(df, x=inputx1 , y=column_value, color=inputx1, title=f"Total compound production filtered by {inputx1}")
-                    return fig
-                
-            else:
-
-                df = df[[column_value,inputx1,inputx2]]
-                df = df.dropna()
-                all_dataframe["global_production_plot_dataframe"] = df
-                has_unique_value = du.has_only_unique_value(df, inputx1, inputx2)
-
-                return px.bar(df,x=inputx1,y=column_value,color=inputx2) if has_unique_value else px.box(df,x=inputx1,y=column_value,color=inputx2)
+            return sm.render_reactive_total_production_plot(data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
         @render.data_frame
         def metadata_table():
             df = data.get_metadata()
             return df
-        
+
         @render.text()
         @reactive.event(input.dtype_change)
         def update_metadata_log():
@@ -929,7 +620,7 @@ def run_shiny(data: DataStorage):
                 text = f"Cannot perform changes, {e}"
 
             return text
-        
+
         @render.text
         def no_taxonomy():
             return "No taxonomic data provided."

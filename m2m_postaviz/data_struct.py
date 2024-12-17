@@ -1,11 +1,8 @@
-import pandas as pd
-from scipy.spatial.distance import pdist
-from scipy.spatial.distance import squareform
-from skbio.stats.ordination import pcoa
 import os
-import pickle
-import sys
 from json import load
+from typing import Optional
+
+import pandas as pd
 
 
 class DataStorage:
@@ -14,12 +11,12 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
     SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
-    JSON_FILENAME = 'sample_info.json'
-    ABUNDANCE_FILE = 'abundance_file.tsv'
-    DF_KEYS = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+    JSON_FILENAME = "sample_info.json"
+    ABUNDANCE_FILE = "abundance_file.tsv"
+    DF_KEYS = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
                "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
-                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", 'sample_info.json']
-    
+                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json")
+
     BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
 
     def __init__(self, save_path: str):
@@ -33,7 +30,7 @@ class DataStorage:
         if save_path is not None:
             self.output_path = save_path
 
-        print(f'Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}')
+        print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}")
 
 
     def open_tsv(self, key: str):
@@ -45,26 +42,26 @@ class DataStorage:
         Returns:
             pd.Dataframe: Pandas dataframe
         """
-        if not key in self.DF_KEYS:
+        if key not in self.DF_KEYS:
             print(key, "not in keys: \n", self.DF_KEYS)
             return
-        
-        for root, dirname, filename in os.walk(self.output_path):
+
+        for root, _dirname, filename in os.walk(self.output_path):
             if key in filename:
                 return pd.read_csv(os.path.join(root,key),sep="\t")
 
 
-    def read_parquet_with_pandas(self, path, col: list = None, condition: list = None) -> pd.DataFrame:
+    def read_parquet_with_pandas(self, path, col: Optional[list] = None, condition: Optional[list] = None) -> pd.DataFrame:
 
-        kargs = {'path': path}
+        kargs = {"path": path}
 
         if col is not None:
 
-            kargs['columns'] = col
+            kargs["columns"] = col
 
         if condition is not None:
 
-            kargs['filters'] = condition
+            kargs["filters"] = condition
 
         df = pd.read_parquet(**kargs)
 
@@ -75,13 +72,13 @@ class DataStorage:
 
         files = []
         for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and 'bin_dataframe_chunk' in i:
+            if os.path.isfile(os.path.join(self.output_path,i)) and "bin_dataframe_chunk" in i:
                 files.append(i)
 
         if len(files) == 0:
             print("No chunk of bin_dataframe has been found in directory.")
             return None
-        
+
         all_df = []
 
         for file in files:
@@ -97,6 +94,99 @@ class DataStorage:
             return None
 
         return pd.concat(all_df)
+    
+
+    def get_cpd_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+
+        files = []
+        for i in os.listdir(self.output_path):
+            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_dataframe_chunk" in i:
+                files.append(i)
+
+        if len(files) == 0:
+            print("No chunk of cpd_dataframe has been found in directory.")
+            return None
+
+        all_df = []
+
+        for file in files:
+
+            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=columns, condition=condition)
+
+            if len(df) == 0:
+                continue
+
+            all_df.append(df)
+
+        if len(all_df) == 0:
+            return None
+
+        df = pd.concat(all_df)
+        df.fillna(0, inplace=True)
+        metadata = self.get_metadata()
+        df = df.reset_index().merge(metadata, 'inner', 'smplID')
+
+        if self.HAS_TAXONOMIC_DATA:
+
+            taxonomy_file = self.get_taxonomic_dataframe()
+            mgs_col_taxonomy = taxonomy_file.columns[0]
+            df = df.merge(taxonomy_file, "inner", left_on='binID', right_on=mgs_col_taxonomy)
+
+        return df
+
+
+    def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
+        
+        cpd_conditon = [(compound, "=", 1.0)]
+        col = ["binID", "smplID", compound]
+
+        files = []
+        for i in os.listdir(self.output_path):
+            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
+                files.append(i)
+
+        if len(files) == 0:
+            print("No chunk of cpd_dataframe has been found in directory.")
+            return None
+
+        cscope_dataframe = []
+        iscope_dataframe = []
+
+        # Get separate dataframe for each cpd.
+
+        for file in files:
+
+            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
+
+            if len(df) == 0:
+                continue
+
+            if "cpd_cscope" in file:
+
+                cscope_dataframe.append(df)
+
+            if "cpd_iscope" in file:
+
+                iscope_dataframe.append(df)
+
+        if len(cscope_dataframe) == 0:
+            return None
+
+        dfc = pd.concat(cscope_dataframe).reset_index()
+
+        # dfc[compound] = compound
+
+        # dfc.rename(columns={compound: "cscope"},inplace=True)
+
+        dfi = pd.concat(iscope_dataframe).reset_index()
+
+        # dfi[compound] = compound
+
+        # dfi.rename(columns={compound: "iscope"},inplace=True)
+
+        # df = pd.merge(dfc,dfi,on=["binID","smplID"])
+
+        return dfc, dfi
 
 
     def get_iscope_production(self, bin_id) -> list:
@@ -121,7 +211,7 @@ class DataStorage:
 
 
     def get_raw_abundance_file(self):
-        return self.open_tsv(key='abundance_file.tsv') if self.HAS_ABUNDANCE_DATA else None
+        return self.open_tsv(key="abundance_file.tsv") if self.HAS_ABUNDANCE_DATA else None
 
 
     def get_global_production_dataframe(self) -> pd.DataFrame:
@@ -130,11 +220,11 @@ class DataStorage:
 
     def get_metabolite_production_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="producers_dataframe_postaviz.tsv")
-        
+
 
     def get_main_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="main_dataframe_postaviz.tsv")
-        
+
 
     def get_metadata(self) -> pd.DataFrame:
         return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
@@ -161,28 +251,13 @@ class DataStorage:
 
     def get_factors(self) -> list:
         return self.get_metadata().columns.tolist()
-        
+
     def get_compound_list(self):
         query = self.get_main_dataframe().columns.tolist()
         if "smplID" in query:
             query.remove("smplID")
 
         return query
-
-    def get_factor_by_id(self, sample_id, factor):
-        query = self.metadata.loc[self.metadata["smplID"] == sample_id][factor]
-        print("get_factor : ", sample_id, factor, "found : ", query)
-        return query
-
-    def factorize_metadata(self):
-        for factor in self.get_metadata_label():
-            self.metadata[factor] = self.metadata[factor].astype("category")
-
-    def weird_way_to_do_it(self, id_value: str, metadata_col: str, metadata: pd.DataFrame):
-        if self.is_indexed(metadata):
-            metadata.reset_index(inplace=True)
-        result = metadata.loc[metadata["smplID"] == id_value][metadata_col].values[0]
-        return result
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path
@@ -195,7 +270,7 @@ class DataStorage:
         except Exception as e:
             logs = e
         return logs
-    
+
     def check_and_rename(self, file_path: str, add: int = 0) -> str:
         original_file_path = file_path
         print(original_file_path)
@@ -207,7 +282,7 @@ class DataStorage:
             return file_path
         else:
             return self.check_and_rename(original_file_path, add + 1)
-        
+
 
     def get_taxonomy_rank(self) -> list:
 
@@ -217,7 +292,7 @@ class DataStorage:
             return ["Taxonomy not provided"]
 
         return taxonomy_col
-        
+
 
     def associate_bin_taxonomy(self, bin_list:list) -> list:
 
@@ -230,7 +305,7 @@ class DataStorage:
         res = []
 
         for bin in bin_list:
-            
+
             taxonomy = taxo_df_indexed.loc[taxo_df_indexed.index == bin].values[0].tolist()
 
             for i, value in enumerate(taxonomy):
@@ -252,13 +327,13 @@ class DataStorage:
         mgs_col_label = taxonomy.columns.values[0]
 
         return taxonomy.loc[taxonomy[rank] == choice][mgs_col_label].tolist()
-    
+
 
     def load_files(self, load_path):
 
         all_files = {}
 
-        for root, dir ,filenames in os.walk(load_path):
+        for _root, _dir ,filenames in os.walk(load_path):
 
             for df_files in self.DF_KEYS:
 
@@ -276,7 +351,7 @@ class DataStorage:
 
                 print(df_files, "IS \t", all_files[df_files])
 
-        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv", 'sample_info.json']
+        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
         # Check if necessary files arent' True
         for file in required_files:
@@ -284,6 +359,6 @@ class DataStorage:
                 continue
             else:
                 print(file)
-                raise RuntimeError('Required files are missing when directly loading from directory.')
+                raise RuntimeError("Required files are missing when directly loading from directory.")
 
         return all_files
