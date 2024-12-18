@@ -1080,7 +1080,7 @@ def cpd_cscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     # Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(os.path.join(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
+        abundance_file_normalised = pd.read_csv(os.path.join(savepath,abundance_path),sep="\t",index_col=0)
 
     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
     sample_list = []
@@ -1168,7 +1168,7 @@ def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     # Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(os.path.join(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
+        abundance_file_normalised = pd.read_csv(os.path.join(savepath,abundance_path),sep="\t",index_col=0)
 
     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
     sample_list = []
@@ -1233,3 +1233,4 @@ def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
         del results
 
     return
+

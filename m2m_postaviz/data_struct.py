@@ -243,14 +243,18 @@ class DataStorage:
         else:
             return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
+
     def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
+
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
 
+
     def get_factors(self) -> list:
         return self.get_metadata().columns.tolist()
+
 
     def get_compound_list(self):
         query = self.get_main_dataframe().columns.tolist()
@@ -258,6 +262,7 @@ class DataStorage:
             query.remove("smplID")
 
         return query
+
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path
@@ -270,6 +275,7 @@ class DataStorage:
         except Exception as e:
             logs = e
         return logs
+
 
     def check_and_rename(self, file_path: str, add: int = 0) -> str:
         original_file_path = file_path
@@ -362,3 +368,31 @@ class DataStorage:
                 raise RuntimeError("Required files are missing when directly loading from directory.")
 
         return all_files
+
+
+    def get_compounds_category_files(self):
+
+        cpd_lvl1_df = pd.read_csv("/home/lbrindel/Downloads/compounds_26_5_level1.tsv", sep="\t")
+        cpd_lvl2_df = pd.read_csv("/home/lbrindel/Downloads/compounds_26_5_level2.tsv", sep="\t")
+
+        return cpd_lvl1_df, cpd_lvl2_df
+    
+
+    def get_compounds_category_list(self):
+
+        cpd_list = self.get_compound_list()
+        cpd_lvl1, cpdlvl2 = self.get_compounds_category_files()
+
+
+        new_cpd_list = []
+        for cpd in cpd_list:
+            new_cpd_list.append(cpd[:-3])
+
+        res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(new_cpd_list)]["category"].unique().tolist()
+        res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(new_cpd_list)]["category"].unique().tolist()
+        return res_lvl1, res_lvl2
+
+
+    def get_compounds_category_dataframe(self):
+
+        return self.get_compounds_category_files()[0]

@@ -1,7 +1,11 @@
 import time
+import sys
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
+
+from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
@@ -397,3 +401,71 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     return px.bar(df, x=user_input1, y=compounds_input,color=user_input2) if has_unique_value else px.box(df, x=user_input1, y=compounds_input,color=user_input2, boxmode="group")
 
+
+def metabolites_heatmap(data: DataStorage, user_cpd_list, by, value):
+
+    all_cscope_dataframe = []
+    all_iscope_dataframe = []
+
+    for cpd in user_cpd_list:
+        
+        try:
+
+            tmp_df = data.get_minimal_cpd_dataframe(cpd)
+            all_cscope_dataframe.append(tmp_df[0])
+            all_iscope_dataframe.append(tmp_df[1])
+
+        except Exception as e:
+
+            print(f'{cpd} not in icscope dataframe')
+
+    dfc = pd.concat(all_cscope_dataframe,axis=0)
+    dfi = pd.concat(all_iscope_dataframe,axis=0)
+
+    if by == "taxonomy":
+
+        taxonomy_file = data.get_taxonomic_dataframe()
+
+        mgs_col_taxonomy = taxonomy_file.columns[0]
+
+        dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[value])
+
+        dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[value])
+
+    if by == "metadata":
+
+        metadata = data.get_metadata()
+
+        dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[value])
+
+        dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[value])
+    
+    dfc.fillna(0,inplace=True)
+
+    dfc.set_index(["binID","smplID"],inplace=True)
+    dfc = dfc.groupby(level="binID").sum()
+
+    dfi.fillna(0,inplace=True)
+
+    dfi.set_index(["binID","smplID"],inplace=True)
+    dfi = dfi.groupby(level="binID").sum()
+
+    print(sys.getsizeof(dfc) / 1000000000, "Go")
+
+    print(sys.getsizeof(dfi) / 1000000000, "Go")
+
+    fig = make_subplots(1,2,x_title="Compounds",y_title="Bins")
+
+    fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis='coloraxis', ),1,1)
+
+    fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis='coloraxis', ),1,2)
+
+    fig.update_layout(coloraxis=dict(colorscale = 'ylgnbu'))
+
+    return fig
+
+
+def df_to_plotly(df):
+    return {'z': df.values.tolist(),
+            'x': df.columns.tolist(),
+            'y': df.index.tolist()}

@@ -55,7 +55,6 @@ def run_shiny(data: DataStorage):
                                                                                                 ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
                                                                                                 selected="bonferroni",)),
 
-
                     ui.input_action_button("export_metabolites_plot_button", "Export plot dataframe"),
                     ui.output_text_verbatim("export_metabolites_plot_dataframe_txt", True),
                     ui.input_action_button("export_metabolites_test_button", "Export stats dataframe"),
@@ -64,13 +63,11 @@ def run_shiny(data: DataStorage):
                     gap=30,
 
             ),
-            ui.layout_column_wrap(
 
-                ui.card(output_widget("producer_plot"),full_screen=True),
+            ui.card(output_widget("producer_plot"),full_screen=True),
 
-                ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
+            ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
 
-            ),
         ),
         full_screen=True
         )
@@ -203,6 +200,45 @@ def run_shiny(data: DataStorage):
 
         bins_exploration_card = None
 
+
+    category_list = data.get_compounds_category_list()
+    category_list[0].insert(0," None")
+
+    compounds_exploration_card = ui.card(
+        ui.card_header("Metabolites exploration."),
+        ui.card_body(
+            ui.layout_sidebar(
+                ui.sidebar(
+
+                    ui.input_selectize("exp_category", "Select a taxonomic rank.", choices=category_list[0], selected=category_list[0][0], multiple=False, width="400px"),
+                    ui.output_ui("exp_category_choice"),
+
+                    # ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
+                    # ui.output_ui("bin_factor_unique"),
+
+                    # ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width="400px"),
+
+                    # ui.input_checkbox("with_bin_abundance", "Weigh the producibility value by the relative abundance of the producer instead of using {0,1} values."),
+
+                    ui.input_task_button("run_cpd_exploration","Generate plots"),
+
+                    # ui.output_text("bin_size_text"),
+                    # ui.output_text("iscope_info"),
+
+                    # ui.output_ui("bin_sample_select"),
+                width=400,
+                gap=35,
+                bg="lightgrey"
+            ),
+            ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
+            ui.card(output_widget("bin_boxplot_count"),full_screen=True),
+            ui.card(output_widget("bin_abundance_plot"),full_screen=True),
+        )
+    ),full_screen=True)
+
+
+
+
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fillable(
@@ -220,11 +256,62 @@ def run_shiny(data: DataStorage):
             ),
             ui.nav_panel("Bins",
                          bins_exploration_card
+            ),
+            ui.nav_panel("Cpd",
+                         compounds_exploration_card
             )
             ),
         )
 
     def server(input, output, session):
+
+        @render.ui
+        def exp_category_choice():
+
+            category_choice = input.exp_category()
+
+            new_cpd_list = []
+            for cpd in list_of_cpd:
+                new_cpd_list.append(cpd[:-3])
+
+            if category_choice == "None":
+                return ui.TagList(
+                ui.input_selectize("exp_category_choice", "Select", choices=list_of_cpd, multiple=True, remove_button=True)
+                )
+
+            df = data.get_compounds_category_dataframe()
+            df = df[df['category'] == category_choice]
+            choices = df.loc[df["compound_id"].isin(new_cpd_list)]["compound_id"].tolist()
+
+            return ui.TagList(
+                ui.input_selectize("exp_category_choice", "Select", choices=choices, selected=choices, multiple=True, remove_button=True)
+                )
+
+
+        @render_widget
+        def cpd_exp_heatmap():
+            return cpd_plot_generation.result()
+
+
+        @ui.bind_task_button(button_id="run_cpd_exploration")
+        @reactive.extended_task
+        async def cpd_plot_generation(selected_compounds):
+
+            selected_compounds_with_compartments = []
+            for cpd in list_of_cpd:
+                if cpd[:-3] in selected_compounds:
+                    selected_compounds_with_compartments.append(cpd)
+
+            if len(selected_compounds) == 0:
+                return
+
+            return sm.metabolites_heatmap(data, selected_compounds_with_compartments, "taxonomy", "family")
+
+
+        @reactive.effect
+        @reactive.event(input.run_cpd_exploration, ignore_none=True)
+        def handle_click_cpd_exploration():
+            cpd_plot_generation(input.exp_category_choice())
 
 
         @render.ui
@@ -244,6 +331,7 @@ def run_shiny(data: DataStorage):
             return ui.TagList(
                 ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
                 )
+
 
         @render.ui
         def rank_unique_choice():
@@ -626,4 +714,4 @@ def run_shiny(data: DataStorage):
             return "No taxonomic data provided."
 
     app = App(app_ui, server)
-    run_app(app=app)
+    run_app(app=app, launch_browser=True)
