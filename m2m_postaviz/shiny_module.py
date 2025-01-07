@@ -93,9 +93,10 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     df = df.merge(new_serie_production, how="inner", on="smplID")
 
     metadata = data.get_metadata()
-    print(df)
+    # print(df)
     df = df.merge(metadata, "inner", "smplID")
-    print(df)
+    df = df.loc[df[factor].isin(factor_choice)]
+    # print(df)
     df.sort_index(inplace=True)
 
     fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
