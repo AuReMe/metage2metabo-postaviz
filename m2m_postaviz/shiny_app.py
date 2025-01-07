@@ -213,6 +213,8 @@ def run_shiny(data: DataStorage):
                     ui.input_selectize("exp_category", "Select a taxonomic rank.", choices=category_list[0], selected=category_list[0][0], multiple=False, width="400px"),
                     ui.output_ui("exp_category_choice"),
 
+                    ui.input_select("exp_user_input1", "Label for X axis", factor_list),
+
                     # ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
                     # ui.output_ui("bin_factor_unique"),
 
@@ -231,8 +233,8 @@ def run_shiny(data: DataStorage):
                 bg="lightgrey"
             ),
             ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
-            ui.card(output_widget("bin_boxplot_count"),full_screen=True),
-            ui.card(output_widget("bin_abundance_plot"),full_screen=True),
+            # ui.card(output_widget("bin_boxplot_count"),full_screen=True),
+            # ui.card(output_widget("bin_abundance_plot"),full_screen=True),
         )
     ),full_screen=True)
 
@@ -267,7 +269,7 @@ def run_shiny(data: DataStorage):
 
         @render.ui
         def exp_category_choice():
-
+            return
             category_choice = input.exp_category()
 
             new_cpd_list = []
@@ -295,7 +297,7 @@ def run_shiny(data: DataStorage):
 
         @ui.bind_task_button(button_id="run_cpd_exploration")
         @reactive.extended_task
-        async def cpd_plot_generation(selected_compounds):
+        async def cpd_plot_generation(selected_compounds, user_input1):
 
             selected_compounds_with_compartments = []
             for cpd in list_of_cpd:
@@ -305,13 +307,13 @@ def run_shiny(data: DataStorage):
             if len(selected_compounds) == 0:
                 return
 
-            return sm.metabolites_heatmap(data, selected_compounds_with_compartments, "taxonomy", "family")
+            return sm.render_reactive_metabolites_production_plot(data, selected_compounds_with_compartments, user_input1, "None")
 
 
         @reactive.effect
         @reactive.event(input.run_cpd_exploration, ignore_none=True)
         def handle_click_cpd_exploration():
-            cpd_plot_generation(input.exp_category_choice())
+            cpd_plot_generation(input.exp_category_choice(), input.exp_user_input1())
 
 
         @render.ui

@@ -67,8 +67,8 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
         print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
 
     filter_condition=[("binID", "in", filtered_list_of_bin)]
-    if factor != "None" and len(factor_choice) > 0:
-        filter_condition.append((factor, "in", factor_choice))
+    # if factor != "None" and len(factor_choice) > 0:
+    #     filter_condition.append((factor, "in", factor_choice))
 
     df = data.get_bin_dataframe(condition=filter_condition)
 
@@ -92,6 +92,10 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     df = df.merge(new_serie_production, how="inner", on="smplID")
 
+    metadata = data.get_metadata()
+    print(df)
+    df = df.merge(metadata, "inner", "smplID")
+    print(df)
     df.sort_index(inplace=True)
 
     fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
@@ -372,7 +376,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, user_input2, with_abundance):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, user_input2, with_abundance = None):
 
     if len(compounds_input) == 0:
         return

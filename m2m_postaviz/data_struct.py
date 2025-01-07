@@ -21,6 +21,9 @@ class DataStorage:
 
     def __init__(self, save_path: str):
 
+        if os.path.isdir(save_path) is not True:
+            raise FileNotFoundError(f"{save_path} is not a directory.")
+
         loaded_files = self.load_files(save_path)
 
         self.HAS_TAXONOMIC_DATA = loaded_files["taxonomic_dataframe_postaviz.tsv"]
@@ -357,9 +360,11 @@ class DataStorage:
 
                 print(df_files, "IS \t", all_files[df_files])
 
-        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
+        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
+                        "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                        "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
-        # Check if necessary files arent' True
+        # Check if necessary files are not True
         for file in required_files:
             if file in all_files and all_files[file] is True:
                 continue

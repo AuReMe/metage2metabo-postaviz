@@ -945,7 +945,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
         sample_list += sample_info["bins_sample_list"][bin]
         bin_list.append(bin)
 
-    #   Delete replicate in list
+    #####   Delete replicate
     sample_unique_list = list(dict.fromkeys(sample_list))
 
     ##### Create Generator to process data by chunks.
@@ -986,7 +986,6 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
 
         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
         count.name = "Count"
-        print(f"Chunk {chunk_index} count serie produced with {sys.getsizeof(count)/1000000000} Gb memory size")
 
         results = pd.concat([results["smplID"],count,s],axis=1)
         del count
@@ -1007,7 +1006,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
             final_result = results
             del results
 
-        final_result = final_result.reset_index().merge(metadata, "inner", "smplID")
+        final_result = final_result.reset_index() # .merge(metadata, "inner", "smplID")
 
         if taxonomy_path is not None: # If taxonomy is provided, merge the dataframe with the taxonomic_dataframe.
 
@@ -1080,7 +1079,7 @@ def cpd_cscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     # Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(os.path.join(savepath,abundance_path),sep="\t",index_col=0)
+        abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
 
     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
     sample_list = []
@@ -1168,7 +1167,7 @@ def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     # Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(os.path.join(savepath,abundance_path),sep="\t",index_col=0)
+        abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
 
     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
     sample_list = []
