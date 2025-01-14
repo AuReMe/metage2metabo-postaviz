@@ -18,6 +18,26 @@ from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
+def get_size(obj, seen=None):
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, '__dict__'):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
+
 
 def is_valid_dir(dirpath):
     """Return True if directory exists or not
@@ -79,12 +99,12 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
         return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
-def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -> pd.DataFrame:
+def relative_abundance_calc(sample_cscope: dict, abundance_path: str, save_path) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
     Args:
         abundance_matrix (pd.DataFrame): abundance matrix given in input.
-        sample_data (dict): Dictionnary of sample's cscopes.
+        sample_cscope (dict): Dictionnary of sample's cscopes.
 
     Raises:
         RuntimeError: If more than one column of type other than INT.
@@ -120,9 +140,9 @@ def relative_abundance_calc(sample_data: dict, abundance_path: str, save_path) -
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
     # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix.
-    for sample in sample_data.keys():
+    for sample in sample_cscope.keys():
 
-        sample_matrix = sample_data[sample]["cscope"].copy()
+        sample_matrix = sample_cscope[sample].copy()
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
@@ -218,7 +238,7 @@ def get_contributions(file_name, path):
             return contributions_file
 
 
-def retrieve_all_sample_data(sample, path):
+def retrieve_all_cscope(sample, path):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
     Args:
@@ -240,7 +260,7 @@ def retrieve_all_sample_data(sample, path):
     return cscope_dataframe, sample
 
 
-def retrieve_all_iscope_data(sample, path):
+def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
     Args:
@@ -249,21 +269,26 @@ def retrieve_all_iscope_data(sample, path):
     Returns:
         dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
-    sample_directory_path = os.path.join(path, sample)
+
+    sample_directory_path = os.path.join(dir_path, sample)
+
     if os.path.isdir(sample_directory_path):
 
         iscope_dataframe = get_scopes("rev_iscope.tsv", sample_directory_path)
+
+        if isinstance(iscope_dataframe,pd.DataFrame):
+
+            iscope_dataframe.to_parquet(os.path.join(iscope_directoy, sample+iscope_file_format), compression='gzip')
+
         if iscope_dataframe is None:
             return None, sample
 
     else:
         return None, sample
 
-    return iscope_dataframe, sample
 
-
-def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
-    """Create and save a dataframe which sum all the compounds produced by each bins in sample cscope for each sample.
+def number_of_producers_cscope_dataframe(sample_cscope: dict, save_path):
+    """Create and save a dataframe which sum all the compounds produced by each genome in sample cscope for each sample.
 
     Args:
         sample_data (dict): Sample's cscope.
@@ -277,8 +302,8 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
         print("producers dataframe already in save directory.")
         return
 
-    if not bool(sample_data):
-        raise Exception("Sample data empty.")
+    if not bool(sample_cscope):
+        raise Exception("Sample cscope dict empty.")
 
     metadata = open_tsv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"))
 
@@ -288,7 +313,7 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
         cpu_available = 1
 
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(sample_data[sample]["cscope"], sample) for sample in sample_data.keys()])
+    all_producers = pool.starmap(individual_producers_processing,[(sample_cscope[sample], sample) for sample in sample_cscope.keys()])
     pool.close()
     pool.join()
 
@@ -300,8 +325,20 @@ def producers_by_compounds_and_samples_multi(sample_data: dict, save_path):
 
     res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 
+
+def number_of_producers_iscope_dataframe(save_path, iscope_directory):
+
+    if "producers_iscope_dataframe_postaviz.tsv" in os.listdir(save_path):
+        print("producers dataframe already in save directory.")
+        return
+
+    cpu_available = cpu_count() - 1
+
+    if type(cpu_available) is not int or cpu_available < 1:
+        cpu_available = 1
+
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(sample_data[sample]["iscope"], sample) for sample in sample_data.keys()])
+    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = os.path.join(iscope_directory, sample)), sample) for sample in os.listdir(os.path.join(save_path,"sample_iscope_directory"))])
     pool.close()
     pool.join()
 
@@ -324,6 +361,11 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     Returns:
         pd.Series: Pandas serie with all metabolites columns sum
     """
+
+    if not isinstance(sample_cscope, pd.DataFrame):
+        print("sample dataframe is not a pandas dataframe object.", sample_cscope)
+        return
+
     serie_value = []
     serie_index = []
 
@@ -334,7 +376,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     return pd.Series(serie_value,index=serie_index,name=sample)
 
 
-def multiprocess_retrieve_data(path): # Need rework two pool map is ineficient when it could be done in one map or starmap. 
+def load_sample_cscope_data(path): # Need rework 
     """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
     dataframe.
 
@@ -344,43 +386,31 @@ def multiprocess_retrieve_data(path): # Need rework two pool map is ineficient w
     Returns:
         dict: sample_data dictionnary
     """
-    retrieve_data = partial(retrieve_all_sample_data, path=path)
+    retrieve_cscope = partial(retrieve_all_cscope, path=path)
 
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
-    results_list = pool.map(retrieve_data,[sample for sample in os.listdir(path)])  # noqa: C416
+    results_list = pool.map(retrieve_cscope,[sample for sample in os.listdir(path)])  # noqa: C416
 
     pool.close()
     pool.join()
 
-    all_data = {}
+    all_cscope_dict = {}
     for df, smpl in results_list:
         if df is not None:
-            all_data[smpl] = {}
-            all_data[smpl]["cscope"] = df
+            all_cscope_dict[smpl] = df
 
-    retrieve_iscope = partial(retrieve_all_iscope_data, path=path)
-    pool = Pool(nb_cpu)
-    results_list = pool.map(retrieve_iscope,[sample for sample in os.listdir(path)])  # noqa: C416
-
-    pool.close()
-    pool.join()
-
-    for df, smpl in results_list:
-        if df is not None:
-            # all_data[smpl] = {}
-            all_data[smpl]["iscope"] = df
+    del results_list
 
     sample_info = {}
     sample_info["bins_list"] = []
     sample_info["bins_count"] = {}
     sample_info["bins_sample_list"] = {}
 
-    for sample in all_data.keys():
+    for sample, dataframe in all_cscope_dict.items():
 
-        dataframe = all_data[sample]["cscope"]
         all_bins_in_sample = dataframe.index.tolist()
 
         sample_info["bins_list"] = sample_info["bins_list"] + all_bins_in_sample
@@ -400,7 +430,22 @@ def multiprocess_retrieve_data(path): # Need rework two pool map is ineficient w
     # Remove duplicate from list
     sample_info["bins_list"] = list(dict.fromkeys(sample_info["bins_list"]))
 
-    return sample_info, all_data
+    return sample_info, all_cscope_dict
+
+
+def load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format):
+
+    nb_cpu = cpu_count() - 1
+    if type(nb_cpu) is not int or nb_cpu < 1:
+        nb_cpu = 1
+    pool = Pool(nb_cpu)
+
+    # retrieve_iscope = partial(retrieve_all_iscope, path=dir_path)
+    pool = Pool(nb_cpu)
+    results_list = pool.starmap(retrieve_all_iscope,[(sample, dir_path, iscope_directory, iscope_file_format) for sample in os.listdir(dir_path)])  # noqa: C416
+
+    pool.close()
+    pool.join()
 
 
 def build_main_dataframe(sample_data: dict, save_path):
@@ -421,7 +466,7 @@ def build_main_dataframe(sample_data: dict, save_path):
 
     all_series = []
     for sample in sample_data.keys():
-        current_sample_df = sample_data[sample]["cscope"]
+        current_sample_df = sample_data[sample]
         serie_index = current_sample_df.columns.values
         serie_data = []
         for _i in range(len(serie_index)):
@@ -462,15 +507,15 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     metadata_processing(metadata_path, save_path)
 
-    sample_info, sample_data = multiprocess_retrieve_data(dir_path)
+    sample_info, sample_cscope_data = load_sample_cscope_data(dir_path)
 
     # sample_info = iscope_production(dir_path=dir_path, sample_info_dict=sample_info)
 
-    producers_by_compounds_and_samples_multi(sample_data, save_path)
+    number_of_producers_cscope_dataframe(sample_cscope_data, save_path)
 
-    build_main_dataframe(sample_data, save_path)
+    build_main_dataframe(sample_cscope_data, save_path)
 
-    relative_abundance_calc(sample_data, abundance_path, save_path)
+    relative_abundance_calc(sample_cscope_data, abundance_path, save_path)
 
     taxonomy_processing(taxonomic_path, save_path)
 
@@ -478,11 +523,26 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     build_pcoa_dataframe(save_path)
 
-    bin_dataframe_build(sample_info, sample_data, abundance_path, taxonomic_path, save_path)
+    bin_dataframe_build(sample_info, sample_cscope_data, abundance_path, taxonomic_path, save_path)
 
-    cpd_cscope_dataframe_build(sample_info, sample_data, abundance_path, save_path)
+    cpd_cscope_dataframe_build(sample_info, sample_cscope_data, abundance_path, save_path)
 
-    cpd_iscope_dataframe_build(sample_info, sample_data, abundance_path, save_path)
+    print(get_size(sample_cscope_data) / 1000000000, "Go")
+    del sample_cscope_data
+
+    iscope_directory = os.path.join(save_path,"sample_iscope_directory")
+
+    if not os.path.isdir(iscope_directory):
+
+        os.makedirs(iscope_directory)
+
+        iscope_file_format = ".parquet.gzip"
+
+        load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format)
+
+    number_of_producers_iscope_dataframe(save_path, iscope_directory)
+
+    cpd_iscope_dataframe_build(iscope_directory, abundance_path, save_path)
 
     # Sample_info JSON
 
@@ -967,7 +1027,7 @@ def bin_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = N
         for sample in current_chunk:
 
             try:
-                df = sample_data[sample]["cscope"]
+                df = sample_data[sample]
                 rows = df.loc[df.index.isin(bin_list)]
                 rows.insert(0 , "smplID", sample)
                 rows.index.name = "binID"
@@ -1055,13 +1115,13 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-def cpd_cscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = None, savepath = None):
+def cpd_cscope_dataframe_build(sample_info: dict, sample_cscope_data: dict, abundance_path = None, savepath = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
     the metadata and the taxonomic rank associated.
 
     Args:
         sample_info (dict): _description_
-        sample_data (dict): _description_
+        sample_cscope_data (dict): _description_
         metadata (Dataframe): _description_
         abundance_file (Dataframe, optional): _description_. Defaults to None.
         taxonomy_path (Dataframe, optional): _description_. Defaults to None.
@@ -1104,14 +1164,14 @@ def cpd_cscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
         for sample in current_chunk:
 
             try:
-                df = sample_data[sample]["cscope"]
+                df = sample_cscope_data[sample]
                 # rows = df.loc[df.index.isin(bin_list)]
                 df.insert(0 , "smplID", sample)
                 df.index.name = "binID"
                 list_of_dataframe.append(df)
 
             except Exception as e:
-                print(f"No dataframe named {sample} in sample_data dictionnary\n{e}")
+                print(f"No dataframe named {sample} in sample_cscope_data dictionnary\n{e}")
 
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
@@ -1145,13 +1205,13 @@ def cpd_cscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     return
 
 
-def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_path = None, savepath = None):
+def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, savepath = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
     the metadata and the taxonomic rank associated.
 
     Args:
         sample_info (dict): _description_
-        sample_data (dict): _description_
+        sample_iscope_data (dict): _description_
         abundance_file (Dataframe, optional): _description_. Defaults to None.
 
     Returns:
@@ -1170,20 +1230,14 @@ def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
         abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
 
     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-    sample_list = []
-    bin_list = []
-    for bin in sample_info["bins_sample_list"].keys():
-        sample_list += sample_info["bins_sample_list"][bin]
-        bin_list.append(bin)
-
-    #   Delete replicate in list
-    sample_unique_list = list(dict.fromkeys(sample_list))
+    sample_list = os.listdir(iscope_directory)
 
     # Create Generator to process data by chunks.
-    chunk_generator = chunks(sample_unique_list, 350)
+    chunk_generator = chunks(sample_list, 300)
 
     # Loop throught generator
     chunk_index = 0
+    
     for current_chunk in chunk_generator:
         chunk_index += 1
         list_of_dataframe = []
@@ -1191,15 +1245,18 @@ def cpd_iscope_dataframe_build(sample_info: dict, sample_data: dict, abundance_p
     # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
         for sample in current_chunk:
 
+            sample_name = sample.split(".parquet")[0]
+            parquet_file_path = os.path.join(iscope_directory, sample)
+
             try:
-                df = sample_data[sample]["iscope"]
+                df = pd.read_parquet(parquet_file_path)
                 # rows = df.loc[df.index.isin(bin_list)]
-                df.insert(0 , "smplID", sample)
+                df.insert(0 , "smplID", sample_name)
                 df.index.name = "binID"
                 list_of_dataframe.append(df)
 
             except Exception as e:
-                print(f"No dataframe named {sample} in sample_data dictionnary\n{e}")
+                print(f"No dataframe named {sample_name} in sample_iscope_data dictionnary\n{e}")
 
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)

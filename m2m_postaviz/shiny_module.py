@@ -93,11 +93,15 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     df = df.merge(new_serie_production, how="inner", on="smplID")
 
     metadata = data.get_metadata()
-    # print(df)
+    metadata = metadata.loc[metadata["smplID"].isin(unique_sample_in_df)]
+    print(df)
+    print(metadata)
     df = df.merge(metadata, "inner", "smplID")
+    print(df[factor].isin(factor_choice))
     df = df.loc[df[factor].isin(factor_choice)]
-    # print(df)
     df.sort_index(inplace=True)
+    print(df)
+
 
     fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
 
@@ -377,34 +381,61 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, user_input2, with_abundance = None):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value = [], with_abundance = None):
 
     if len(compounds_input) == 0:
         return
 
     producer_data = data.get_metabolite_production_dataframe()
-    producer_data = producer_data.set_index("smplID")
+    # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
+
+    if sample_filtering_enabled and len(sample_filter_value) != 0:
+
+        if sample_filter_button is "Include":
+
+            producer_data = producer_data.loc[producer_data["smplID"].isin(sample_filter_value)]
+
+        elif sample_filter_button is "Exclude":
+
+            producer_data = producer_data.loc[~producer_data["smplID"].isin(sample_filter_value)]
+
+    # producer_data = producer_data.set_index("smplID")
 
     if user_input1 == "None":
-        df = producer_data[[*compounds_input]]
-        # all_dataframe["metabolites_production_plot_dataframe"] = df
-        return px.box(df,y=compounds_input)
 
-    if user_input2 == "None" or user_input1 == user_input2:
+        if color_input == "None":
+
+            df = producer_data[[*compounds_input]]
+            return px.box(df, y=compounds_input)
+
+        else:
+
+            df = producer_data[[*compounds_input, color_input]]
+            return px.box(df, y=compounds_input, color=color_input)
+
+    if color_input == "None" or user_input1 == color_input:
+
         df = producer_data[[*compounds_input,user_input1]]
         df = df.dropna()
-        # all_dataframe["metabolites_production_plot_dataframe"] = df
+
+        if df[user_input1].dtypes == float:
+
+            df[user_input1] = df[user_input1].astype(str)
+
         has_unique_value = du.has_only_unique_value(df, user_input1)
 
+        return px.bar(df, x=user_input1, y=compounds_input, color=user_input1) if has_unique_value else px.box(df, x=user_input1, y=compounds_input, color=user_input1)
 
-        return px.bar(df,x=user_input1,y=compounds_input,color=user_input1) if has_unique_value else px.box(df,x=user_input1,y=compounds_input,color=user_input1)
-
-    df = producer_data[[*compounds_input,user_input1,user_input2]]
+    df = producer_data[[*compounds_input,user_input1,color_input]]
     df = df.dropna()
-    # all_dataframe["metabolites_production_plot_dataframe"] = df
-    has_unique_value = du.has_only_unique_value(df, user_input1, user_input2)
 
-    return px.bar(df, x=user_input1, y=compounds_input,color=user_input2) if has_unique_value else px.box(df, x=user_input1, y=compounds_input,color=user_input2, boxmode="group")
+    if df[user_input1].dtypes == float:
+
+        df[user_input1] = df[user_input1].astype(str)
+
+    has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
+
+    return px.bar(df, x=user_input1, y=compounds_input,color=color_input) if has_unique_value else px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group")
 
 
 def metabolites_heatmap(data: DataStorage, user_cpd_list, by, value):

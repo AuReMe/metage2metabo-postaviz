@@ -14,10 +14,12 @@ class DataStorage:
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
     DF_KEYS = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
-               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json")
 
     BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
+    SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+    PADMET_DIR = os.path.join(os.path.dirname(SRC_DIR), "padmet_data")
 
     def __init__(self, save_path: str):
 
@@ -177,17 +179,7 @@ class DataStorage:
 
         dfc = pd.concat(cscope_dataframe).reset_index()
 
-        # dfc[compound] = compound
-
-        # dfc.rename(columns={compound: "cscope"},inplace=True)
-
         dfi = pd.concat(iscope_dataframe).reset_index()
-
-        # dfi[compound] = compound
-
-        # dfi.rename(columns={compound: "iscope"},inplace=True)
-
-        # df = pd.merge(dfc,dfi,on=["binID","smplID"])
 
         return dfc, dfi
 
@@ -225,6 +217,10 @@ class DataStorage:
         return self.open_tsv(key="producers_dataframe_postaviz.tsv")
 
 
+    def get_iscope_metabolite_production_dataframe(self) -> pd.DataFrame:
+        return self.open_tsv(key="producers_iscope_dataframe_postaviz.tsv")
+
+
     def get_main_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="main_dataframe_postaviz.tsv")
 
@@ -259,11 +255,19 @@ class DataStorage:
         return self.get_metadata().columns.tolist()
 
 
-    def get_compound_list(self):
+    def get_sample_list(self) -> list:
+        return self.get_main_dataframe()["smplID"].tolist()
+
+
+    def get_compound_list(self, without_compartment: Optional[bool] = False):
         query = self.get_main_dataframe().columns.tolist()
         if "smplID" in query:
             query.remove("smplID")
-
+        if without_compartment:
+            new_query = []
+            for cpd in query:
+                new_query.append(cpd[:-3])
+            return new_query
         return query
 
 
@@ -377,27 +381,25 @@ class DataStorage:
 
     def get_compounds_category_files(self):
 
-        cpd_lvl1_df = pd.read_csv("/home/lbrindel/Downloads/compounds_26_5_level1.tsv", sep="\t")
-        cpd_lvl2_df = pd.read_csv("/home/lbrindel/Downloads/compounds_26_5_level2.tsv", sep="\t")
+        cpd_lvl1_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level1.tsv")
+        cpd_lvl2_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level2.tsv")
+
+        cpd_lvl1_df = pd.read_csv(cpd_lvl1_filepath, sep="\t")
+        cpd_lvl2_df = pd.read_csv(cpd_lvl2_filepath, sep="\t")
 
         return cpd_lvl1_df, cpd_lvl2_df
     
 
     def get_compounds_category_list(self):
 
-        cpd_list = self.get_compound_list()
+        cpd_list = self.get_compound_list(True)
         cpd_lvl1, cpdlvl2 = self.get_compounds_category_files()
 
-
-        new_cpd_list = []
-        for cpd in cpd_list:
-            new_cpd_list.append(cpd[:-3])
-
-        res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(new_cpd_list)]["category"].unique().tolist()
-        res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(new_cpd_list)]["category"].unique().tolist()
+        res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(cpd_list)]["category"].unique().tolist()
+        res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(cpd_list)]["category"].unique().tolist()
         return res_lvl1, res_lvl2
 
 
     def get_compounds_category_dataframe(self):
 
-        return self.get_compounds_category_files()[0]
+        return self.get_compounds_category_files()
