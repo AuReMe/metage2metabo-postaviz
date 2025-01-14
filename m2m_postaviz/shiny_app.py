@@ -223,7 +223,7 @@ def run_shiny(data: DataStorage):
                 
                     ui.input_select("exp_user_input1", "Filter by metadata:", factor_list_no_smpl),
 
-                    ui.input_selectize("exp_user_color_input", "Plot color group: ", factor_list, selected=factor_list[0], multiple=False, width="400px"),
+                    ui.input_selectize("exp_user_color_input", "Add color by metadata: ", factor_list, selected=factor_list[0], multiple=False, width="400px"),
 
                     ui.input_checkbox("exp_cpd_enable_sample_filter","Filter plot by sample."),
 
@@ -239,13 +239,12 @@ def run_shiny(data: DataStorage):
                 gap=35,
                 bg="lightgrey"
             ),
-            # ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
+            ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
             ui.card(output_widget("cpd_exp_producers_plot"),full_screen=True),
             # ui.card(output_widget("bin_abundance_plot"),full_screen=True),
         )
     ),
     full_screen=True)
-
 
 
     ### APPLICATION TREE ###
@@ -279,8 +278,7 @@ def run_shiny(data: DataStorage):
         def _update_category_choices():
 
             category_level = input.exp_cpd_category_level()
-            print(category_level)
-            print(str(category_level))
+
             if category_level == "Ontology level 1":
 
                 return ui.update_selectize("exp_category_choice", choices=category_list[0], selected=category_list[0][0])
@@ -320,12 +318,12 @@ def run_shiny(data: DataStorage):
 
         @render_widget
         def cpd_exp_heatmap():
-            return
+            # return
             return cpd_plot_generation.result()[1]
 
         @render_widget
         def cpd_exp_producers_plot():
-            return cpd_plot_generation.result()
+            return cpd_plot_generation.result()[0]
 
         @ui.bind_task_button(button_id="run_cpd_exploration")
         @reactive.extended_task
@@ -339,7 +337,11 @@ def run_shiny(data: DataStorage):
             if len(selected_compounds) == 0:
                 return
 
-            return sm.render_reactive_metabolites_production_plot(data, selected_compounds_without_compartments, user_input1, user_color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value)
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(data, selected_compounds_without_compartments, user_input1, user_color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value)
+
+            heatmap = sm.metabolites_heatmap(data, selected_compounds_without_compartments, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, "metadata")
+
+            return nb_producers_boxplot, heatmap
 
 
         @reactive.effect

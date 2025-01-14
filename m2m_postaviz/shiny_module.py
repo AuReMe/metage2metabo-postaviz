@@ -391,11 +391,11 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if sample_filtering_enabled and len(sample_filter_value) != 0:
 
-        if sample_filter_button is "Include":
+        if sample_filter_button == "Include":
 
             producer_data = producer_data.loc[producer_data["smplID"].isin(sample_filter_value)]
 
-        elif sample_filter_button is "Exclude":
+        elif sample_filter_button == "Exclude":
 
             producer_data = producer_data.loc[~producer_data["smplID"].isin(sample_filter_value)]
 
@@ -411,7 +411,8 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         else:
 
             df = producer_data[[*compounds_input, color_input]]
-            return px.box(df, y=compounds_input, color=color_input)
+            has_unique_value = du.has_only_unique_value(df, color_input)
+            return px.bar(df, y=compounds_input, color=color_input) if has_unique_value else px.box(df, y=compounds_input, color=color_input)
 
     if color_input == "None" or user_input1 == color_input:
 
@@ -438,7 +439,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     return px.bar(df, x=user_input1, y=compounds_input,color=color_input) if has_unique_value else px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group")
 
 
-def metabolites_heatmap(data: DataStorage, user_cpd_list, by, value):
+def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
 
     all_cscope_dataframe = []
     all_iscope_dataframe = []
@@ -457,40 +458,55 @@ def metabolites_heatmap(data: DataStorage, user_cpd_list, by, value):
 
     dfc = pd.concat(all_cscope_dataframe,axis=0)
     dfi = pd.concat(all_iscope_dataframe,axis=0)
+    print(dfc.shape)
+    if sample_filtering_enabled and len(sample_filter_value) != 0:
 
-    if by == "taxonomy":
+        if sample_filter_button == "Include":
+
+            dfc = dfc.loc[dfc["smplID"].isin(sample_filter_value)]
+            dfi = dfi.loc[dfi["smplID"].isin(sample_filter_value)]
+
+        elif sample_filter_button == "Exclude":
+
+            dfc = dfc.loc[~dfc["smplID"].isin(sample_filter_value)]
+            dfi = dfi.loc[~dfi["smplID"].isin(sample_filter_value)]
+
+    if by == "taxonomy" and user_input1 != "None":
 
         taxonomy_file = data.get_taxonomic_dataframe()
 
         mgs_col_taxonomy = taxonomy_file.columns[0]
 
-        dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[value])
+        dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
 
-        dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[value])
+        dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
 
-    if by == "metadata":
+    if by == "metadata" and user_input1 != "None":
 
         metadata = data.get_metadata()
 
-        dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[value])
+        dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[user_input1])
 
-        dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[value])
+        dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[user_input1])
     
+    
+
+
     dfc.fillna(0,inplace=True)
+    print(dfc)
 
     dfc.set_index(["binID","smplID"],inplace=True)
     dfc = dfc.groupby(level="binID").sum()
 
     dfi.fillna(0,inplace=True)
+    # print(dfi)
 
     dfi.set_index(["binID","smplID"],inplace=True)
     dfi = dfi.groupby(level="binID").sum()
 
-    print(sys.getsizeof(dfc) / 1000000000, "Go")
 
-    print(sys.getsizeof(dfi) / 1000000000, "Go")
 
-    fig = make_subplots(1,2,x_title="Compounds",y_title="Bins")
+    fig = make_subplots(1,2, subplot_titles=["cscope", "iscope"])
 
     fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis='coloraxis', ),1,1)
 
