@@ -15,7 +15,7 @@ from shinywidgets import render_widget
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
-
+from m2m_postaviz.cpd_exploration_module import cpd_tab_ui, cpd_tab_server
 
 def run_shiny(data: DataStorage):
 
@@ -29,8 +29,6 @@ def run_shiny(data: DataStorage):
     factor_list_no_smpl = data.get_factors()
     factor_list_no_smpl.remove("smplID")
     factor_list_no_smpl.insert(0, "None")
-
-    cpd_exploration_all_category = ["Ontology level 1", "Ontology level 2", "Pathway level 1", "Pathway level 2"]
 
     metadata_label = data.get_factors()
     metadata_label.remove("smplID")
@@ -207,46 +205,6 @@ def run_shiny(data: DataStorage):
         bins_exploration_card = None
 
 
-    category_list = data.get_compounds_category_list()
-    category_list[0].insert(0," None")
-    category_list[1].insert(0," None")
-
-    compounds_exploration_card = ui.card(
-        ui.card_header("Metabolites exploration."),
-        ui.card_body(
-            ui.layout_sidebar(
-                ui.sidebar(
-
-                    ui.input_select("exp_cpd_category_level", " ", choices= cpd_exploration_all_category, selected= cpd_exploration_all_category[0]),
-                    ui.input_selectize("exp_category_choice", "Select one ontology", choices=category_list[0], selected=category_list[0][0], multiple=False, width="400px"),
-                    ui.input_selectize("exp_cpd_compounds_choice", "Select compounds", choices=data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
-                
-                    ui.input_select("exp_user_input1", "Filter by metadata:", factor_list_no_smpl),
-
-                    ui.input_selectize("exp_user_color_input", "Add color by metadata: ", factor_list, selected=factor_list[0], multiple=False, width="400px"),
-
-                    ui.input_checkbox("exp_cpd_enable_sample_filter","Filter plot by sample."),
-
-                    ui.panel_conditional("input.exp_cpd_enable_sample_filter",
-
-                        ui.input_radio_buttons("exp_cpd_sample_filter", "Exclude or include samples into the plot.", ["Include", "Exclude"]),
-                        ui.input_selectize("exp_cpd_sample_filter_value", "Selection of samples to filter.", choices=data.get_sample_list(), multiple=True, remove_button=True),
-                        ),
-
-                    ui.input_task_button("run_cpd_exploration","Generate plots"),
-
-                width=400,
-                gap=35,
-                bg="lightgrey"
-            ),
-            ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
-            ui.card(output_widget("cpd_exp_producers_plot"),full_screen=True),
-            # ui.card(output_widget("bin_abundance_plot"),full_screen=True),
-        )
-    ),
-    full_screen=True)
-
-
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fillable(
@@ -266,89 +224,14 @@ def run_shiny(data: DataStorage):
                          bins_exploration_card
             ),
             ui.nav_panel("Cpd",
-                         compounds_exploration_card
+                cpd_tab_ui("module_test_ui", data)
             )
             ),
         )
 
     def server(input, output, session):
 
-
-        @reactive.effect
-        def _update_category_choices():
-
-            category_level = input.exp_cpd_category_level()
-
-            if category_level == "Ontology level 1":
-
-                return ui.update_selectize("exp_category_choice", choices=category_list[0], selected=category_list[0][0])
-                
-            if category_level == "Ontology level 2":
-
-                return ui.update_selectize("exp_category_choice", choices=category_list[1], selected=category_list[1][0])
-
-            if category_level == "Pathway level 1":
-
-                return ui.update_selectize("exp_category_choice", choices=[])
-
-            if category_level == "Pathway level 1":
-
-                return ui.update_selectize("exp_category_choice", choices=[])
-            
-        @reactive.effect
-        def _update_compounds_choices():
-
-            category_level = input.exp_cpd_category_level()
-            category_choice = input.exp_category_choice()
-            cpd_list_no_compart = data.get_compound_list(without_compartment=True)
-
-            if category_level == "Ontology level 1":
-
-                df = data.get_compounds_category_dataframe()[0]
-
-            if category_level == "Ontology level 2":
-
-                df = data.get_compounds_category_dataframe()[1]
-
-            df = df[df['category'] == category_choice]
-            choices = df.loc[df["compound_id"].isin(cpd_list_no_compart)]["compound_id"].tolist()
-
-            return ui.update_selectize("exp_cpd_compounds_choice", choices=choices, selected=choices)
-                
-
-        @render_widget
-        def cpd_exp_heatmap():
-            # return
-            return cpd_plot_generation.result()[1]
-
-        @render_widget
-        def cpd_exp_producers_plot():
-            return cpd_plot_generation.result()[0]
-
-        @ui.bind_task_button(button_id="run_cpd_exploration")
-        @reactive.extended_task
-        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value):
-
-            selected_compounds_without_compartments = []
-            for cpd in list_of_cpd:
-                if cpd[:-3] in selected_compounds:
-                    selected_compounds_without_compartments.append(cpd)
-
-            if len(selected_compounds) == 0:
-                return
-
-            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(data, selected_compounds_without_compartments, user_input1, user_color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value)
-
-            heatmap = sm.metabolites_heatmap(data, selected_compounds_without_compartments, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, "metadata")
-
-            return nb_producers_boxplot, heatmap
-
-
-        @reactive.effect
-        @reactive.event(input.run_cpd_exploration, ignore_none=True)
-        def handle_click_cpd_exploration():
-            cpd_plot_generation(input.exp_cpd_compounds_choice(), input.exp_user_input1(), input.exp_user_color_input(), input.exp_cpd_enable_sample_filter(),input.exp_cpd_sample_filter(), input.exp_cpd_sample_filter_value())
-
+        cpd_tab_server("module_test_ui", Data=data)
 
         @render.ui
         def bin_factor_unique():
@@ -367,7 +250,6 @@ def run_shiny(data: DataStorage):
             return ui.TagList(
                 ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
                 )
-
 
         @render.ui
         def rank_unique_choice():

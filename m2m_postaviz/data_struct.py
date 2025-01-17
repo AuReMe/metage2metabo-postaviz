@@ -213,8 +213,16 @@ class DataStorage:
         return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
 
 
-    def get_metabolite_production_dataframe(self) -> pd.DataFrame:
-        return self.open_tsv(key="producers_dataframe_postaviz.tsv")
+    def get_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
+
+        df = self.open_tsv(key="producers_dataframe_postaviz.tsv")
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.merge(metadata,"inner","smplID")
+
+        return df 
 
 
     def get_iscope_metabolite_production_dataframe(self) -> pd.DataFrame:
@@ -232,6 +240,9 @@ class DataStorage:
     def get_pcoa_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
 
+
+    def get_list_of_tests(self):
+        return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
     # def set_main_metadata(self, new_metadata):
     #     self.metadata = new_metadata
@@ -251,8 +262,19 @@ class DataStorage:
         return True if df.index.name == "smplID" else False
 
 
-    def get_factors(self) -> list:
-        return self.get_metadata().columns.tolist()
+    def get_factors(self, remove_smpl_col = False, insert_none = False) -> list:
+
+        result = self.get_metadata().columns.tolist()
+
+        if remove_smpl_col:
+             
+             result.remove("smplID")
+
+        if insert_none:
+
+            result.insert(0, "None")
+
+        return result
 
 
     def get_sample_list(self) -> list:
@@ -397,9 +419,56 @@ class DataStorage:
 
         res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(cpd_list)]["category"].unique().tolist()
         res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(cpd_list)]["category"].unique().tolist()
+
+        res_lvl1.insert(0," None")
+        res_lvl2.insert(0," None")
+
         return res_lvl1, res_lvl2
 
 
     def get_compounds_category_dataframe(self):
 
         return self.get_compounds_category_files()
+    
+
+    def get_nb_prod_diff_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
+
+        print(sample_filter_enabled, sample_filter_mode, sample_filter_value)
+
+        cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
+
+        iscope_df = self.get_iscope_metabolite_production_dataframe().sort_values("smplID")
+
+        col_diff = cscope_df.columns.difference(iscope_df.columns)
+
+        col_diff_dict = dict.fromkeys(col_diff, 0.0)
+
+        temp_df = pd.DataFrame(col_diff_dict, index=iscope_df.index)
+
+        iscope_df = pd.concat([iscope_df, temp_df], axis=1)
+
+        if sample_filter_enabled is not False:
+
+            if sample_filter_mode == "Include":
+
+                cscope_df = cscope_df.loc[cscope_df.smplID.isin(sample_filter_value)]
+                iscope_df = iscope_df.loc[iscope_df.smplID.isin(sample_filter_value)]
+
+            if sample_filter_mode == "Exclude":
+
+                cscope_df = cscope_df.loc[~cscope_df.smplID.isin(sample_filter_value)]
+                iscope_df = iscope_df.loc[~iscope_df.smplID.isin(sample_filter_value)]
+
+
+        cscope_df.set_index("smplID",inplace=True)
+        iscope_df.set_index("smplID",inplace=True)
+
+        cscope_df.sort_index(axis=1,inplace=True)
+        iscope_df.sort_index(axis=1,inplace=True)
+
+        if cpd_input is not None:
+
+            cscope_df = cscope_df[[*cpd_input]]
+            iscope_df = iscope_df[[*cpd_input]]
+
+        return cscope_df - iscope_df

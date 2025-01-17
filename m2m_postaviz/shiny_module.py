@@ -194,7 +194,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
             return
 
 
-def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
+def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance = None):
     y1, x1, x2 = metabolites_choices, user_input1, user_input2
 
     if len(y1) == 0:
@@ -406,37 +406,56 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         if color_input == "None":
 
             df = producer_data[[*compounds_input]]
-            return px.box(df, y=compounds_input)
+            return px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of mgs producers for each samples")
 
         else:
 
             df = producer_data[[*compounds_input, color_input]]
             has_unique_value = du.has_only_unique_value(df, color_input)
-            return px.bar(df, y=compounds_input, color=color_input) if has_unique_value else px.box(df, y=compounds_input, color=color_input)
 
-    if color_input == "None" or user_input1 == color_input:
+            if has_unique_value:
+
+                fig = px.bar(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+            else:
+                fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+
+            return fig
+
+    if color_input == "None" or user_input1 == color_input: # If only the filtering by metadata has been selected (no color).
 
         df = producer_data[[*compounds_input,user_input1]]
         df = df.dropna()
 
-        if df[user_input1].dtypes == float:
+        has_unique_value = du.has_only_unique_value(df, user_input1)
+
+        if df[user_input1].dtypes == float or df[user_input1].dtypes == int:
 
             df[user_input1] = df[user_input1].astype(str)
 
-        has_unique_value = du.has_only_unique_value(df, user_input1)
+        if has_unique_value:
 
-        return px.bar(df, x=user_input1, y=compounds_input, color=user_input1) if has_unique_value else px.box(df, x=user_input1, y=compounds_input, color=user_input1)
+            fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
+        else:
+            fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
+
+        return fig
 
     df = producer_data[[*compounds_input,user_input1,color_input]]
     df = df.dropna()
 
-    if df[user_input1].dtypes == float:
+    has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
+
+    if df[user_input1].dtypes == float or df[user_input1].dtypes == int:
 
         df[user_input1] = df[user_input1].astype(str)
 
-    has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
+    if has_unique_value:
 
-    return px.bar(df, x=user_input1, y=compounds_input,color=color_input) if has_unique_value else px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group")
+        fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+    else:
+        fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
+
+    return fig 
 
 
 def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
@@ -458,7 +477,7 @@ def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_fi
 
     dfc = pd.concat(all_cscope_dataframe,axis=0)
     dfi = pd.concat(all_iscope_dataframe,axis=0)
-    print(dfc.shape)
+
     if sample_filtering_enabled and len(sample_filter_value) != 0:
 
         if sample_filter_button == "Include":
@@ -488,12 +507,9 @@ def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_fi
         dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[user_input1])
 
         dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[user_input1])
-    
-    
-
 
     dfc.fillna(0,inplace=True)
-    print(dfc)
+    # print(dfc)
 
     dfc.set_index(["binID","smplID"],inplace=True)
     dfc = dfc.groupby(level="binID").sum()
@@ -521,3 +537,11 @@ def df_to_plotly(df):
     return {'z': df.values.tolist(),
             'x': df.columns.tolist(),
             'y': df.index.tolist()}
+
+def in_test_difference_iscope_cscope_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
+
+    df = data.get_nb_prod_diff_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+
+    fig = go.Figure(data=go.Heatmap(df_to_plotly(df), coloraxis='coloraxis'))
+
+    return fig

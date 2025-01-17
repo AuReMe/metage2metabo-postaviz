@@ -82,7 +82,7 @@ def benchmark_decorator(func):
 
 def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
     """
-    Return True if df column value contain only one value per input, False otherwise.
+    Return True if the dataframe's column(s) only has unique value, False otherwise.
 
     Args:
         dataframe (pd.DataFrame): _description_
@@ -305,7 +305,7 @@ def number_of_producers_cscope_dataframe(sample_cscope: dict, save_path):
     if not bool(sample_cscope):
         raise Exception("Sample cscope dict empty.")
 
-    metadata = open_tsv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"))
+    # metadata = open_tsv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"))
 
     cpu_available = cpu_count() - 1
 
@@ -321,7 +321,7 @@ def number_of_producers_cscope_dataframe(sample_cscope: dict, save_path):
     res.fillna(0,inplace=True)
     res.index.name = "smplID"
     res.reset_index(inplace=True)
-    res = res.merge(metadata,"inner","smplID")
+    # res = res.merge(metadata,"inner","smplID")
 
     res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 
@@ -346,6 +346,7 @@ def number_of_producers_iscope_dataframe(save_path, iscope_directory):
     res.fillna(0,inplace=True)
     res.index.name = "smplID"
     res.reset_index(inplace=True)
+    res["smplID"] = res["smplID"].apply(lambda x: x.split(".parquet")[0]) ## Should resolve .parquet.gzip simplID unwanted name.
     # res = res.merge(metadata,"inner","smplID")
 
     res.to_csv(os.path.join(save_path,"producers_iscope_dataframe_postaviz.tsv"),sep="\t",index=False)
