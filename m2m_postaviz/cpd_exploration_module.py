@@ -54,10 +54,20 @@ def cpd_tab_ui(Data: DataStorage):
             gap=35,
             bg="lightgrey"
         ),
-        ui.card(output_widget("cpd_exp_diff_heatmap"),full_screen=True),
-        # ui.card(output_widget("cpd_exp_heatmap"),full_screen=True),
+        ui.card(
+            ui.input_radio_buttons("heatmap_radio_button", " ", ["Cscope", "Iscope", "Added value"], selected="Cscope"),
+            output_widget("cpd_exp_diff_heatmap"),full_screen=True
+            ),
+
+        ui.card(
+            ui.input_radio_buttons("percent_barplot_radio_button", " ", ["Cscope", "Iscope"], selected="Cscope"),
+            output_widget("cpd_exp_percent"),full_screen=True
+            ),
+
         ui.card(output_widget("cpd_exp_producers_plot"),full_screen=True),
+
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
+
     ),
 
     min_height="1500px"
@@ -78,15 +88,33 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                 
         @render_widget
         def cpd_exp_diff_heatmap():
-            return cpd_plot_generation.result()[3]
+
+            if input.heatmap_radio_button() == "Cscope":
+
+                return cpd_plot_generation.result()[3][0]
+            
+            if input.heatmap_radio_button() == "Iscope":
+
+                return cpd_plot_generation.result()[3][1]
+    
+            if input.heatmap_radio_button() == "Added value":
+
+                return cpd_plot_generation.result()[3][2]
 
         @render.data_frame
         def cpd_exp_stat_dataframe():
             return cpd_plot_generation.result()[2]
 
         @render_widget
-        def cpd_exp_heatmap():
-            return cpd_plot_generation.result()[1]
+        def cpd_exp_percent():
+            if input.percent_barplot_radio_button() == "Cscope":
+                
+                return cpd_plot_generation.result()[1][0]
+
+            if input.percent_barplot_radio_button() == "Iscope":
+                
+                return cpd_plot_generation.result()[1][1]
+                
 
         @render_widget
         def cpd_exp_producers_plot():
@@ -106,7 +134,12 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
 
-            heatmap = None#sm.metabolites_heatmap(Data, cpd_filtered_list, user_input1, sample_filtering_enabled, sample_filter_mode, sample_filter_value, "metadata")
+            if user_input1 != "None":
+
+                percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1,)
+
+            else:
+                percent_barplot = None
 
             if with_statistic:
 
@@ -118,9 +151,9 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 stat_dataframe = None
 
-            diff_heatmap = sm.in_test_difference_iscope_cscope_heatmap(Data, cpd_filtered_list, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+            cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.added_value_heatmap(Data, cpd_filtered_list, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
 
-            return nb_producers_boxplot, heatmap, stat_dataframe, diff_heatmap
+            return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
 
 
         @reactive.effect

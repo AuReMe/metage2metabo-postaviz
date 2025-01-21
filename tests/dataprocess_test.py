@@ -187,8 +187,8 @@ def test_shiny_module():
 
     # Test for metabolites production reactive plot.
 
-    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", True)
-    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days", True)
+    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", with_abundance=True)
+    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days", with_abundance=True)
 
     assert isinstance(reactive_metabolites_production_plot, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
 

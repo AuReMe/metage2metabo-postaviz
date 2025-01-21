@@ -225,8 +225,16 @@ class DataStorage:
         return df 
 
 
-    def get_iscope_metabolite_production_dataframe(self) -> pd.DataFrame:
-        return self.open_tsv(key="producers_iscope_dataframe_postaviz.tsv")
+    def get_iscope_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
+
+        df = self.open_tsv(key="producers_iscope_dataframe_postaviz.tsv")
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.merge(metadata,"inner","smplID")
+
+        return df 
 
 
     def get_main_dataframe(self) -> pd.DataFrame:
@@ -431,13 +439,13 @@ class DataStorage:
         return self.get_compounds_category_files()
     
 
-    def get_nb_prod_diff_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
+    def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
 
         print(sample_filter_enabled, sample_filter_mode, sample_filter_value)
 
         cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
 
-        iscope_df = self.get_iscope_metabolite_production_dataframe().sort_values("smplID")
+        iscope_df = self.get_iscope_metabolite_production_dataframe(False).sort_values("smplID")
 
         col_diff = cscope_df.columns.difference(iscope_df.columns)
 
@@ -459,7 +467,6 @@ class DataStorage:
                 cscope_df = cscope_df.loc[~cscope_df.smplID.isin(sample_filter_value)]
                 iscope_df = iscope_df.loc[~iscope_df.smplID.isin(sample_filter_value)]
 
-
         cscope_df.set_index("smplID",inplace=True)
         iscope_df.set_index("smplID",inplace=True)
 
@@ -471,4 +478,4 @@ class DataStorage:
             cscope_df = cscope_df[[*cpd_input]]
             iscope_df = iscope_df[[*cpd_input]]
 
-        return cscope_df - iscope_df
+        return cscope_df, iscope_df, cscope_df - iscope_df
