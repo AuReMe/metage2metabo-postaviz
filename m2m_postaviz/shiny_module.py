@@ -381,7 +381,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input, sample_filtering_enabled, sample_filter_button, sample_filter_value = [], with_abundance = None):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input, sample_filtering_enabled = False, sample_filter_button = "None", sample_filter_value = [], with_abundance = None):
 
     if len(compounds_input) == 0:
         return
