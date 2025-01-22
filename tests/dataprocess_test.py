@@ -42,6 +42,8 @@ abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
 
 CSCOPE_DIR = os.path.join(TEST_DATA_CONTAINER, "cscope_directory")
 
+os.makedirs(CSCOPE_DIR)
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
