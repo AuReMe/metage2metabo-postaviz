@@ -40,9 +40,13 @@ metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
 
-CSCOPE_DIR = os.path.join(TEST_DATA_CONTAINER, "cscope_directory")
+# CSCOPE_DIR = os.path.join(TMP_DIR, "cscope_directory")
 
-os.makedirs(CSCOPE_DIR)
+# os.makedirs(CSCOPE_DIR)
+
+# ISCOPE_DIR = os.path.join(TMP_DIR, "iscope_directory")
+
+# os.makedirs(ISCOPE_DIR)
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -55,7 +59,7 @@ def test_data_processing():
 
     data = DataStorage(TMP_DIR)
 
-    sample_info = du.load_sample_cscope_data(TEST_DATA_CONTAINER, CSCOPE_DIR, ".parquet.gz")
+    # sample_info = du.load_sample_cscope_data(TEST_DATA_CONTAINER, CSCOPE_DIR, ".parquet.gz")
 
     metadata = data.get_metadata()
 
