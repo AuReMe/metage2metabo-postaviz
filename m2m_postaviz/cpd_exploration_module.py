@@ -54,14 +54,16 @@ def cpd_tab_ui(Data: DataStorage):
             gap=35,
             bg="lightgrey"
         ),
-        ui.card(
-            ui.input_radio_buttons("heatmap_radio_button", " ", ["Cscope", "Iscope", "Added value"], selected="Cscope"),
-            output_widget("cpd_exp_diff_heatmap"),full_screen=True
+
+        ui.navset_card_tab(
+            ui.nav_panel("Cscope", ui.card(output_widget("cpd_exp_heatmap_cscope"), full_screen=True)),
+            ui.nav_panel("Iscope", ui.card(output_widget("cpd_exp_heatmap_iscope"), full_screen=True)),
+            ui.nav_panel("Added value", ui.card(output_widget("cpd_exp_heatmap_added_value"), full_screen=True)),
             ),
 
-        ui.card(
-            ui.input_radio_buttons("percent_barplot_radio_button", " ", ["Cscope", "Iscope"], selected="Cscope"),
-            output_widget("cpd_exp_percent"),full_screen=True
+        ui.navset_card_tab(
+            ui.nav_panel("Cscope", ui.card(output_widget("sample_percentage_production_cscope"), full_screen=True)),
+            ui.nav_panel("Iscope", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
             ),
 
         ui.card(output_widget("cpd_exp_producers_plot"),full_screen=True),
@@ -87,33 +89,43 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             return ui.update_selectize("sample_filter_selection_input", choices=Data.get_sample_list(), selected=None)
                 
         @render_widget
-        def cpd_exp_diff_heatmap():
+        def cpd_exp_heatmap_cscope():
+            return cpd_plot_generation.result()[3][0]
 
-            if input.heatmap_radio_button() == "Cscope":
+        @render_widget
+        def cpd_exp_heatmap_iscope():
+            return cpd_plot_generation.result()[3][1]
 
-                return cpd_plot_generation.result()[3][0]
+        @render_widget
+        def cpd_exp_heatmap_added_value():
+            return cpd_plot_generation.result()[3][2]
+
+        # @render_widget
+        # def cpd_exp_diff_heatmap():
+
+        #     if input.heatmap_radio_button() == "Cscope":
+
+        #         return cpd_plot_generation.result()[3][0]
             
-            if input.heatmap_radio_button() == "Iscope":
+        #     if input.heatmap_radio_button() == "Iscope":
 
-                return cpd_plot_generation.result()[3][1]
+        #         return cpd_plot_generation.result()[3][1]
     
-            if input.heatmap_radio_button() == "Added value":
+        #     if input.heatmap_radio_button() == "Added value":
 
-                return cpd_plot_generation.result()[3][2]
+        #         return cpd_plot_generation.result()[3][2]
 
         @render.data_frame
         def cpd_exp_stat_dataframe():
             return cpd_plot_generation.result()[2]
 
         @render_widget
-        def cpd_exp_percent():
-            if input.percent_barplot_radio_button() == "Cscope":
-                
-                return cpd_plot_generation.result()[1][0]
+        def sample_percentage_production_cscope():
+            return cpd_plot_generation.result()[1][0]
 
-            if input.percent_barplot_radio_button() == "Iscope":
-                
-                return cpd_plot_generation.result()[1][1]
+        @render_widget
+        def sample_percentage_production_iscope():
+            return cpd_plot_generation.result()[1][1]
                 
 
         @render_widget
