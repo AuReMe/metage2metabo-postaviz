@@ -16,6 +16,7 @@ import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 from m2m_postaviz.cpd_exploration_module import cpd_tab_ui, cpd_tab_server
+from m2m_postaviz.bin_exploration_module import bin_exp_ui, bin_exp_server
 
 def run_shiny(data: DataStorage):
 
@@ -33,14 +34,9 @@ def run_shiny(data: DataStorage):
     metadata_label = data.get_factors()
     metadata_label.remove("smplID")
 
-    list_of_bins = data.get_bins_list()
-
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
-        converted_bin_list = data.associate_bin_taxonomy(list_of_bins)
-
-    bins_count = data.get_bins_count()
 
     all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
 
@@ -166,44 +162,6 @@ def run_shiny(data: DataStorage):
         full_screen=True
     )
 
-    if data.HAS_TAXONOMIC_DATA:
-
-        bins_exploration_card = ui.card(
-            ui.card_header("Bins exploration"),
-            ui.card_body(
-                ui.layout_sidebar(
-                    ui.sidebar(
-
-                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width="400px"),
-                        ui.output_ui("rank_unique_choice"),
-
-                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
-                        ui.output_ui("bin_factor_unique"),
-
-                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width="400px"),
-
-                        ui.input_checkbox("with_bin_abundance", "Weigh the producibility value by the relative abundance of the producer instead of using {0,1} values."),
-
-                        ui.input_task_button("run_bin_exploration","Go"),
-
-                        ui.output_text("bin_size_text"),
-                        ui.output_text("iscope_info"),
-
-                        ui.output_ui("bin_sample_select"),
-                    width=400,
-                    gap=35,
-                    bg="lightgrey"
-                ),
-                ui.card(output_widget("bin_unique_count_histplot"),full_screen=True),
-                ui.card(output_widget("bin_boxplot_count"),full_screen=True),
-                ui.card(output_widget("bin_abundance_plot"),full_screen=True),
-            )
-        ),full_screen=True)
-
-    else:
-
-        bins_exploration_card = None
-
 
     ### APPLICATION TREE ###
 
@@ -221,173 +179,19 @@ def run_shiny(data: DataStorage):
                     custom_pcoa_card
             ),
             ui.nav_panel("Bins",
-                         bins_exploration_card
+                         bin_exp_ui("module_bin_exp", data)
             ),
             ui.nav_panel("Cpd",
-                cpd_tab_ui("module_test_ui", data)
+                cpd_tab_ui("module_cpd_exp", data)
             )
             ),
         )
 
     def server(input, output, session):
 
-        cpd_tab_server("module_test_ui", Data=data)
+        cpd_tab_server("module_cpd_exp", Data=data)
 
-        @render.ui
-        def bin_factor_unique():
-
-            factor_choice = input.bin_factor()
-
-            if factor_choice == "None":
-                return ui.TagList(
-                ui.input_selectize("bin_factor_unique", "Select", choices=[], multiple=True, remove_button=True)
-                )
-
-            df = data.get_metadata()
-
-            choices = df[factor_choice].unique().tolist()
-
-            return ui.TagList(
-                ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
-                )
-
-        @render.ui
-        def rank_unique_choice():
-
-            rank_choice = input.rank_choice()
-
-            if rank_choice == "all":
-
-                return ui.TagList(
-                ui.input_selectize("rank_unique_choice", "Select", choices=[], multiple=False,)
-                )
-
-            if rank_choice == "mgs":
-
-                return ui.TagList(
-                ui.input_selectize("rank_unique_choice", "Select", choices=converted_bin_list, multiple=False,)
-                )
-
-            df = data.get_taxonomic_dataframe()
-
-            choices = df[rank_choice].unique().tolist()
-
-            return ui.TagList(
-                ui.input_selectize("rank_unique_choice", "Select", choices=choices, multiple=False,)
-                )
-
-        @render.ui
-        def bin_sample_select():
-            df = run_exploration.result()[2]
-            if df is None:
-                return
-            choice = df["smplID"].tolist()
-
-            return ui.TagList(
-                ui.input_selectize("bin_sample_select_input", "Choose a sample, or paste a list of samples to filter the analysis.", choices=choice, multiple=False,)
-                )
-
-        @render.text
-        def bin_size_text():
-            """Display the number of bins within the selection of user's input.
-            If only one bin is in selection, then display in how many samples this bin is present.
-
-            Returns:
-                str: str to display inside an output text UI.
-            """
-            rank_choice, rank_unique_choice = input.rank_choice(), input.rank_unique_choice()
-
-            if rank_choice == "mgs":
-
-                rank_unique_choice = rank_unique_choice.split(" ")[0]
-
-            if rank_choice == "all":
-
-                return f"All {len(list_of_bins)} bins selected"
-
-            list_of_bin_in_rank = data.get_bin_list_from_taxonomic_rank(rank_choice, rank_unique_choice)
-
-            filtered_list_of_bin = []
-
-            for x in list_of_bin_in_rank:
-                if x in list_of_bins:
-
-                    filtered_list_of_bin.append(x)
-
-            if len(filtered_list_of_bin) == 0:
-                return "No bin in selection."
-
-            if len(filtered_list_of_bin) == 1:
-                return "Bin: "+str(filtered_list_of_bin[0])+" Found in "+str(bins_count[filtered_list_of_bin[0]])+" sample(s)"
-
-            return f"{len(filtered_list_of_bin)} bins found in selection."
-
-        @render.text
-        def iscope_info():
-            # bin_input = input.bin_choice().split("/")[0]
-            # iscope_prod = data.get_iscope_production(bin_input)
-            # df = run_exploration.result()[2]
-            # cscope_prod = df.loc[df["Count"] == df["Count"].max()]["Production"].tolist()
-
-            # res = []
-            # for cpd in cscope_prod:
-            #     if cpd not in iscope_prod:
-            #         res.append(cpd)
-            timer = run_exploration.result()[3]
-            return f"Took {timer} seconds to run."
-
-        @render_widget
-        def bin_boxplot_count():
-            return run_exploration.result()[4]
-
-            smpl_choice = input.bin_sample_select_input()
-            bin_input = input.bin_choice().split("/")[0]
-
-            df = run_exploration.result()[2]
-
-            if not du.is_indexed_by_id(df):
-                df.set_index("smplID", inplace=True)
-
-            cscope_prod = df.at[smpl_choice,"Production"]
-            iscope_prod = data.get_iscope_production(bin_input)
-
-            res = []
-            reference_set = []
-            for cpd in cscope_prod:
-                if cpd not in iscope_prod:
-                    res.append(cpd)
-                reference_set.append(cpd)
-
-            for i, cpd in enumerate(res):
-                res[i] = cpd[:-3]
-
-            for i, cpd in enumerate(cscope_prod):
-                reference_set[i] = cpd[:-3]
-
-            interest_set = pd.Series( cpd for cpd in res )
-
-
-            fig = ontos(interest_set=interest_set, reference_set=reference_set, ontology="metacyc")
-            return fig
-
-        @render_widget
-        def bin_abundance_plot():
-            return run_exploration.result()[1]
-
-        @render_widget
-        def bin_unique_count_histplot():
-            return run_exploration.result()[0]
-
-        @ui.bind_task_button(button_id="run_custom_pcoa")
-        @reactive.extended_task
-        async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
-
-            return sm.bin_exploration_processing(data, factor, factor_choice, rank, rank_choice, with_abundance, color)
-
-        @reactive.effect
-        @reactive.event(input.run_bin_exploration, ignore_none=True)
-        def handle_click_bin_exploration():
-            run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color())
+        bin_exp_server("module_bin_exp", data)
 
         @render.text
         def display_warning_pcoa():
