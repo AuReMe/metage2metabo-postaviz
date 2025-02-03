@@ -306,7 +306,7 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     return fig
 
 
-def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
+def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_method: str = "jaccard"):
     """Calculate Principal Coordinate Analysis with the dataframe given in args.
     Use metadata's drataframe as second argument to return the full ordination result plus
     all metadata column inserted along Ordination.samples dataframe.
@@ -319,7 +319,6 @@ def run_pcoa(main_df: pd.DataFrame, metadata: pd.DataFrame, distance_method: str
     Returns:
         _type_: Ordination results object from skbio's package.
     """
-    main_dataframe = main_df
 
     if not du.is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")

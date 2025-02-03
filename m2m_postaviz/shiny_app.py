@@ -17,6 +17,7 @@ import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 from m2m_postaviz.cpd_exploration_module import cpd_tab_ui, cpd_tab_server
 from m2m_postaviz.bin_exploration_module import bin_exp_ui, bin_exp_server
+from m2m_postaviz.pcoa_module import pcoa_module_ui, pcoa_module_server
 
 def run_shiny(data: DataStorage):
 
@@ -129,61 +130,28 @@ def run_shiny(data: DataStorage):
         ui.output_data_frame("metadata_table")
         )
 
-    pcoa_card = ui.card(
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                ui.output_ui("pcoa_ui"),
-                ui.help_text(ui.output_text("display_warning_pcoa")),
-                width=300,
-                gap=30,
-            ),
-        output_widget("pcoa_plot")
-        ),
-        full_screen=True
-    )
-
-    custom_pcoa_card = ui.card(ui.card_header("Make a custom pcoa filtered by columns values."),
-        ui.layout_sidebar(
-            ui.sidebar(
-
-                ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
-                ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
-                ui.output_ui("pcoa_custom_choice"),
-                ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
-
-
-                ui.input_task_button("run_custom_pcoa","Go"),
-                width=300,
-                gap=35,
-            ),
-        output_widget("pcoa_custom_plot"),
-        ),
-        full_screen=True
-    )
-
-
     ### APPLICATION TREE ###
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav_panel("Exploration", total_production_plot),
-            ui.nav_panel(
-                "Metadata",
-                metadata_table,
-                # dev_table
+            ui.nav_panel("Exploration",
+                total_production_plot),
+
+            ui.nav_panel("Metadata",
+                metadata_table),
+
+            ui.nav_panel("PCOA",
+                pcoa_module_ui("module_pcoa", data)
             ),
-            ui.nav_panel(
-                "PCOA",
-                    pcoa_card,
-                    custom_pcoa_card
-            ),
+
             ui.nav_panel("Bins",
-                         bin_exp_ui("module_bin_exp", data)
+                bin_exp_ui("module_bin_exp", data)
             ),
+
             ui.nav_panel("Cpd",
                 cpd_tab_ui("module_cpd_exp", data)
             )
+
             ),
         )
 
@@ -193,88 +161,7 @@ def run_shiny(data: DataStorage):
 
         bin_exp_server("module_bin_exp", data)
 
-        @render.text
-        def display_warning_pcoa():
-            return "Warning: this is just for display, Pcoa's dataframe is not recalculated."
-
-        @reactive.effect
-        @reactive.event(input.run_custom_pcoa, ignore_none=False)
-        def handle_click():
-            make_custom_pcoa(input.custom_pcoa_selection(), input.pcoa_custom_choice(), input.pcoa_custom_abundance_check(), input.pcoa_custom_color())
-
-        @ui.bind_task_button(button_id="run_custom_pcoa")
-        @reactive.extended_task
-        async def make_custom_pcoa(column, choices, abundance, color):
-
-            return sm.make_pcoa(data, column, choices, abundance, color)
-
-        @render_widget
-        def pcoa_custom_plot():
-            return make_custom_pcoa.result()
-
-        @render.ui
-        @reactive.event(input.custom_pcoa_selection)
-        def pcoa_custom_choice():
-
-            df = data.get_metadata()
-            value = df[input.custom_pcoa_selection()]
-
-            if not du.serie_is_float(value):
-
-                return ui.TagList(
-                            ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
-                                               selected=value.unique().tolist(),
-                                               multiple=True,
-                                               options={"plugins": ["clear_button"]}),)
-            else:
-
-                return ui.TagList(
-                            ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
-
-        @render_widget
-        def pcoa_plot():
-            # Get all parameters.
-            selected_col = input.pcoa_color()
-
-            df = data.get_pcoa_dataframe()
-
-            # Check column dtype.
-            if du.serie_is_float(df[selected_col]):
-
-                min_limit = input.pcoa_slider()[0]
-
-                max_limit = input.pcoa_slider()[1]
-
-                df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
-
-            else:
-
-                show_only = input.pcoa_selectize()
-
-                df = df.loc[df[selected_col].isin(show_only)]
-
-            fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
-
-            return fig
-
-        @render.ui
-        @reactive.event(input.pcoa_color)
-        def pcoa_ui():
-
-            df = data.get_pcoa_dataframe()
-            value = df[input.pcoa_color()]
-
-            if not du.serie_is_float(value):
-
-                return ui.TagList(
-                            ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
-                                               selected=value.unique().tolist(),
-                                               multiple=True,
-                                               options={"plugins": ["clear_button"]}),)
-            else:
-
-                return ui.TagList(
-                            ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
+        pcoa_module_server("module_pcoa", data)
 
         @render_widget
         def taxonomic_boxplot():
