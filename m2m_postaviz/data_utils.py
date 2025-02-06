@@ -4,10 +4,10 @@ import os.path
 import sys
 import tarfile
 import time
-from functools import partial
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from typing import Optional
+from padmet.classes import PadmetSpec, PadmetRef
 
 import numpy as np
 import pandas as pd
@@ -565,6 +565,10 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
     else:
         with open(os.path.join(save_path,"sample_info.json"), "w") as f:
             json.dump(sample_info, f)
+
+    # Metacyc database TREE
+
+    padmet_to_tree(save_path)
 
 
 def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
@@ -1312,4 +1316,115 @@ def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, sav
         del results
 
     return
+
+
+def padmet_to_tree(save_path):
+
+    if "padmet_compounds_category_tree.json" in os.listdir(save_path) or "padmet_child_parent_dataframe.tsv" in os.listdir(save_path):
+        print("Padmet category tree already exist.")
+        return
+    
+    print("Building compounds category tree...")
+
+    MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    metacyc_padmet_directory = os.path.join(MODULE_DIR, "padmet_data")
+    metacyc_padmet_file = os.path.join(metacyc_padmet_directory, "metacyc28_5.padmet")
+    
+    padmet = PadmetRef(metacyc_padmet_file)
+
+    cpd_id = [node.id for node in padmet.dicOfNode.values() if node.type == "compound"]
+
+    # classes_id = [node.id for node in padmet.dicOfNode.values() if node.type == "class"]
+
+    df = pd.DataFrame(columns=["child_id", "parent_id"])
+
+    for mid in cpd_id:
+
+        build_parent_child_dataframe(padmet, df, mid)
+
+        if mid not in df["child_id"].values:
+
+            try:
+                # Catch the error usually a KEY ERROR.
+                log_rlt = [rlt.id_out for rlt in padmet.dicOfRelationIn[mid] if rlt.type == "is_a_class"][0]
+
+            except Exception as e:
+                print(e)
+                print("ERROR for : ",mid)
+                continue
+
+    root = {}
+
+    root["FRAMES"] = {}
+
+    build_tree_from_root(root["FRAMES"], "FRAMES", df)
+
+    with open(os.path.join(save_path, "padmet_compounds_category_tree.json"), 'w') as fp:
+        json.dump(root, fp) 
+
+    print("Compounds category tree done.")
+
+def build_parent_child_dataframe(padmet: PadmetRef, dataframe: pd.DataFrame, id1, child_column = "child_id", parent_column = "parent_id"):
+
+    # id1 can be a Compound id or a class id children of the cpd_id / class_id.
+    # Check of id1 is already in child column. STOP condition.
+    if id1 in dataframe[child_column].values:
+
+        return
+
+    # Get list of relations of id1
+    try:
+        rlt_classes = [rlt.id_out for rlt in padmet.dicOfRelationIn[id1] if rlt.type == "is_a_class"]
+    except KeyError as e:
+        print(e)
+        return
+
+    if len(rlt_classes) == 0:
+        
+        return
+    
+    # Loop in classes id children of cpd_id OR one of its classes id.
+    for rlt_c in rlt_classes:
+
+        # If id1 is NOT in child columns. Write id1 in child column with its FIRST child as parent in parent column.
+        if id1 not in dataframe[child_column].values:
+
+            dataframe.loc[len(dataframe)] = {child_column : id1, parent_column : rlt_c}
+
+        # If the current child is already in child column pass to the next.
+        if rlt_c in dataframe[child_column].values:
+
+            continue
+
+        # Then continue with the first child of id1 who is not in child column. Until no more child then pass to next CPD_ID.
+        build_parent_child_dataframe(padmet, dataframe = dataframe, id1 = rlt_c)
+
+
+def build_tree_from_root(node, id, df):
+    """Build a tree from a dataframe and a dictionary with the first key as root.
+    The first key is the first parent node from which the tree will be built starting with its first child.
+    Any node that is not connected indirectly with the root node won't be in the tree.
+
+    Example :   root = {}
+
+                root["FRAMES"] = {}
+
+                build_tree_from_root(root["FRAMES"], "FRAMES", dataframe)
+
+    Args:
+        node (dict): root node 
+        id (str): Root node key id, correspond to the string of the first node in the dataframe.
+        df (pd.DataFrame): Dataframe with 2 columns: columns names must be child_id and parent_id. child_id column has only unique values. 
+    """
+    children = df.loc[df["parent_id"] == id]["child_id"].tolist()
+
+    if len(children) == 0:
+        return 
+
+    for child in children:
+
+        node[child] = {}
+
+        build_tree_from_root(node[child], child, df)
+
 

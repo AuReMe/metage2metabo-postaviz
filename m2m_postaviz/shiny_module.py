@@ -353,7 +353,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
     if user_input1 == "None":
 
         # all_dataframe["global_production_plot_dataframe"] = df
-        return px.box(df, y=column_value, title="Total production.")
+        return px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
 
     elif user_input2 == "None" or user_input1 == user_input2:
 
@@ -363,11 +363,11 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
 
         if du.has_only_unique_value(df, user_input1):
 
-            return px.bar(df, x=user_input1 , y=column_value, color=user_input1, title=f"Total compound production filtered by {user_input1}")
+            return px.bar(df, x=user_input1 , y=column_value, color=user_input1, title=f"Numbers of unique compounds produced by samples filtered by {user_input1}")
 
         else:
 
-            fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Total compound production filtered by {user_input1}")
+            fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Numbers of unique compounds produced by samples filtered by {user_input1}")
             return fig
 
     else:

@@ -135,10 +135,30 @@ def run_shiny(data: DataStorage):
     app_ui = ui.page_fillable(
         ui.navset_tab(
             ui.nav_panel("Exploration",
-                total_production_plot),
+                ui.layout_column_wrap(
+                    ui.value_box(
+                        "Numbers of unique metabolic network:",
+                        ui.output_text_verbatim("unique_total_bin_count"),
+                        # showcase=icon_svg("dollar-sign"),
+                    ),
+                    ui.value_box(
+                        "Numbers of samples:",
+                        ui.output_text_verbatim("total_samples_count"),
+                    #     # showcase=ui.output_ui("change_icon"),
+                    ),
+                    ui.value_box(
+                        "Numbers of unique compounds produced:",
+                        ui.output_text_verbatim("total_unique_cpd"),
+                    #     # showcase=icon_svg("percent"),
+                    ),
+                fill=False,
+                ),
+                total_production_plot
+                ),
 
             ui.nav_panel("Metadata",
-                metadata_table),
+                metadata_table
+                ),
 
             ui.nav_panel("PCOA",
                 pcoa_module_ui("module_pcoa", data)
@@ -162,6 +182,18 @@ def run_shiny(data: DataStorage):
         bin_exp_server("module_bin_exp", data)
 
         pcoa_module_server("module_pcoa", data)
+
+        @render.text
+        def unique_total_bin_count():
+            return data.get_total_unique_bins_count()
+        
+        @render.text
+        def total_samples_count():
+            return str(data.get_main_dataframe().shape[0])
+
+        @render.text
+        def total_unique_cpd():
+            return str(data.get_main_dataframe().shape[1])
 
         @render_widget
         def taxonomic_boxplot():

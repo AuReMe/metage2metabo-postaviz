@@ -204,6 +204,12 @@ class DataStorage:
 
         return sample_info["bins_count"]
 
+    def get_total_unique_bins_count(self) -> str:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return str(len(sample_info["bins_list"]))
+
 
     def get_raw_abundance_file(self):
         return self.open_tsv(key="abundance_file.tsv") if self.HAS_ABUNDANCE_DATA else None
@@ -440,8 +446,6 @@ class DataStorage:
     
 
     def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
-
-        print(sample_filter_enabled, sample_filter_mode, sample_filter_value)
 
         cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
 
