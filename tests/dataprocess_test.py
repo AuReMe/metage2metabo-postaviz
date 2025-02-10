@@ -262,9 +262,9 @@ def test_recursive_tree_padmet():
 
     cpd_list = data.find_compounds_from_category(tree)
 
-    expected_cpd_list = ['FRAMES', 'CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
+    expected_cpd_list = ['CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
 
-    expected_keys_list = ['Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
+    expected_keys_list = ['FRAMES', 'Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
 
     assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
