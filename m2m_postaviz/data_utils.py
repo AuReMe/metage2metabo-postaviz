@@ -493,7 +493,7 @@ def build_main_dataframe(save_path, cscope_directory):
     print("Main dataframe done and saved.")
 
 
-def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None):
+def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None, metacyc: Optional[bool] = False):
     """
     Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
     in save_path given in CLI.
@@ -568,7 +568,9 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     # Metacyc database TREE
 
-    padmet_to_tree(save_path)
+    if not metacyc:
+
+        padmet_to_tree(save_path)
 
 
 def metadata_processing(metadata_path, save_path) -> pd.DataFrame:

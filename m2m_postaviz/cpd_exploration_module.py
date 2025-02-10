@@ -10,9 +10,15 @@ import m2m_postaviz.shiny_module as sm
 @module.ui
 def cpd_tab_ui(Data: DataStorage):
         
-    cpd_exploration_all_category = Data.get_all_tree_keys()
+    if Data.USE_METACYC_PADMET:
 
-    cpd_exploration_all_category.insert(0,"None")
+        cpd_exploration_all_category = Data.get_all_tree_keys()
+
+        cpd_exploration_all_category.insert(0,"None")
+
+    else:
+
+        cpd_exploration_all_category = ["None"]
 
     compounds_exploration_card = ui.card(
     ui.card_header("Metabolites exploration."),
@@ -103,21 +109,6 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         def cpd_exp_heatmap_added_value():
             return cpd_plot_generation.result()[3][2]
 
-        # @render_widget
-        # def cpd_exp_diff_heatmap():
-
-        #     if input.heatmap_radio_button() == "Cscope":
-
-        #         return cpd_plot_generation.result()[3][0]
-            
-        #     if input.heatmap_radio_button() == "Iscope":
-
-        #         return cpd_plot_generation.result()[3][1]
-    
-        #     if input.heatmap_radio_button() == "Added value":
-
-        #         return cpd_plot_generation.result()[3][2]
-
         @render.data_frame
         def cpd_exp_stat_dataframe():
             return cpd_plot_generation.result()[2]
@@ -193,20 +184,22 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
 
-            category_node = []
-            
-            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
-            
-            category_node = category_node[0]
-            
-            cpds_found = []
-            
-            Data.find_compounds_from_category(category_node, cpds_found)
+            if Data.USE_METACYC_PADMET:
 
-            cpd_list = Data.get_compound_list(True)
+                category_node = []
+                
+                Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
+                
+                category_node = category_node[0]
+                
+                cpds_found = []
+                
+                Data.find_compounds_from_category(category_node, cpds_found)
 
-            final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
+                cpd_list = Data.get_compound_list(True)
 
-            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
+                final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
+
+                return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
         

@@ -33,7 +33,10 @@ class DataStorage:
 
         self.HAS_ABUNDANCE_DATA = loaded_files["abundance_file.tsv"]
 
+        self.USE_METACYC_PADMET = loaded_files["padmet_compounds_category_tree.json"]
+
         if save_path is not None:
+
             self.output_path = save_path
 
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}")
@@ -412,36 +415,6 @@ class DataStorage:
                 raise RuntimeError(f"Required {file} is missing when directly loading from directory.")
 
         return all_files
-
-
-    def get_compounds_category_files(self):
-
-        cpd_lvl1_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level1.tsv")
-        cpd_lvl2_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level2.tsv")
-
-        cpd_lvl1_df = pd.read_csv(cpd_lvl1_filepath, sep="\t")
-        cpd_lvl2_df = pd.read_csv(cpd_lvl2_filepath, sep="\t")
-
-        return cpd_lvl1_df, cpd_lvl2_df
-    
-
-    def get_compounds_category_list(self):
-
-        cpd_list = self.get_compound_list(True)
-        cpd_lvl1, cpdlvl2 = self.get_compounds_category_files()
-
-        res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(cpd_list)]["category"].unique().tolist()
-        res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(cpd_list)]["category"].unique().tolist()
-
-        res_lvl1.insert(0," None")
-        res_lvl2.insert(0," None")
-
-        return res_lvl1, res_lvl2
-
-
-    def get_compounds_category_dataframe(self):
-
-        return self.get_compounds_category_files()
     
 
     def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
