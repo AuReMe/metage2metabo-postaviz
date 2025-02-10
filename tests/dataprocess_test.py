@@ -241,3 +241,29 @@ def test_statistic_method():
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
+
+def test_recursive_tree_padmet():
+
+    data = DataStorage(TMP_DIR)
+
+    dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
+
+    tree = {}
+
+    tree["FRAMES"] = {}
+
+    du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
+
+    res = []
+
+    data.get_all_tree_keys_recursive(tree, res)
+
+    cpd_list = data.find_compounds_from_category(tree)
+
+    expected_cpd_list = ['FRAMES', 'CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
+
+    expected_keys_list = ['Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
+
+    assert res == expected_keys_list, "all keys found in padmet tree are not equal to the expected keys list."
+
+    assert cpd_list == expected_cpd_list, "all compounds found in padmet tree are not equal to the expected compounds list."
