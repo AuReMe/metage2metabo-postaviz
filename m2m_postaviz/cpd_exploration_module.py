@@ -1,0 +1,212 @@
+from shiny import module, ui
+from shinywidgets import output_widget
+from shinywidgets import render_widget
+from m2m_postaviz.data_struct import DataStorage
+from shiny import reactive
+from shiny import render
+import m2m_postaviz.shiny_module as sm
+
+
+@module.ui
+def cpd_tab_ui(Data: DataStorage):
+        
+    cpd_exploration_all_category = Data.get_all_tree_keys()
+
+    cpd_exploration_all_category.insert(0,"None")
+
+    compounds_exploration_card = ui.card(
+    ui.card_header("Metabolites exploration."),
+    ui.card_body(
+        ui.layout_sidebar(
+            ui.sidebar(
+
+                ui.input_selectize("category_choice_input", "Select one category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
+                
+                ui.card(" ",
+                    ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
+                    max_height="300px",
+                    # theme="lightgrey"
+                    ),
+                ui.input_select("metadata_filter_input", "Filter by metadata:", Data.get_factors(remove_smpl_col=True, insert_none=True)),
+
+                ui.input_selectize("color_filter_input", "Add color by metadata: ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
+
+                ui.input_checkbox("sample_filter_enable_input","Filter plot by sample."),
+
+                ui.panel_conditional("input.sample_filter_enable_input",
+
+                    ui.input_radio_buttons("sample_filter_choice_input", "Exclude or include samples into the plot.", ["Include", "Exclude"]),
+                    ui.input_selectize("sample_filter_selection_input", "Selection of samples to filter.", choices=Data.get_sample_list(), multiple=True, remove_button=True),
+                    ui.input_action_button("reset_sample_filter_button", "Reset")
+                    ),
+
+                ui.input_task_button("run_plot_generation","Generate plots"),
+
+                ##### stat ui
+
+                ui.input_checkbox("exp_cpd_generate_stat_dataframe", "Generate statistical test dataframe."),
+
+                ui.panel_conditional("input.exp_cpd_generate_stat_dataframe",
+                                        
+                    ui.input_checkbox("exp_cpd_multiple_correction", "Multiple test correction"),
+                    ui.panel_conditional("input.exp_cpd_multiple_correction",
+                                            ui.input_select("exp_cpd_multiple_correction_method","Method",Data.get_list_of_tests(),selected=Data.get_list_of_tests()[0],)),
+                    ),
+
+            width=400,
+            gap=35,
+            bg="lightgrey"
+        ),
+
+        ui.navset_card_tab(
+            ui.nav_panel("Cscope", ui.card(output_widget("cpd_exp_heatmap_cscope"), full_screen=True)),
+            ui.nav_panel("Iscope", ui.card(output_widget("cpd_exp_heatmap_iscope"), full_screen=True)),
+            ui.nav_panel("Added value", ui.card(output_widget("cpd_exp_heatmap_added_value"), full_screen=True)),
+            ),
+
+        ui.navset_card_tab(
+            ui.nav_panel("Cscope", ui.card(output_widget("sample_percentage_production_cscope"), full_screen=True)),
+            ui.nav_panel("Iscope", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
+            ),
+
+        ui.card(output_widget("cpd_exp_producers_plot"),full_screen=True),
+
+        ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
+
+    ),
+
+    min_height="1500px"
+    ),
+
+    full_screen=True,)
+
+    return compounds_exploration_card
+
+
+@module.server
+def cpd_tab_server(input, output, session, Data: DataStorage):
+    
+        @reactive.effect
+        @reactive.event(input.reset_sample_filter_button, ignore_none=True)
+        def _reset_sample_filter_choice():
+            return ui.update_selectize("sample_filter_selection_input", choices=Data.get_sample_list(), selected=None)
+                
+        @render_widget
+        def cpd_exp_heatmap_cscope():
+            return cpd_plot_generation.result()[3][0]
+
+        @render_widget
+        def cpd_exp_heatmap_iscope():
+            return cpd_plot_generation.result()[3][1]
+
+        @render_widget
+        def cpd_exp_heatmap_added_value():
+            return cpd_plot_generation.result()[3][2]
+
+        # @render_widget
+        # def cpd_exp_diff_heatmap():
+
+        #     if input.heatmap_radio_button() == "Cscope":
+
+        #         return cpd_plot_generation.result()[3][0]
+            
+        #     if input.heatmap_radio_button() == "Iscope":
+
+        #         return cpd_plot_generation.result()[3][1]
+    
+        #     if input.heatmap_radio_button() == "Added value":
+
+        #         return cpd_plot_generation.result()[3][2]
+
+        @render.data_frame
+        def cpd_exp_stat_dataframe():
+            return cpd_plot_generation.result()[2]
+
+        @render_widget
+        def sample_percentage_production_cscope():
+            return cpd_plot_generation.result()[1][0]
+
+        @render_widget
+        def sample_percentage_production_iscope():
+            return cpd_plot_generation.result()[1][1]
+                
+        @render_widget
+        def cpd_exp_producers_plot():
+            return cpd_plot_generation.result()[0]
+
+        @ui.bind_task_button(button_id="run_plot_generation")
+        @reactive.extended_task
+        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method):
+
+            cpd_filtered_list = []
+            for cpd in Data.get_compound_list():
+                if cpd[:-3] in selected_compounds:
+                    cpd_filtered_list.append(cpd)
+
+            if len(selected_compounds) == 0:
+                return
+
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+
+            if user_input1 != "None":
+
+                percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1,)
+
+            else:
+                percent_barplot = None
+
+            if with_statistic:
+
+                try:
+                    stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
+                except:
+                    stat_dataframe = None
+            else:
+
+                stat_dataframe = None
+
+            cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.added_value_heatmap(Data, cpd_filtered_list, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+
+            return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
+
+
+        @reactive.effect
+        @reactive.event(input.run_plot_generation, ignore_none=True)
+        def handle_click_cpd_exploration():
+            cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(), 
+                                input.color_filter_input(), input.sample_filter_enable_input(),
+                                input.sample_filter_choice_input(), input.sample_filter_selection_input(), 
+                                input.exp_cpd_generate_stat_dataframe(), input.exp_cpd_multiple_correction(),
+                                input.exp_cpd_multiple_correction_method())
+
+
+        @reactive.effect
+        def _update_category_choices():
+
+            category_level = input.category_choice_input()
+
+            if category_level == "":
+
+                return ui.update_selectize("compounds_choice_input", choices=[])
+
+            if category_level == "None":
+
+                return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
+
+            category_node = []
+            
+            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
+            
+            category_node = category_node[0]
+            
+            cpds_found = []
+            
+            Data.find_compounds_from_category(category_node, cpds_found)
+
+            cpd_list = Data.get_compound_list(True)
+
+            final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
+
+            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
+
+        

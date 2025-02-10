@@ -10,16 +10,22 @@ class DataStorage:
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
-    SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
+    USE_METACYC_PADMET : bool = False
+    # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
-    DF_KEYS = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
-               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
-                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json")
+    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
     BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
+    SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+    PADMET_DIR = os.path.join(os.path.dirname(SRC_DIR), "padmet_data")
 
     def __init__(self, save_path: str):
+
+        if os.path.isdir(save_path) is not True:
+            raise FileNotFoundError(f"{save_path} is not a directory.")
 
         loaded_files = self.load_files(save_path)
 
@@ -42,9 +48,6 @@ class DataStorage:
         Returns:
             pd.Dataframe: Pandas dataframe
         """
-        if key not in self.DF_KEYS:
-            print(key, "not in keys: \n", self.DF_KEYS)
-            return
 
         for root, _dirname, filename in os.walk(self.output_path):
             if key in filename:
@@ -174,17 +177,7 @@ class DataStorage:
 
         dfc = pd.concat(cscope_dataframe).reset_index()
 
-        # dfc[compound] = compound
-
-        # dfc.rename(columns={compound: "cscope"},inplace=True)
-
         dfi = pd.concat(iscope_dataframe).reset_index()
-
-        # dfi[compound] = compound
-
-        # dfi.rename(columns={compound: "iscope"},inplace=True)
-
-        # df = pd.merge(dfc,dfi,on=["binID","smplID"])
 
         return dfc, dfi
 
@@ -210,6 +203,13 @@ class DataStorage:
         return sample_info["bins_count"]
 
 
+    def get_total_unique_bins_count(self) -> str:
+        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+            sample_info = load(f)
+
+        return str(len(sample_info["bins_list"]))
+
+
     def get_raw_abundance_file(self):
         return self.open_tsv(key="abundance_file.tsv") if self.HAS_ABUNDANCE_DATA else None
 
@@ -218,8 +218,28 @@ class DataStorage:
         return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
 
 
-    def get_metabolite_production_dataframe(self) -> pd.DataFrame:
-        return self.open_tsv(key="producers_dataframe_postaviz.tsv")
+    def get_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
+
+        df = self.open_tsv(key="producers_dataframe_postaviz.tsv")
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.merge(metadata,"inner","smplID")
+
+        return df 
+
+
+    def get_iscope_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
+
+        df = self.open_tsv(key="producers_iscope_dataframe_postaviz.tsv")
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.merge(metadata,"inner","smplID")
+
+        return df 
 
 
     def get_main_dataframe(self) -> pd.DataFrame:
@@ -234,6 +254,9 @@ class DataStorage:
         return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
 
 
+    def get_list_of_tests(self):
+        return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
+
     # def set_main_metadata(self, new_metadata):
     #     self.metadata = new_metadata
 
@@ -243,21 +266,45 @@ class DataStorage:
         else:
             return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
+
     def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
         return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
+
 
     def is_indexed(self, df: pd.DataFrame) -> bool:
         return True if df.index.name == "smplID" else False
 
-    def get_factors(self) -> list:
-        return self.get_metadata().columns.tolist()
 
-    def get_compound_list(self):
+    def get_factors(self, remove_smpl_col = False, insert_none = False) -> list:
+
+        result = self.get_metadata().columns.tolist()
+
+        if remove_smpl_col:
+             
+             result.remove("smplID")
+
+        if insert_none:
+
+            result.insert(0, "None")
+
+        return result
+
+
+    def get_sample_list(self) -> list:
+        return self.get_main_dataframe()["smplID"].tolist()
+
+
+    def get_compound_list(self, without_compartment: Optional[bool] = False):
         query = self.get_main_dataframe().columns.tolist()
         if "smplID" in query:
             query.remove("smplID")
-
+        if without_compartment:
+            new_query = []
+            for cpd in query:
+                new_query.append(cpd[:-3])
+            return new_query
         return query
+
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
         path_to_save = self.output_path
@@ -270,6 +317,7 @@ class DataStorage:
         except Exception as e:
             logs = e
         return logs
+
 
     def check_and_rename(self, file_path: str, add: int = 0) -> str:
         original_file_path = file_path
@@ -335,7 +383,7 @@ class DataStorage:
 
         for _root, _dir ,filenames in os.walk(load_path):
 
-            for df_files in self.DF_KEYS:
+            for df_files in self.ALL_FILE_NAMES:
 
                 if df_files in all_files:
 
@@ -351,14 +399,181 @@ class DataStorage:
 
                 print(df_files, "IS \t", all_files[df_files])
 
-        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv", "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
+        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
+                        "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                        "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
-        # Check if necessary files arent' True
+        # Check if necessary files are not True
         for file in required_files:
             if file in all_files and all_files[file] is True:
                 continue
             else:
                 print(file)
-                raise RuntimeError("Required files are missing when directly loading from directory.")
+                raise RuntimeError(f"Required {file} is missing when directly loading from directory.")
 
         return all_files
+
+
+    def get_compounds_category_files(self):
+
+        cpd_lvl1_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level1.tsv")
+        cpd_lvl2_filepath = os.path.join(self.PADMET_DIR, "compounds_26_5_level2.tsv")
+
+        cpd_lvl1_df = pd.read_csv(cpd_lvl1_filepath, sep="\t")
+        cpd_lvl2_df = pd.read_csv(cpd_lvl2_filepath, sep="\t")
+
+        return cpd_lvl1_df, cpd_lvl2_df
+    
+
+    def get_compounds_category_list(self):
+
+        cpd_list = self.get_compound_list(True)
+        cpd_lvl1, cpdlvl2 = self.get_compounds_category_files()
+
+        res_lvl1 = cpd_lvl1.loc[cpd_lvl1["compound_id"].isin(cpd_list)]["category"].unique().tolist()
+        res_lvl2 = cpdlvl2.loc[cpdlvl2["compound_id"].isin(cpd_list)]["category"].unique().tolist()
+
+        res_lvl1.insert(0," None")
+        res_lvl2.insert(0," None")
+
+        return res_lvl1, res_lvl2
+
+
+    def get_compounds_category_dataframe(self):
+
+        return self.get_compounds_category_files()
+    
+
+    def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
+
+        cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
+
+        iscope_df = self.get_iscope_metabolite_production_dataframe(False).sort_values("smplID")
+
+        col_diff = cscope_df.columns.difference(iscope_df.columns)
+
+        col_diff_dict = dict.fromkeys(col_diff, 0.0)
+
+        temp_df = pd.DataFrame(col_diff_dict, index=iscope_df.index)
+
+        iscope_df = pd.concat([iscope_df, temp_df], axis=1)
+
+        if sample_filter_enabled is not False:
+
+            if sample_filter_mode == "Include":
+
+                cscope_df = cscope_df.loc[cscope_df.smplID.isin(sample_filter_value)]
+                iscope_df = iscope_df.loc[iscope_df.smplID.isin(sample_filter_value)]
+
+            if sample_filter_mode == "Exclude":
+
+                cscope_df = cscope_df.loc[~cscope_df.smplID.isin(sample_filter_value)]
+                iscope_df = iscope_df.loc[~iscope_df.smplID.isin(sample_filter_value)]
+
+        cscope_df.set_index("smplID",inplace=True)
+        iscope_df.set_index("smplID",inplace=True)
+
+        cscope_df.sort_index(axis=1,inplace=True)
+        iscope_df.sort_index(axis=1,inplace=True)
+
+        if cpd_input is not None:
+
+            cscope_df = cscope_df[[*cpd_input]]
+            iscope_df = iscope_df[[*cpd_input]]
+
+        return cscope_df, iscope_df, cscope_df - iscope_df
+    
+
+    def get_cpd_category_tree(self) -> dict:
+        with open(os.path.join(self.output_path, "padmet_compounds_category_tree.json"), 'r') as fp:
+            tree = load(fp)
+
+        return tree
+    
+
+    def get_all_tree_keys(self):
+
+        res = []
+
+        tree = self.get_cpd_category_tree()
+
+        self.get_all_tree_keys_recursive(tree, res)
+
+        return res
+
+
+    def get_all_tree_keys_recursive(self, node, results = []):
+
+        for key, child in node.items():
+
+            # If no child (dict empty)
+            if not bool(child):
+
+                continue
+            
+            # If key of node is not already in results list
+            if not key in results:
+
+                results.append(key)
+
+            # Go to the next node.
+            self.get_all_tree_keys_recursive(child, results)
+
+
+    def get_sub_tree_recursive(self, data, id, results = []):
+        """Search throught the tree for a match between key and id.
+        Return only the part of the tree with the node id as the root. 
+
+        Args:
+            data (dict): original Tree.
+            id (str): ID of the node.
+            results (list, optional): List used as transport of results between recursive. Ignore and let it to default. Defaults to [].
+
+        Returns:
+            list: list containing the dictionary of the node.
+        """
+        if len(results) > 0:
+
+            return results
+
+        for key, child in data.items():
+            
+            if id == key:
+
+                results.append(data[id])
+
+                return 
+
+            else:
+                
+                self.get_sub_tree_recursive(child, id, results)
+
+                if len(results) > 0:
+
+                    return 
+
+
+    def find_compounds_from_category(self, data, results = []):
+        """Find and return in a list all the leaf of the tree. each leaf is a compounds
+        A compounds has not children, but work need te bo done to be sure that category node 
+        that do not have any children (not supposed to) will be in the result list.
+
+        Args:
+            data (dict): Tree
+            results (list, optional): List used as transport of results between recursive. Ignore and let it to default. Defaults to [].
+
+        Returns:
+            list: List of childless node found in tree (compounds).
+        """
+
+        for key, child in data.items():
+
+            if not bool(child):
+
+                results.append(key)
+            
+            else:
+
+                self.find_compounds_from_category(child, results)
+
+        return 

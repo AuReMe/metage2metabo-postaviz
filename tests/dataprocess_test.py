@@ -40,6 +40,14 @@ metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
 
+# CSCOPE_DIR = os.path.join(TMP_DIR, "cscope_directory")
+
+# os.makedirs(CSCOPE_DIR)
+
+# ISCOPE_DIR = os.path.join(TMP_DIR, "iscope_directory")
+
+# os.makedirs(ISCOPE_DIR)
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
@@ -51,7 +59,7 @@ def test_data_processing():
 
     data = DataStorage(TMP_DIR)
 
-    sample_info, sample_data = du.multiprocess_retrieve_data(TEST_DATA_CONTAINER)
+    # sample_info = du.load_sample_cscope_data(TEST_DATA_CONTAINER, CSCOPE_DIR, ".parquet.gz")
 
     metadata = data.get_metadata()
 
@@ -83,17 +91,17 @@ def test_data_processing():
     assert global_production_dataframe.drop(columns=["Total_production", "Total_abundance_weighted"]).equals(metadata_against_global_dataframe), "Metadata in global_dataframe and metadata aren't equals."
 
     # Check if all sample_data are dataframe and if the numbers of metabolites produced is the same by checking len(columns in df) and len(metabolites produced list in json)
-    for sample in sample_data.keys():
-        # JSON equivalent of TSV format cscope. usefull to check if any values has been lost in the processing.
-        sample_json = du.open_json(os.path.join(TEST_DATA_CONTAINER, sample+"/"+"community_analysis/"+"comm_scopes.json"))["com_scope"]
+    # for sample in sample_data.keys():
+    #     # JSON equivalent of TSV format cscope. usefull to check if any values has been lost in the processing.
+    #     sample_json = du.open_json(os.path.join(TEST_DATA_CONTAINER, sample+"/"+"community_analysis/"+"comm_scopes.json"))["com_scope"]
 
-        assert isinstance(sample_data[sample]["cscope"], pd.DataFrame), f"sample {sample} in sample_data is not a pandas dataframe object."
-        assert len(sample_data[sample]["cscope"].columns) == len(sample_json),"Length of sample columns and length of json metabolites production list are not the same."
+    #     assert isinstance(sample_data[sample]["cscope"], pd.DataFrame), f"sample {sample} in sample_data is not a pandas dataframe object."
+    #     assert len(sample_data[sample]["cscope"].columns) == len(sample_json),"Length of sample columns and length of json metabolites production list are not the same."
 
         # Select 1 row of main_dataframe by matching index ID with the sample name. Then extract the values and sum() the get the amount of cpd produced. Compare first with TSV cscope then JSON file.
-        if not du.is_indexed_by_id(main_dataframe):
-            main_dataframe.set_index("smplID",inplace=True)
-        assert main_dataframe.loc[main_dataframe.index == sample].values.sum() == len(sample_json),f"The amount of metabolites produced for {sample} in main_dataframe is not the same as com_scopes json file."
+        # if not du.is_indexed_by_id(main_dataframe):
+        #     main_dataframe.set_index("smplID",inplace=True)
+        # assert main_dataframe.loc[main_dataframe.index == sample].values.sum() == len(sample_json),f"The amount of metabolites produced for {sample} in main_dataframe is not the same as com_scopes json file."
 
 
 """ Disable since sample_data is no longer use after data processing.
@@ -187,8 +195,8 @@ def test_shiny_module():
 
     # Test for metabolites production reactive plot.
 
-    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", True)
-    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days", True)
+    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days")
+    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days")
 
     assert isinstance(reactive_metabolites_production_plot, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
 
@@ -233,3 +241,33 @@ def test_statistic_method():
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
+
+def test_recursive_tree_padmet():
+
+    from collections import Counter
+
+    data = DataStorage(TMP_DIR)
+
+    dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
+
+    tree = {}
+
+    tree["FRAMES"] = {}
+
+    du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
+
+    res = []
+
+    data.get_all_tree_keys_recursive(tree, res)
+
+    cpd_list = []
+
+    data.find_compounds_from_category(tree, cpd_list)
+
+    expected_cpd_list = ['CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
+
+    expected_keys_list = ['FRAMES', 'Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
+
+    assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
+
+    assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
