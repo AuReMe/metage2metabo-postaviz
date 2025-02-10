@@ -553,7 +553,7 @@ class DataStorage:
                     return 
 
 
-    def find_compounds_from_category(self, data, results = [], nb_run = 0):
+    def find_compounds_from_category(self, data, results = []):
         """Find and return in a list all the leaf of the tree. each leaf is a compounds
         A compounds has not children, but work need te bo done to be sure that category node 
         that do not have any children (not supposed to) will be in the result list.
@@ -573,7 +573,7 @@ class DataStorage:
                 results.append(key)
             
             else:
-                
-                self.find_compounds_from_category(child, results, nb_run=nb_run+1)
+
+                self.find_compounds_from_category(child, results)
 
         return 

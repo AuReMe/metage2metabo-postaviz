@@ -260,7 +260,9 @@ def test_recursive_tree_padmet():
 
     data.get_all_tree_keys_recursive(tree, res)
 
-    cpd_list = data.find_compounds_from_category(tree)
+    cpd_list = []
+
+    data.find_compounds_from_category(tree, cpd_list)
 
     expected_cpd_list = ['CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
 
