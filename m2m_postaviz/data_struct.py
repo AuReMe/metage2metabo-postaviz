@@ -10,12 +10,13 @@ class DataStorage:
     ID_VAR = "smplID"
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
-    SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
+    USE_METACYC_PADMET : bool = False
+    # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
-    DF_KEYS = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
                "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
-                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json")
+                "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
     BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
     SRC_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -47,9 +48,6 @@ class DataStorage:
         Returns:
             pd.Dataframe: Pandas dataframe
         """
-        if key not in self.DF_KEYS:
-            print(key, "not in keys: \n", self.DF_KEYS)
-            return
 
         for root, _dirname, filename in os.walk(self.output_path):
             if key in filename:
@@ -203,6 +201,7 @@ class DataStorage:
             sample_info = load(f)
 
         return sample_info["bins_count"]
+
 
     def get_total_unique_bins_count(self) -> str:
         with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
@@ -384,7 +383,7 @@ class DataStorage:
 
         for _root, _dir ,filenames in os.walk(load_path):
 
-            for df_files in self.DF_KEYS:
+            for df_files in self.ALL_FILE_NAMES:
 
                 if df_files in all_files:
 
@@ -410,7 +409,7 @@ class DataStorage:
                 continue
             else:
                 print(file)
-                raise RuntimeError("Required files are missing when directly loading from directory.")
+                raise RuntimeError(f"Required {file} is missing when directly loading from directory.")
 
         return all_files
 
@@ -483,3 +482,98 @@ class DataStorage:
             iscope_df = iscope_df[[*cpd_input]]
 
         return cscope_df, iscope_df, cscope_df - iscope_df
+    
+
+    def get_cpd_category_tree(self) -> dict:
+        with open(os.path.join(self.output_path, "padmet_compounds_category_tree.json"), 'r') as fp:
+            tree = load(fp)
+
+        return tree
+    
+
+    def get_all_tree_keys(self):
+
+        res = []
+
+        tree = self.get_cpd_category_tree()
+
+        self.get_all_tree_keys_recursive(tree, res)
+
+        return res
+
+
+    def get_all_tree_keys_recursive(self, node, results = []):
+
+        for key, child in node.items():
+
+            # If no child (dict empty)
+            if not bool(child):
+
+                continue
+            
+            # If key of node is not already in results list
+            if not key in results:
+
+                results.append(key)
+
+            # Go to the next node.
+            self.get_all_tree_keys_recursive(child, results)
+
+
+    def get_sub_tree_recursive(self, data, id, results = []):
+        """Search throught the tree for a match between key and id.
+        Return only the part of the tree with the node id as the root. 
+
+        Args:
+            data (dict): original Tree.
+            id (str): ID of the node.
+            results (list, optional): List used as transport of results between recursive. Ignore and let it to default. Defaults to [].
+
+        Returns:
+            list: list containing the dictionary of the node.
+        """
+        if len(results) > 0:
+
+            return results
+
+        for key, child in data.items():
+            
+            if id == key:
+
+                results.append(data[id])
+
+                return 
+
+            else:
+                
+                self.get_sub_tree_recursive(child, id, results)
+
+                if len(results) > 0:
+
+                    return 
+
+
+    def find_compounds_from_category(self, data, results = [], nb_run = 0):
+        """Find and return in a list all the leaf of the tree. each leaf is a compounds
+        A compounds has not children, but work need te bo done to be sure that category node 
+        that do not have any children (not supposed to) will be in the result list.
+
+        Args:
+            data (dict): Tree
+            results (list, optional): List used as transport of results between recursive. Ignore and let it to default. Defaults to [].
+
+        Returns:
+            list: List of childless node found in tree (compounds).
+        """
+
+        for key, child in data.items():
+
+            if not bool(child):
+
+                results.append(key)
+            
+            else:
+                
+                self.find_compounds_from_category(child, results, nb_run=nb_run+1)
+
+        return 

@@ -136,21 +136,28 @@ def run_shiny(data: DataStorage):
         ui.navset_tab(
             ui.nav_panel("Exploration",
                 ui.layout_column_wrap(
+
                     ui.value_box(
                         "Numbers of unique metabolic network:",
-                        ui.output_text_verbatim("unique_total_bin_count"),
+                        ui.output_text("unique_total_bin_count"),
+                        theme="bg-gradient-indigo-purple",
                         # showcase=icon_svg("dollar-sign"),
                     ),
+
                     ui.value_box(
                         "Numbers of samples:",
-                        ui.output_text_verbatim("total_samples_count"),
+                        ui.output_text("total_samples_count"),
+                        theme="cyan",
                     #     # showcase=ui.output_ui("change_icon"),
                     ),
+
                     ui.value_box(
                         "Numbers of unique compounds produced:",
-                        ui.output_text_verbatim("total_unique_cpd"),
+                        ui.output_text("total_unique_cpd"),
+                        theme="bg-gradient-blue-purple",
                     #     # showcase=icon_svg("percent"),
                     ),
+
                 fill=False,
                 ),
                 total_production_plot

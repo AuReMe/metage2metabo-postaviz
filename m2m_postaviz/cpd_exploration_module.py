@@ -10,7 +10,9 @@ import m2m_postaviz.shiny_module as sm
 @module.ui
 def cpd_tab_ui(Data: DataStorage):
         
-    cpd_exploration_all_category = ["None", "Ontology level 1", "Ontology level 2", "Pathway level 1", "Pathway level 2"]
+    cpd_exploration_all_category = Data.get_all_tree_keys()
+
+    cpd_exploration_all_category.insert(0,"None")
 
     compounds_exploration_card = ui.card(
     ui.card_header("Metabolites exploration."),
@@ -18,12 +20,13 @@ def cpd_tab_ui(Data: DataStorage):
         ui.layout_sidebar(
             ui.sidebar(
 
-                ui.input_select("category_level_input", "Search by compounds, ontology or pathway", choices= cpd_exploration_all_category, selected= cpd_exploration_all_category[0]),
-
-                ui.input_selectize("category_choice_input", "Select one category", choices=Data.get_compounds_category_list()[0], selected=Data.get_compounds_category_list()[0][0], multiple=False, width="400px"),
+                ui.input_selectize("category_choice_input", "Select one category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
                 
-                ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
-            
+                ui.card(" ",
+                    ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
+                    max_height="300px",
+                    # theme="lightgrey"
+                    ),
                 ui.input_select("metadata_filter_input", "Filter by metadata:", Data.get_factors(remove_smpl_col=True, insert_none=True)),
 
                 ui.input_selectize("color_filter_input", "Add color by metadata: ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
@@ -127,7 +130,6 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         def sample_percentage_production_iscope():
             return cpd_plot_generation.result()[1][1]
                 
-
         @render_widget
         def cpd_exp_producers_plot():
             return cpd_plot_generation.result()[0]
@@ -181,58 +183,30 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.effect
         def _update_category_choices():
 
-            category_level = input.category_level_input()
+            category_level = input.category_choice_input()
+
+            if category_level == "":
+
+                return ui.update_selectize("compounds_choice_input", choices=[])
 
             if category_level == "None":
 
-                return ui.update_selectize("category_choice_input", choices=["None"], selected="None")
+                return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
 
-            if category_level == "Ontology level 1":
-
-                return ui.update_selectize("category_choice_input", choices=Data.get_compounds_category_list()[0], selected=Data.get_compounds_category_list()[0][0])
-                
-            if category_level == "Ontology level 2":
-
-                return ui.update_selectize("category_choice_input", choices=Data.get_compounds_category_list()[1], selected=Data.get_compounds_category_list()[1][0])
-
-            if category_level == "Pathway level 1":
-
-                return ui.update_selectize("category_choice_input", choices=[])
-
-            if category_level == "Pathway level 1":
-
-                return ui.update_selectize("category_choice_input", choices=[])
+            category_node = []
             
+            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
+            
+            category_node = category_node[0]
+            
+            cpds_found = []
+            
+            Data.find_compounds_from_category(category_node, cpds_found)
 
-        @reactive.effect
-        def _update_compounds_choices():
+            cpd_list = Data.get_compound_list(True)
 
-            category_level = input.category_level_input()
-            category_choice = input.category_choice_input()
-            cpd_list_no_compart = Data.get_compound_list(without_compartment=True)
+            final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
 
-            if category_level == "None":
+            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
-                return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(True))
-
-            if category_level == "Ontology level 1":
-
-                df = Data.get_compounds_category_dataframe()[0]
-
-            if category_level == "Ontology level 2":
-
-                df = Data.get_compounds_category_dataframe()[1]
-
-            if category_level == "Pathway level 1":
-
-                return ui.update_selectize("compounds_choice_input", choices=[])
-
-            if category_level == "Pathway level 2":
-
-                return ui.update_selectize("compounds_choice_input", choices=[])
-
-            df = df[df['category'] == category_choice]
-            input_choices = df.loc[df["compound_id"].isin(cpd_list_no_compart)]["compound_id"].tolist()
-
-            return ui.update_selectize("compounds_choice_input", choices=input_choices, selected=input_choices)
         

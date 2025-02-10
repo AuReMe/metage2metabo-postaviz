@@ -1061,11 +1061,9 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
-        print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
 
         s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
         s.name = "Production"
-        print(f"Chunk {chunk_index} production serie produced with {sys.getsizeof(s)/1000000000} Gb memory size of production serie")
 
         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
         count.name = "Count"
@@ -1105,9 +1103,7 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
         final_result.to_parquet(filepath, compression="gzip")
 
-        print(f"Chunk {chunk_index} done in {time.time() - start_chunk} with {sys.getsizeof(final_result) / 1000000000} Gb memory size.")
         del final_result
-
 
     print("Took: ", time.time() - start, "Before saving")
 
@@ -1319,6 +1315,16 @@ def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, sav
 
 
 def padmet_to_tree(save_path):
+    """Build a tree to be used in the Shiny application.
+    Allow the user to select directly a compounds or a category of compounds and fill a list
+    with all the compounds corresponding to that category.
+
+    Use the function build_parent_child_dataframe to create a 2 columns (child_id/parent_id) dataframe.
+    With the relation dataframe, build the tree using build_tree_from_root.
+
+    Args:
+        save_path (str): Path of the save directory.
+    """
 
     if "padmet_compounds_category_tree.json" in os.listdir(save_path) or "padmet_child_parent_dataframe.tsv" in os.listdir(save_path):
         print("Padmet category tree already exist.")
@@ -1364,17 +1370,26 @@ def padmet_to_tree(save_path):
 
     print("Compounds category tree done.")
 
-def build_parent_child_dataframe(padmet: PadmetRef, dataframe: pd.DataFrame, id1, child_column = "child_id", parent_column = "parent_id"):
 
-    # id1 can be a Compound id or a class id children of the cpd_id / class_id.
-    # Check of id1 is already in child column. STOP condition.
-    if id1 in dataframe[child_column].values:
+def build_parent_child_dataframe(padmet: PadmetRef, dataframe: pd.DataFrame, current_id, child_column = "child_id", parent_column = "parent_id"):
+    """Build a child /parent relation dataframe between compounds category from a metacyc database in a padmet file format.
+
+    Args:
+        padmet (PadmetRef): PadmetRef object from padmet package.
+        dataframe (pd.DataFrame): Transmission of the dataframe between recursive call.
+        current_id (_type_): ID of the current category / compound.
+        child_column (str, optional): Column label of the child column of the dataframe. Defaults to "child_id".
+        parent_column (str, optional): Column label of the parent column of the dataframe. Defaults to "parent_id".
+    """
+    # current_id can be a Compound id or a class id children of the cpd_id / class_id.
+    # Check of current_id is already in child column. STOP condition.
+    if current_id in dataframe[child_column].values:
 
         return
 
-    # Get list of relations of id1
+    # Get list of relations of current_id
     try:
-        rlt_classes = [rlt.id_out for rlt in padmet.dicOfRelationIn[id1] if rlt.type == "is_a_class"]
+        rlt_classes = [rlt.id_out for rlt in padmet.dicOfRelationIn[current_id] if rlt.type == "is_a_class"]
     except KeyError as e:
         print(e)
         return
@@ -1386,18 +1401,18 @@ def build_parent_child_dataframe(padmet: PadmetRef, dataframe: pd.DataFrame, id1
     # Loop in classes id children of cpd_id OR one of its classes id.
     for rlt_c in rlt_classes:
 
-        # If id1 is NOT in child columns. Write id1 in child column with its FIRST child as parent in parent column.
-        if id1 not in dataframe[child_column].values:
+        # If current_id is NOT in child columns. Write current_id in child column with its FIRST child as parent in parent column.
+        if current_id not in dataframe[child_column].values:
 
-            dataframe.loc[len(dataframe)] = {child_column : id1, parent_column : rlt_c}
+            dataframe.loc[len(dataframe)] = {child_column : current_id, parent_column : rlt_c}
 
         # If the current child is already in child column pass to the next.
         if rlt_c in dataframe[child_column].values:
 
             continue
 
-        # Then continue with the first child of id1 who is not in child column. Until no more child then pass to next CPD_ID.
-        build_parent_child_dataframe(padmet, dataframe = dataframe, id1 = rlt_c)
+        # Then continue with the first child of current_id who is not in child column. Until no more child then pass to next CPD_ID.
+        build_parent_child_dataframe(padmet, dataframe = dataframe, current_id = rlt_c)
 
 
 def build_tree_from_root(node, id, df):
