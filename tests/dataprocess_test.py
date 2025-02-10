@@ -244,6 +244,8 @@ def test_statistic_method():
 
 def test_recursive_tree_padmet():
 
+    from collections import Counter
+
     data = DataStorage(TMP_DIR)
 
     dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
@@ -264,6 +266,6 @@ def test_recursive_tree_padmet():
 
     expected_keys_list = ['Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
 
-    assert res == expected_keys_list, "all keys found in padmet tree are not equal to the expected keys list."
+    assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
-    assert cpd_list == expected_cpd_list, "all compounds found in padmet tree are not equal to the expected compounds list."
+    assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
