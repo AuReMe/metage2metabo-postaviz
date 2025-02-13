@@ -1,6 +1,7 @@
 import os
 from json import load
 from typing import Optional
+from m2m_postaviz.lineage import Lineage
 
 import pandas as pd
 
@@ -100,7 +101,7 @@ class DataStorage:
             return None
 
         return pd.concat(all_df)
-    
+
 
     def get_cpd_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
 
@@ -130,19 +131,19 @@ class DataStorage:
         df = pd.concat(all_df)
         df.fillna(0, inplace=True)
         metadata = self.get_metadata()
-        df = df.reset_index().merge(metadata, 'inner', 'smplID')
+        df = df.reset_index().merge(metadata, "inner", "smplID")
 
         if self.HAS_TAXONOMIC_DATA:
 
             taxonomy_file = self.get_taxonomic_dataframe()
             mgs_col_taxonomy = taxonomy_file.columns[0]
-            df = df.merge(taxonomy_file, "inner", left_on='binID', right_on=mgs_col_taxonomy)
+            df = df.merge(taxonomy_file, "inner", left_on="binID", right_on=mgs_col_taxonomy)
 
         return df
 
 
     def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
-        
+
         cpd_conditon = [(compound, "=", 1.0)]
         col = ["binID", "smplID", compound]
 
@@ -230,7 +231,7 @@ class DataStorage:
             metadata = self.get_metadata()
             df = df.merge(metadata,"inner","smplID")
 
-        return df 
+        return df
 
 
     def get_iscope_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
@@ -242,7 +243,7 @@ class DataStorage:
             metadata = self.get_metadata()
             df = df.merge(metadata,"inner","smplID")
 
-        return df 
+        return df
 
 
     def get_main_dataframe(self) -> pd.DataFrame:
@@ -283,7 +284,7 @@ class DataStorage:
         result = self.get_metadata().columns.tolist()
 
         if remove_smpl_col:
-             
+
              result.remove("smplID")
 
         if insert_none:
@@ -415,7 +416,7 @@ class DataStorage:
                 raise RuntimeError(f"Required {file} is missing when directly loading from directory.")
 
         return all_files
-    
+
 
     def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
 
@@ -455,27 +456,33 @@ class DataStorage:
             iscope_df = iscope_df[[*cpd_input]]
 
         return cscope_df, iscope_df, cscope_df - iscope_df
-    
+
 
     def get_cpd_category_tree(self) -> dict:
-        with open(os.path.join(self.output_path, "padmet_compounds_category_tree.json"), 'r') as fp:
+        with open(os.path.join(self.output_path, "padmet_compounds_category_tree.json")) as fp:
             tree = load(fp)
 
         return tree
-    
-
-    def get_all_tree_keys(self):
-
-        res = []
-
-        tree = self.get_cpd_category_tree()
-
-        self.get_all_tree_keys_recursive(tree, res)
-
-        return res
 
 
-    def get_all_tree_keys_recursive(self, node, results = []):
+    def get_all_tree_keys(self, tree = None):
+
+        if tree is None:
+
+            tree = self.get_cpd_category_tree()
+
+        lin=Lineage()
+        lin.construct_dict(tree,0)
+        list_final=list()
+        for k,v in lin.level_dict.items():
+            list_final.extend(v)
+
+        list_final.insert(0,list(tree.keys())[0])
+
+        return list_final
+
+
+    def get_all_tree_keys_recursive(self, node, results):
 
         for key, child in node.items():
 
@@ -483,9 +490,9 @@ class DataStorage:
             if not bool(child):
 
                 continue
-            
+
             # If key of node is not already in results list
-            if not key in results:
+            if key not in results:
 
                 results.append(key)
 
@@ -493,9 +500,9 @@ class DataStorage:
             self.get_all_tree_keys_recursive(child, results)
 
 
-    def get_sub_tree_recursive(self, data, id, results = []):
+    def get_sub_tree_recursive(self, data, id, results):
         """Search throught the tree for a match between key and id.
-        Return only the part of the tree with the node id as the root. 
+        Return only the part of the tree with the node id as the root.
 
         Args:
             data (dict): original Tree.
@@ -510,25 +517,25 @@ class DataStorage:
             return results
 
         for key, child in data.items():
-            
+
             if id == key:
 
                 results.append(data[id])
 
-                return 
+                return
 
             else:
-                
+
                 self.get_sub_tree_recursive(child, id, results)
 
                 if len(results) > 0:
 
-                    return 
+                    return
 
 
-    def find_compounds_from_category(self, data, results = []):
+    def find_compounds_from_category(self, data, results):
         """Find and return in a list all the leaf of the tree. each leaf is a compounds
-        A compounds has not children, but work need te bo done to be sure that category node 
+        A compounds has not children, but work need te bo done to be sure that category node
         that do not have any children (not supposed to) will be in the result list.
 
         Args:
@@ -544,9 +551,48 @@ class DataStorage:
             if not bool(child):
 
                 results.append(key)
-            
+
             else:
 
                 self.find_compounds_from_category(child, results)
 
-        return 
+        return
+
+
+    def get_metacyc_category_list(self, tree = None):
+
+        if tree is None:
+
+            tree = self.get_cpd_category_tree()
+
+        res = []
+
+        self.get_all_tree_keys_recursive(tree, res)
+
+        print(len(res))
+
+        final_res = []
+
+        data_cpd_list = self.get_compound_list(without_compartment=True)
+
+        for key in res:
+
+            cpd_in_category = []
+
+            sub_tree = []
+
+            self.get_sub_tree_recursive(tree, key,sub_tree)
+
+            sub_tree = sub_tree[0]
+
+            self.find_compounds_from_category(sub_tree, cpd_in_category)
+
+            final_cpd_list = [cpd for cpd in data_cpd_list if cpd in cpd_in_category]
+
+            new_key = key+" "+"("+f"{len(final_cpd_list)}"+"/"+f"{len(cpd_in_category)}"+")"
+
+            final_res.append(new_key)
+
+        return final_res
+        
+

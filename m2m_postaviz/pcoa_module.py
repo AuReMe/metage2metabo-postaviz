@@ -1,12 +1,14 @@
 import plotly.express as px
-from shiny import module, ui
-from shinywidgets import output_widget
-from shinywidgets import render_widget
-from m2m_postaviz.data_struct import DataStorage
+from shiny import module
 from shiny import reactive
 from shiny import render
-import m2m_postaviz.shiny_module as sm
+from shiny import ui
+from shinywidgets import output_widget
+from shinywidgets import render_widget
+
 import m2m_postaviz.data_utils as du
+import m2m_postaviz.shiny_module as sm
+from m2m_postaviz.data_struct import DataStorage
 
 
 @module.ui
@@ -49,7 +51,7 @@ def pcoa_module_ui(Data: DataStorage):
         full_screen=True
     )
 
-    return custom_pcoa_card
+    return pcoa_card, custom_pcoa_card
 
 @module.server
 def pcoa_module_server(input, output, session, Data: DataStorage):
@@ -83,10 +85,13 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
         if not du.serie_is_float(value):
 
             return ui.TagList(
+                    ui.card(" ",
                         ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
                                             selected=value.unique().tolist(),
                                             multiple=True,
-                                            options={"plugins": ["clear_button"]}),)
+                                            options={"plugins": ["clear_button"]})
+                    ,max_height="400px"
+                    ))
         else:
 
             return ui.TagList(
@@ -128,10 +133,13 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
         if not du.serie_is_float(value):
 
             return ui.TagList(
+                    ui.card(" ",
                         ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
                                             selected=value.unique().tolist(),
                                             multiple=True,
-                                            options={"plugins": ["clear_button"]}),)
+                                            options={"plugins": ["clear_button"]}),
+                        max_height="400px"
+                        ))
         else:
 
             return ui.TagList(

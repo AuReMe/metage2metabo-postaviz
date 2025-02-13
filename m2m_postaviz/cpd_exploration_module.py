@@ -1,18 +1,20 @@
-from shiny import module, ui
-from shinywidgets import output_widget
-from shinywidgets import render_widget
-from m2m_postaviz.data_struct import DataStorage
+from shiny import module
 from shiny import reactive
 from shiny import render
+from shiny import ui
+from shinywidgets import output_widget
+from shinywidgets import render_widget
+
 import m2m_postaviz.shiny_module as sm
+from m2m_postaviz.data_struct import DataStorage
 
 
 @module.ui
 def cpd_tab_ui(Data: DataStorage):
-        
+
     if Data.USE_METACYC_PADMET:
 
-        cpd_exploration_all_category = Data.get_all_tree_keys()
+        cpd_exploration_all_category = Data.get_metacyc_category_list()
 
         cpd_exploration_all_category.insert(0,"None")
 
@@ -26,8 +28,9 @@ def cpd_tab_ui(Data: DataStorage):
         ui.layout_sidebar(
             ui.sidebar(
 
-                ui.input_selectize("category_choice_input", "Select one category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
-                
+                ui.input_select("first_category_input","Select any compounds category from Metacyc_database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category),
+                ui.input_selectize("category_choice_input", "Select a sub category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
+
                 ui.card(" ",
                     ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
                     max_height="300px",
@@ -53,7 +56,7 @@ def cpd_tab_ui(Data: DataStorage):
                 ui.input_checkbox("exp_cpd_generate_stat_dataframe", "Generate statistical test dataframe."),
 
                 ui.panel_conditional("input.exp_cpd_generate_stat_dataframe",
-                                        
+
                     ui.input_checkbox("exp_cpd_multiple_correction", "Multiple test correction"),
                     ui.panel_conditional("input.exp_cpd_multiple_correction",
                                             ui.input_select("exp_cpd_multiple_correction_method","Method",Data.get_list_of_tests(),selected=Data.get_list_of_tests()[0],)),
@@ -91,12 +94,12 @@ def cpd_tab_ui(Data: DataStorage):
 
 @module.server
 def cpd_tab_server(input, output, session, Data: DataStorage):
-    
+
         @reactive.effect
         @reactive.event(input.reset_sample_filter_button, ignore_none=True)
         def _reset_sample_filter_choice():
             return ui.update_selectize("sample_filter_selection_input", choices=Data.get_sample_list(), selected=None)
-                
+
         @render_widget
         def cpd_exp_heatmap_cscope():
             return cpd_plot_generation.result()[3][0]
@@ -120,7 +123,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @render_widget
         def sample_percentage_production_iscope():
             return cpd_plot_generation.result()[1][1]
-                
+
         @render_widget
         def cpd_exp_producers_plot():
             return cpd_plot_generation.result()[0]
@@ -150,7 +153,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 try:
                     stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
-                except:
+                except:  # noqa: E722
                     stat_dataframe = None
             else:
 
@@ -164,17 +167,36 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.effect
         @reactive.event(input.run_plot_generation, ignore_none=True)
         def handle_click_cpd_exploration():
-            cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(), 
+            cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(),
                                 input.color_filter_input(), input.sample_filter_enable_input(),
-                                input.sample_filter_choice_input(), input.sample_filter_selection_input(), 
+                                input.sample_filter_choice_input(), input.sample_filter_selection_input(),
                                 input.exp_cpd_generate_stat_dataframe(), input.exp_cpd_multiple_correction(),
                                 input.exp_cpd_multiple_correction_method())
 
 
         @reactive.effect
-        def _update_category_choices():
+        def _update_sub_category_choices():
 
-            category_level = input.category_choice_input()
+            metacyc_category_first_input = input.first_category_input().split(" ")[0]
+
+            if metacyc_category_first_input == "None" or metacyc_category_first_input == "":
+
+                return ui.update_selectize("category_choice_input", choices=[])
+
+            category_node = []
+
+            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
+
+            category_node = category_node[0]
+
+            new_sub_category_list = Data.get_metacyc_category_list(category_node)
+
+            return ui.update_selectize("category_choice_input", choices=new_sub_category_list)
+
+        @reactive.effect
+        def _update_compounds_choices():
+
+            category_level = input.category_choice_input().split(" ")[0]
 
             if category_level == "":
 
@@ -187,13 +209,13 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             if Data.USE_METACYC_PADMET:
 
                 category_node = []
-                
+
                 Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
-                
+
                 category_node = category_node[0]
-                
+
                 cpds_found = []
-                
+
                 Data.find_compounds_from_category(category_node, cpds_found)
 
                 cpd_list = Data.get_compound_list(True)
@@ -202,4 +224,3 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
-        

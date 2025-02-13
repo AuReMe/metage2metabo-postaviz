@@ -1,10 +1,8 @@
 import time
-import sys
 
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-
 from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -454,7 +452,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     else:
         fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
 
-    return fig 
+    return fig
 
 
 def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
@@ -463,16 +461,16 @@ def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_fi
     all_iscope_dataframe = []
 
     for cpd in user_cpd_list:
-        
+
         try:
 
             tmp_df = data.get_minimal_cpd_dataframe(cpd)
             all_cscope_dataframe.append(tmp_df[0])
             all_iscope_dataframe.append(tmp_df[1])
 
-        except Exception as e:
+        except Exception:
 
-            print(f'{cpd} not in icscope dataframe')
+            print(f"{cpd} not in icscope dataframe")
 
     dfc = pd.concat(all_cscope_dataframe,axis=0)
     dfi = pd.concat(all_iscope_dataframe,axis=0)
@@ -523,30 +521,42 @@ def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_fi
 
     fig = make_subplots(1,2, subplot_titles=["cscope", "iscope"])
 
-    fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis='coloraxis', ),1,1)
+    fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis="coloraxis", ),1,1)
 
-    fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis='coloraxis', ),1,2)
+    fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis="coloraxis", ),1,2)
 
-    fig.update_layout(coloraxis=dict(colorscale = 'ylgnbu'))
+    fig.update_layout(coloraxis=dict(colorscale = "ylgnbu"))
 
     return fig
 
 
 def df_to_plotly(df):
-    return {'z': df.values.tolist(),
-            'x': df.columns.tolist(),
-            'y': df.index.tolist()}
+    return {"z": df.values.tolist(),
+            "x": df.columns.tolist(),
+            "y": df.index.tolist()}
 
 
 def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
+    """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
+    The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
+    Make three plotly Heatmap from those dataframe and return them to be rendered. 
+    Args:
+        data (DataStorage): DataStorage object.
+        cpd_input (list): List of compounds selected by user.
+        sample_filtering_enabled (bool): Enable the filtering by sample
+        sample_filter_mode (str): Either Inlcude or Exclude selected by user.
+        sample_filter_value (list): List of sample selected in filter.
 
+    Returns:
+        _type_: _description_
+    """
     cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
 
-    added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis='coloraxis'))
+    added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
 
-    cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis='coloraxis'))
+    cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
 
-    iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis='coloraxis'))
+    iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
 
     return cscope_fig, iscope_fig, added_value_fig
 
@@ -556,7 +566,7 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     cscope_df = data.get_metabolite_production_dataframe()
     iscope_df = data.get_iscope_metabolite_production_dataframe()
 
-    # Check if the iscope dataframe contain all the cpd in cscope dataframe. IF not add them as column filled with 0 value. 
+    # Check if the iscope dataframe contain all the cpd in cscope dataframe. IF not add them as column filled with 0 value.
     col_diff = cscope_df.columns.difference(iscope_df.columns)
 
     col_diff_dict = dict.fromkeys(col_diff, 0.0)
@@ -570,17 +580,17 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     iscope_df = iscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
 
     # Check for numeric dtype (boolean / int / unsigned / float / complex).
-    if cscope_df[metadata_filter_input].dtype.kind in 'biufc':
+    if cscope_df[metadata_filter_input].dtype.kind in "biufc":
         cscope_df[metadata_filter_input] = cscope_df[metadata_filter_input].astype("str")
 
-    if iscope_df[metadata_filter_input].dtype.kind in 'biufc':
+    if iscope_df[metadata_filter_input].dtype.kind in "biufc":
         iscope_df[metadata_filter_input] = iscope_df[metadata_filter_input].astype("str")
 
     # Set Id and metadata column as index to get the matrix.
     cscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
     iscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
 
-    # Replace any value above 0 by 1. 
+    # Replace any value above 0 by 1.
     cscope_df.mask(cscope_df > 0.0, 1, inplace=True)
     iscope_df.mask(iscope_df > 0.0, 1, inplace=True)
 
@@ -623,21 +633,21 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
 
     cscope_df.reset_index(inplace=True)
     cscope_df.rename(columns={"index" : "metadata"}, inplace=True)
-    cscope_df = cscope_df.melt('metadata')
+    cscope_df = cscope_df.melt("metadata")
 
     iscope_df.reset_index(inplace=True)
     iscope_df.rename(columns={"index" : "metadata"}, inplace=True)
     iscope_df = iscope_df.melt("metadata")
 
-    fig1 = px.bar(cscope_df, x = "variable", y = 'value', color = 'metadata', barmode='group', title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title='Compounds', yaxis_title='Percent of sample producing the compound')
+    fig1 = px.bar(cscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
 
-    fig2 = px.bar(iscope_df, x = "variable", y = 'value', color = 'metadata', barmode='group', title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title='Compounds', yaxis_title='Percent of sample producing the compound')
+    fig2 = px.bar(iscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
 
     return fig1, fig2
 
 
 def col_value_to_percent(col: pd.Series):
-    
+
     sum_val = col.sum()
 
     len_val = len(col.values)

@@ -7,16 +7,17 @@ import time
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from typing import Optional
-from padmet.classes import PadmetSpec, PadmetRef
 
 import numpy as np
 import pandas as pd
+from padmet.classes import PadmetRef
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
+
 
 def get_size(obj, seen=None):
     """Recursively finds size of objects"""
@@ -32,9 +33,9 @@ def get_size(obj, seen=None):
     if isinstance(obj, dict):
         size += sum([get_size(v, seen) for v in obj.values()])
         size += sum([get_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, '__dict__'):
+    elif hasattr(obj, "__dict__"):
         size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
+    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
         size += sum([get_size(i, seen) for i in obj])
     return size
 
@@ -257,9 +258,9 @@ def retrieve_all_cscope(sample, dir_path, cscope_directoy, cscope_file_format):
     if isinstance(cscope_dataframe,pd.DataFrame):
 
         bin_list = cscope_dataframe.index.tolist()
-        cscope_dataframe.to_parquet(os.path.join(cscope_directoy, sample + cscope_file_format), compression='gzip')
+        cscope_dataframe.to_parquet(os.path.join(cscope_directoy, sample + cscope_file_format), compression="gzip")
         return bin_list, sample
-    
+
     else:
         print(sample, "returned None", cscope_dataframe)
         return None, sample
@@ -283,13 +284,13 @@ def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
 
         if isinstance(iscope_dataframe,pd.DataFrame):
 
-            iscope_dataframe.to_parquet(os.path.join(iscope_directoy, sample+iscope_file_format), compression='gzip')
+            iscope_dataframe.to_parquet(os.path.join(iscope_directoy, sample+iscope_file_format), compression="gzip")
 
-        if iscope_dataframe is None:
-            return None, sample
+        else:
+            print(sample, "Iscope dataframe is not an instance of Pandas DataFrame Object.")
 
     else:
-        return None, sample
+        print(sample," Sample_directory path is not valid.")
 
 
 def number_of_producers_cscope_dataframe(save_path, cscope_directory):
@@ -353,10 +354,10 @@ def number_of_producers_iscope_dataframe(save_path, iscope_directory):
 
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
-    """sums the count of metabolites produced in the sample's cscope.
+    """sums the numbers of bins producing the metabolites for each metabolites in the sample's scope.
 
     Args:
-        sample_cscope (pd.DataFrame): Sample cscope dataframe
+        sample_cscope (pd.DataFrame): Sample scope dataframe
         sample (str): Sample ID
 
     Returns:
@@ -377,7 +378,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     return pd.Series(serie_value,index=serie_index,name=sample)
 
 
-def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # Need rework 
+def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # Need rework
     """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
     dataframe.
 
@@ -388,16 +389,20 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # N
         dict: sample_data dictionnary
     """
 
+    print("Converting cscope dataframe into parquet file...")
+
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
 
     pool = Pool(nb_cpu)
-    results_list = pool.starmap(retrieve_all_cscope,[(sample, dir_path, cscope_directory, cscope_file_format) for sample in os.listdir(dir_path)])  # noqa: C416
+    results_list = pool.starmap(retrieve_all_cscope,[(sample, dir_path, cscope_directory, cscope_file_format) for sample in os.listdir(dir_path)])
 
     pool.close()
     pool.join()
+
+    print("Extracting sample's info")
 
     sample_info = {}
     sample_info["bins_list"] = []
@@ -406,7 +411,7 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # N
 
     for all_bins_in_sample, sample in results_list:
 
-        if type(all_bins_in_sample) != list:
+        if type(all_bins_in_sample) != list:  # noqa: E721
             print(all_bins_in_sample)
             continue
 
@@ -427,22 +432,27 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # N
     # Remove duplicate from list
     sample_info["bins_list"] = list(dict.fromkeys(sample_info["bins_list"]))
 
+    print("Done.")
+
     return sample_info
 
 
 def load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format):
+
+    print("Converting cscope dataframe into parquet file...")
 
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
         nb_cpu = 1
     pool = Pool(nb_cpu)
 
-    # retrieve_iscope = partial(retrieve_all_iscope, path=dir_path)
     pool = Pool(nb_cpu)
-    results_list = pool.starmap(retrieve_all_iscope,[(sample, dir_path, iscope_directory, iscope_file_format) for sample in os.listdir(dir_path)])  # noqa: C416
+    pool.starmap(retrieve_all_iscope,[(sample, dir_path, iscope_directory, iscope_file_format) for sample in os.listdir(dir_path)])
 
     pool.close()
     pool.join()
+
+    print("Done.")
 
 
 def build_main_dataframe(save_path, cscope_directory):
@@ -479,7 +489,7 @@ def build_main_dataframe(save_path, cscope_directory):
 
             serie_data.append(1)
 
-        # Make the Pandas Series with compounds as index and 1 as value and append in global for concatenation. 
+        # Make the Pandas Series with compounds as index and 1 as value and append in global for concatenation.
         all_series.append(pd.Series(data=serie_data,index=serie_index,name=sample_id))
 
     # Concatenation of all the serie into one dataframe.
@@ -523,9 +533,9 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
         os.makedirs(cscope_directory)
 
-    cscope_file_format = ".parquet.gzip"
+        cscope_file_format = ".parquet.gzip"
 
-    sample_info = load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format)
+        sample_info = load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format)
 
     number_of_producers_cscope_dataframe(save_path, cscope_directory)
 
@@ -998,8 +1008,6 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
     start = time.time()
 
-    metadata = open_tsv(os.path.join(savepath,"metadata_dataframe_postaviz.tsv"))
-
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
@@ -1026,7 +1034,7 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
     #####   Delete replicate
     sample_unique_list = os.listdir(cscope_directory)
-    
+
     ##### Create Generator to process data by chunks.
     print("Making chunk of sample list...")
 
@@ -1038,7 +1046,6 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
     for current_chunk in chunk_generator:
 
-        start_chunk = time.time()
         chunk_index += 1
         list_of_dataframe = []
         logs = []
@@ -1118,7 +1125,15 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
 
 def get_production_list_from_bin_dataframe(serie: pd.Series) -> list:
+    """Return the list of column label where the value if superior to 1.
+    Used to get the metabolites production of a Sample or Bin.
 
+    Args:
+        serie (pd.Series): Series to process.
+
+    Returns:
+        list: List of metabolites produced.
+    """
     list_of_cpd_produced = []
 
     for label, value in serie.items():
@@ -1262,7 +1277,7 @@ def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, sav
 
     # Loop throught generator
     chunk_index = 0
-    
+
     for current_chunk in chunk_generator:
         chunk_index += 1
         list_of_dataframe = []
@@ -1331,13 +1346,13 @@ def padmet_to_tree(save_path):
     if "padmet_compounds_category_tree.json" in os.listdir(save_path) or "padmet_child_parent_dataframe.tsv" in os.listdir(save_path):
         print("Padmet category tree already exist.")
         return
-    
+
     print("Building compounds category tree...")
 
     MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     metacyc_padmet_directory = os.path.join(MODULE_DIR, "padmet_data")
     metacyc_padmet_file = os.path.join(metacyc_padmet_directory, "metacyc28_5.padmet")
-    
+
     padmet = PadmetRef(metacyc_padmet_file)
 
     cpd_id = [node.id for node in padmet.dicOfNode.values() if node.type == "compound"]
@@ -1352,23 +1367,17 @@ def padmet_to_tree(save_path):
 
         if mid not in df["child_id"].values:
 
-            try:
-                # Catch the error usually a KEY ERROR.
-                log_rlt = [rlt.id_out for rlt in padmet.dicOfRelationIn[mid] if rlt.type == "is_a_class"][0]
-
-            except Exception as e:
-                print(e)
-                print("ERROR for : ",mid)
-                continue
+            print("ERROR for : ",mid)
 
     root = {}
 
     root["FRAMES"] = {}
 
     build_tree_from_root(root["FRAMES"], "FRAMES", df)
+    root["All_metabolites"] = root.pop("FRAMES")
 
-    with open(os.path.join(save_path, "padmet_compounds_category_tree.json"), 'w') as fp:
-        json.dump(root, fp) 
+    with open(os.path.join(save_path, "padmet_compounds_category_tree.json"), "w") as fp:
+        json.dump(root, fp)
 
     print("Compounds category tree done.")
 
@@ -1397,9 +1406,9 @@ def build_parent_child_dataframe(padmet: PadmetRef, dataframe: pd.DataFrame, cur
         return
 
     if len(rlt_classes) == 0:
-        
+
         return
-    
+
     # Loop in classes id children of cpd_id OR one of its classes id.
     for rlt_c in rlt_classes:
 
@@ -1429,14 +1438,14 @@ def build_tree_from_root(node, id, df):
                 build_tree_from_root(root["FRAMES"], "FRAMES", dataframe)
 
     Args:
-        node (dict): root node 
+        node (dict): root node
         id (str): Root node key id, correspond to the string of the first node in the dataframe.
-        df (pd.DataFrame): Dataframe with 2 columns: columns names must be child_id and parent_id. child_id column has only unique values. 
+        df (pd.DataFrame): Dataframe with 2 columns: columns names must be child_id and parent_id. child_id column has only unique values.
     """
     children = df.loc[df["parent_id"] == id]["child_id"].tolist()
 
     if len(children) == 0:
-        return 
+        return
 
     for child in children:
 

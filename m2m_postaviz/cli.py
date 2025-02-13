@@ -48,7 +48,7 @@ def main(args=None):
         Data = DataStorage(arg_parser.load)
         sh.run_shiny(Data)
 
-    if arg_parser.test:
+    elif arg_parser.test:
 
         if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
             print("No data_test/ directory found. \nExtract test data tarfile...")
@@ -60,21 +60,22 @@ def main(args=None):
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
         save_path = "/home/lbrindel/postaviz_test_run/smpl100"
         du.build_dataframes(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
+        Data = DataStorage(save_path)
+        sh.run_shiny(Data)
 
     elif arg_parser.dev:
 
         dir_path = "/home/lbrindel/postaviz_data/res_smpl1/"
-        # dir_path = "/home/lbrindel/output/western_diet_samples/all_samples/"
 
         metadata_path = "~/postaviz_data/all_data/postaviz_metadata_processed.tsv"
         abundance_path = "~/postaviz_data/all_data/specI.mat"
         taxonomic_path = "/home/lbrindel/Downloads/gtdbtk.summary_split.tsv"
 
-        # save_path = "/home/lbrindel/output/TEST_BUILD/"
         save_path = "/home/lbrindel/postaviz_test_run/testou/"
-        # save_path = "/home/lbrindel/output/full_run_postaviz/"
 
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
+        Data = DataStorage(save_path)
+        sh.run_shiny(Data)
 
     else:
 
@@ -84,9 +85,8 @@ def main(args=None):
         taxonomic_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        metacyc = arg_parser["--no-metacyc"]
+        metacyc = arg_parser["no_metacyc"]
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path, metacyc)
 
-    Data = DataStorage(save_path)
-
-    sh.run_shiny(Data)
+        Data = DataStorage(save_path)
+        sh.run_shiny(Data)
