@@ -40,7 +40,7 @@ class DataStorage:
 
             self.output_path = save_path
 
-        print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}")
+        print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
 
     def open_tsv(self, key: str):
@@ -401,7 +401,7 @@ class DataStorage:
 
                     all_files[df_files] = False
 
-                print(df_files, "IS \t", all_files[df_files])
+                # print(df_files, "IS \t", all_files[df_files])
 
         required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
                         "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",

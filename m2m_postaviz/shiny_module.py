@@ -562,7 +562,16 @@ def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_en
 
 
 def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str):
+    """Produce two plotly figure barplot from the list of compounds and the column filter given in input.
 
+    Args:
+        data (DataStorage): DataStorage object
+        cpd_input (list): List of compounds input
+        metadata_filter_input (str): Column label of metadata filter
+
+    Returns:
+        _type_: _description_
+    """
     cscope_df = data.get_metabolite_production_dataframe()
     iscope_df = data.get_iscope_metabolite_production_dataframe()
 
