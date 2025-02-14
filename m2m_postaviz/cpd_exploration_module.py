@@ -58,9 +58,9 @@ def cpd_tab_ui(Data: DataStorage):
 
                 ui.panel_conditional("input.exp_cpd_generate_stat_dataframe",
 
-                    ui.input_checkbox("exp_cpd_multiple_correction", "Multiple test correction"),
-                    ui.panel_conditional("input.exp_cpd_multiple_correction",
-                                            ui.input_select("exp_cpd_multiple_correction_method","Method",Data.get_list_of_tests(),selected=Data.get_list_of_tests()[0],)),
+                    ui.input_checkbox("multiple_correction", "Multiple test correction"),
+                    ui.panel_conditional("input.multiple_correction",
+                                            ui.input_select("multiple_correction_method","Method",Data.get_list_of_tests(),selected=Data.get_list_of_tests()[0],)),
                     ),
 
             width=400,
@@ -171,8 +171,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(),
                                 input.color_filter_input(), input.sample_filter_enable_input(),
                                 input.sample_filter_choice_input(), input.sample_filter_selection_input(),
-                                input.exp_cpd_generate_stat_dataframe(), input.exp_cpd_multiple_correction(),
-                                input.exp_cpd_multiple_correction_method())
+                                input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
+                                input.multiple_correction_method())
 
 
         @reactive.effect
