@@ -1,9 +1,7 @@
 import warnings
 
-import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from ontosunburst.ontosunburst import ontosunburst as ontos
 from shiny import App
 from shiny import reactive
 from shiny import render
@@ -12,18 +10,19 @@ from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 
-import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_module as sm
+from m2m_postaviz.bin_exploration_module import bin_exp_server
+from m2m_postaviz.bin_exploration_module import bin_exp_ui
+from m2m_postaviz.cpd_exploration_module import cpd_tab_server
+from m2m_postaviz.cpd_exploration_module import cpd_tab_ui
 from m2m_postaviz.data_struct import DataStorage
-from m2m_postaviz.cpd_exploration_module import cpd_tab_ui, cpd_tab_server
-from m2m_postaviz.bin_exploration_module import bin_exp_ui, bin_exp_server
-from m2m_postaviz.pcoa_module import pcoa_module_ui, pcoa_module_server
+from m2m_postaviz.pcoa_module import pcoa_module_server
+from m2m_postaviz.pcoa_module import pcoa_module_ui
+
 
 def run_shiny(data: DataStorage):
 
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
-
-    list_of_cpd = data.get_compound_list()
 
     factor_list = data.get_factors()
     factor_list.insert(0, "None")
@@ -42,54 +41,6 @@ def run_shiny(data: DataStorage):
     all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
-
-    producer_plot =   ui.card(
-            ui.layout_sidebar(
-                ui.sidebar(
-                    ui.input_select("box_inputx1", "Label for X axis", factor_list),
-                    ui.input_select("box_inputx2", "Label for 2nd X axis", factor_list),
-                    ui.input_selectize("box_inputy1", "Compound for Y axis", list_of_cpd, multiple=True, selected=list_of_cpd[0]),
-
-                    ui.input_checkbox("ab_norm", "With normalised data"),
-                    ui.input_checkbox("multiple_correction_metabo_plot", "Multiple test correction"),
-                    ui.panel_conditional("input.multiple_correction_metabo_plot",ui.input_select("multiple_test_method_metabo","Method",
-                                                                                                ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
-                                                                                                selected="bonferroni",)),
-
-                    ui.input_action_button("export_metabolites_plot_button", "Export plot dataframe"),
-                    ui.output_text_verbatim("export_metabolites_plot_dataframe_txt", True),
-                    ui.input_action_button("export_metabolites_test_button", "Export stats dataframe"),
-                    ui.output_text_verbatim("export_metabolites_test_dataframe_txt", True),
-                    width=350,
-                    gap=30,
-
-            ),
-
-            ui.card(output_widget("producer_plot"),full_screen=True),
-
-            ui.card(ui.output_data_frame("producer_test_dataframe"),full_screen=True)
-
-        ),
-        full_screen=True
-        )
-
-    if data.HAS_TAXONOMIC_DATA:
-        taxonomy_boxplot = ui.card(
-            ui.layout_sidebar(
-                ui.sidebar(
-                    ui.input_select("tax_inpx1", "Label for X axis", factor_list),
-                    ui.input_select("tax_inpx2", "Label for 2nd X axis", factor_list),
-                    # ui.input_selectize("tax_inpy1", "Taxa for Y axis", long_taxo_df["Taxa"].unique().tolist(), multiple=True),
-                    ui.input_checkbox("taxo_norm", "With normalised data"),
-                    width=350,
-                ),
-                output_widget("taxonomic_boxplot"),
-            ),
-            full_screen=True
-        )
-
-    else:
-        taxonomy_boxplot = ui.output_text_verbatim("no_taxonomy", True),
 
     total_production_plot = ui.card(
         ui.card_header("Total production of all compound, weighted with the abundance if provided."),
@@ -141,21 +92,18 @@ def run_shiny(data: DataStorage):
                         "Numbers of unique metabolic network:",
                         ui.output_text("unique_total_bin_count"),
                         theme="bg-gradient-indigo-purple",
-                        # showcase=icon_svg("dollar-sign"),
                     ),
 
                     ui.value_box(
                         "Numbers of samples:",
                         ui.output_text("total_samples_count"),
                         theme="cyan",
-                    #     # showcase=ui.output_ui("change_icon"),
                     ),
 
                     ui.value_box(
                         "Numbers of unique compounds produced:",
                         ui.output_text("total_unique_cpd"),
                         theme="bg-gradient-blue-purple",
-                    #     # showcase=icon_svg("percent"),
                     ),
 
                 fill=False,
@@ -193,7 +141,7 @@ def run_shiny(data: DataStorage):
         @render.text
         def unique_total_bin_count():
             return data.get_total_unique_bins_count()
-        
+
         @render.text
         def total_samples_count():
             return str(data.get_main_dataframe().shape[0])
