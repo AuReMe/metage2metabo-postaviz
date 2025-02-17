@@ -276,7 +276,7 @@ def test_compounds_exploration_module():
 
     data = DataStorage(TMP_DIR)
 
-    cpd_short_list = data.get_compound_list(True)[:50]
+    cpd_short_list = data.get_compound_list()[:50]
 
     ### Heatmap
 
