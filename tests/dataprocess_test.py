@@ -180,9 +180,9 @@ def test_shiny_module():
 
         custom_pcoa_integer_factor = sm.make_pcoa(data, "Days", [0, 180], False, "Group")
 
-    assert custom_pcoa_category_factor != tuple(), "Custom pcoa function returned empty plot"
+    assert custom_pcoa_category_factor.data != tuple(), "Custom pcoa function returned empty plot"
 
-    assert custom_pcoa_integer_factor != tuple(), "Custom pcoa function returned empty plot"
+    assert custom_pcoa_integer_factor.data != tuple(), "Custom pcoa function returned empty plot"
 
     # Test for total production reactive plot.
 
@@ -271,3 +271,37 @@ def test_recursive_tree_padmet():
     assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
     assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
+
+def test_compounds_exploration_module():
+
+    data = DataStorage(TMP_DIR)
+
+    cpd_short_list = data.get_compound_list(True)[:50]
+
+    ### Heatmap
+
+    cscope_hm, icscope_hm, added_value_hm = sm.added_value_heatmap(data, cpd_short_list)
+
+    assert isinstance(cscope_hm, plotly.graph_objs._figure.Figure), "cscope heatmap is not a plotly graph object."
+
+    assert cscope_hm.data != tuple(), "cscope heatmap is empty."
+
+    assert isinstance(icscope_hm, plotly.graph_objs._figure.Figure), "iscope heatmap is not a plotly graph object."
+
+    assert icscope_hm.data != tuple(), "iscope heatmap is empty."
+
+    assert isinstance(added_value_hm, plotly.graph_objs._figure.Figure), "added_value heatmap is not a plotly graph object."
+
+    assert added_value_hm.data != tuple(), "added_value heatmap is empty."
+
+    ### Sample producers graph.
+
+    cscope_producers, iscope_producers = sm.percentage_smpl_producing_cpd(data, cpd_short_list, "Days")
+
+    assert isinstance(cscope_producers, plotly.graph_objs._figure.Figure), "Percent of sample producers cscope graph is not an plotly object"
+
+    assert cscope_producers.data != tuple(), "smpl_prod cscope graph empty."
+
+    assert isinstance(iscope_producers, plotly.graph_objs._figure.Figure), "Percent of sample producers iscope graph is not an plotly object"
+
+    assert iscope_producers.data != tuple(), "smpl_prod iscope graph empty."
