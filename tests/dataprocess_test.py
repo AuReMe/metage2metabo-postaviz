@@ -151,6 +151,20 @@ def test_shiny_module():
                                                                                                         "Clostridia",
                                                                                                         True, "Days")
     
+    production_histplot2, production_boxplot2, df2, timing2, abundance_plot2 = sm.bin_exploration_processing(data,
+                                                                                                    "Group",
+                                                                                                    ["Control","Treatment"],
+                                                                                                    "all",
+                                                                                                    "Clostridia",
+                                                                                                    True, "Days")
+    
+    production_histplot3, production_boxplot3, df3, timing3, abundance_plot3 = sm.bin_exploration_processing(data,
+                                                                                                    "Group",
+                                                                                                    ["Control","Treatment"],
+                                                                                                    "mgs",
+                                                                                                    "MB2bin10 taxonomy",
+                                                                                                    True, "Days")
+    
     # Object type check.
 
     assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
@@ -160,6 +174,22 @@ def test_shiny_module():
     assert isinstance(df, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
 
     assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
+
+    assert isinstance(production_histplot2, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+
+    assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
+
+    assert isinstance(df2, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+
+    assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
+
+    assert isinstance(production_histplot3, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+
+    assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
+
+    assert isinstance(df3, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+
+    assert isinstance(abundance_plot3, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
 
     # Object is empty check.
 
@@ -186,12 +216,21 @@ def test_shiny_module():
 
     # Test for total production reactive plot.
 
-    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
     reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot_2 = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
 
     assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 
     assert isinstance(reactive_total_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
+
+    assert isinstance(reactive_total_production_plot_2, plotly.graph_objs._figure.Figure), "reactive_total_production_plot2 is supposed to be a plotly graph object."
+
+    assert reactive_total_production_plot.data != tuple(), "reactive_total_production_plot data empty."
+
+    assert reactive_total_production_plot_abundance.data != tuple(), "reactive_total_production_plot_abundance data empty."
+
+    assert reactive_total_production_plot_2.data != tuple(), "reactive_total_production_plot_2 data empty."
 
     # Test for metabolites production reactive plot.
 
@@ -212,7 +251,7 @@ def test_statistic_method():
 
         # Return None
         total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "None", "Days", True, "simes-hochberg", True)
-        assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should've return None with user_input1 == None."
+        assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should have return None with user_input1 == None."
 
         # Return Wilcoxon/Man-whitney dataframe
         total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Group", "Days", True, "simes-hochberg", True)

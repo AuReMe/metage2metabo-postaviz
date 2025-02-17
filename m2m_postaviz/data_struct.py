@@ -103,45 +103,6 @@ class DataStorage:
         return pd.concat(all_df)
 
 
-    def get_cpd_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
-
-        files = []
-        for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_dataframe_chunk" in i:
-                files.append(i)
-
-        if len(files) == 0:
-            print("No chunk of cpd_dataframe has been found in directory.")
-            return None
-
-        all_df = []
-
-        for file in files:
-
-            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=columns, condition=condition)
-
-            if len(df) == 0:
-                continue
-
-            all_df.append(df)
-
-        if len(all_df) == 0:
-            return None
-
-        df = pd.concat(all_df)
-        df.fillna(0, inplace=True)
-        metadata = self.get_metadata()
-        df = df.reset_index().merge(metadata, "inner", "smplID")
-
-        if self.HAS_TAXONOMIC_DATA:
-
-            taxonomy_file = self.get_taxonomic_dataframe()
-            mgs_col_taxonomy = taxonomy_file.columns[0]
-            df = df.merge(taxonomy_file, "inner", left_on="binID", right_on=mgs_col_taxonomy)
-
-        return df
-
-
     def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
 
         cpd_conditon = [(compound, "=", 1.0)]
