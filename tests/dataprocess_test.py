@@ -189,7 +189,7 @@ def test_shiny_module():
 
     assert isinstance(df3, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
 
-    assert isinstance(abundance_plot3, None), "Abundance3 barplot should be Nonetype."
+    assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
 
     # Object is empty check.
 
