@@ -280,7 +280,7 @@ def test_compounds_exploration_module():
 
     ### Heatmap
 
-    cscope_hm, icscope_hm, added_value_hm = sm.added_value_heatmap(data, cpd_short_list)
+    cscope_hm, icscope_hm, added_value_hm = sm.added_value_heatmap(data, cpd_short_list, False, None, None)
 
     assert isinstance(cscope_hm, plotly.graph_objs._figure.Figure), "cscope heatmap is not a plotly graph object."
 
