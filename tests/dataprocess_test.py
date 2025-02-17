@@ -258,7 +258,7 @@ def test_recursive_tree_padmet():
 
     res = []
 
-    data.get_all_tree_keys_recursive(tree, res)
+    data.get_all_tree_keys(tree, res)
 
     cpd_list = []
 

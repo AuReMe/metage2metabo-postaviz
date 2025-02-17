@@ -482,24 +482,6 @@ class DataStorage:
         return list_final
 
 
-    def get_all_tree_keys_recursive(self, node, results):
-
-        for key, child in node.items():
-
-            # If no child (dict empty)
-            if not bool(child):
-
-                continue
-
-            # If key of node is not already in results list
-            if key not in results:
-
-                results.append(key)
-
-            # Go to the next node.
-            self.get_all_tree_keys_recursive(child, results)
-
-
     def get_sub_tree_recursive(self, data, id, results):
         """Search throught the tree for a match between key and id.
         Return only the part of the tree with the node id as the root.
@@ -560,16 +542,20 @@ class DataStorage:
 
 
     def get_metacyc_category_list(self, tree = None):
+        """Return the category list of the metacyc database. By default it return thel list of the category
+        of the whole tree. If any sub tree is given it return only the sub category of that tree.
 
+        Args:
+            tree (Dict, optional): _description_. Defaults to None.
+
+        Returns:
+            List: _description_
+        """
         if tree is None:
 
             tree = self.get_cpd_category_tree()
 
-        res = []
-
-        self.get_all_tree_keys_recursive(tree, res)
-
-        print(len(res))
+        res = self.get_all_tree_keys(tree)
 
         final_res = []
 
