@@ -256,9 +256,7 @@ def test_recursive_tree_padmet():
 
     du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
 
-    res = []
-
-    data.get_all_tree_keys(tree, res)
+    res = data.get_all_tree_keys(tree)
 
     cpd_list = []
 
