@@ -167,7 +167,7 @@ def test_shiny_module():
     
     # Object type check.
 
-    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
 
     assert isinstance(production_boxplot, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
 
@@ -175,29 +175,29 @@ def test_shiny_module():
 
     assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot2, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+    assert isinstance(production_histplot2, plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
 
-    assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
+    assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot2 is not a plotly express boxplot"
 
     assert isinstance(df2, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
 
-    assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
+    assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance2 barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot3, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+    assert isinstance(production_histplot3, plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
 
-    assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
+    assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot3 is not a plotly express boxplot"
 
     assert isinstance(df3, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
 
-    assert isinstance(abundance_plot3, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
+    assert isinstance(abundance_plot3, None), "Abundance3 barplot should be Nonetype."
 
     # Object is empty check.
 
-    assert production_histplot != tuple(), "Production histogram is empty."
+    assert production_histplot.data != tuple(), "Production histogram is empty."
 
-    assert production_boxplot != tuple(), "Production boxplot is empty."
+    assert production_boxplot.data != tuple(), "Production boxplot is empty."
 
-    assert abundance_plot != tuple(), "Abundance barplot is empty."
+    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
 
     # Test for custom PCOA
