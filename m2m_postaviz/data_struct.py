@@ -272,6 +272,16 @@ class DataStorage:
 
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
+        """Save the dataframe in input. Check for already saved file and change the name accordingly.
+
+        Args:
+            df_to_save (pd.DataFrame): _description_
+            file_name (str): _description_
+            extension (str, optional): _description_. Defaults to "tsv".
+
+        Returns:
+            _type_: _description_
+        """
         path_to_save = self.output_path
         final_file_path = path_to_save + "/" + file_name + "." + extension
         if os.path.isfile(final_file_path):
