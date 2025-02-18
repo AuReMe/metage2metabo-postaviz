@@ -103,48 +103,48 @@ class DataStorage:
         return pd.concat(all_df)
 
 
-    def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
+    # def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
 
-        cpd_conditon = [(compound, "=", 1.0)]
-        col = ["binID", "smplID", compound]
+    #     cpd_conditon = [(compound, "=", 1.0)]
+    #     col = ["binID", "smplID", compound]
 
-        files = []
-        for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
-                files.append(i)
+    #     files = []
+    #     for i in os.listdir(self.output_path):
+    #         if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
+    #             files.append(i)
 
-        if len(files) == 0:
-            print("No chunk of cpd_dataframe has been found in directory.")
-            return None
+    #     if len(files) == 0:
+    #         print("No chunk of cpd_dataframe has been found in directory.")
+    #         return None
 
-        cscope_dataframe = []
-        iscope_dataframe = []
+    #     cscope_dataframe = []
+    #     iscope_dataframe = []
 
-        # Get separate dataframe for each cpd.
+    #     # Get separate dataframe for each cpd.
 
-        for file in files:
+    #     for file in files:
 
-            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
+    #         df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
 
-            if len(df) == 0:
-                continue
+    #         if len(df) == 0:
+    #             continue
 
-            if "cpd_cscope" in file:
+    #         if "cpd_cscope" in file:
 
-                cscope_dataframe.append(df)
+    #             cscope_dataframe.append(df)
 
-            if "cpd_iscope" in file:
+    #         if "cpd_iscope" in file:
 
-                iscope_dataframe.append(df)
+    #             iscope_dataframe.append(df)
 
-        if len(cscope_dataframe) == 0:
-            return None
+    #     if len(cscope_dataframe) == 0:
+    #         return None
 
-        dfc = pd.concat(cscope_dataframe).reset_index()
+    #     dfc = pd.concat(cscope_dataframe).reset_index()
 
-        dfi = pd.concat(iscope_dataframe).reset_index()
+    #     dfi = pd.concat(iscope_dataframe).reset_index()
 
-        return dfc, dfi
+    #     return dfc, dfi
 
 
     def get_iscope_production(self, bin_id) -> list:
@@ -308,7 +308,14 @@ class DataStorage:
 
 
     def associate_bin_taxonomy(self, bin_list:list) -> list:
+        """Associate for each bins in the list a taxonomic rank separated by <;>.
 
+        Args:
+            bin_list (list): _description_
+
+        Returns:
+            list: _description_
+        """
         taxonomic_df = self.get_taxonomic_dataframe()
 
         first_col_value = taxonomic_df.columns.values[0]
@@ -507,7 +514,7 @@ class DataStorage:
         of the whole tree. If any sub tree is given it return only the sub category of that tree.
 
         Args:
-            tree (Dict, optional): _description_. Defaults to None.
+            tree (Dict, optional): Sub tree from to get the keys from if None takes the whole tree. Defaults to None.
 
         Returns:
             List: _description_

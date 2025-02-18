@@ -191,6 +191,22 @@ def test_shiny_module():
 
     assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
 
+    list_of_bins = data.get_bins_list()
+
+    assert list_of_bins, "List of bins is empty."
+
+    taxonomic_rank = data.get_taxonomy_rank()
+
+    assert taxonomic_rank, "List of taxonomic rank is empty."
+
+    converted_bin_list = data.associate_bin_taxonomy(list_of_bins)
+
+    assert converted_bin_list, "List of bins associated with their taxonomy is empty."
+
+    list_of_factors = data.get_factors()
+
+    assert list_of_factors, "List of metadata factors is empty."
+
     # Object is empty check.
 
     assert production_histplot.data != tuple(), "Production histogram is empty."
@@ -308,6 +324,10 @@ def test_recursive_tree_padmet():
     assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
     assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
+
+    list_of_category = data.get_metacyc_category_list()
+
+    assert list_of_category, "List of category is empty."
 
 def test_compounds_exploration_module():
 
