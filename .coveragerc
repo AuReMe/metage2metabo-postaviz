@@ -10,15 +10,11 @@ source =
     tests
 parallel = true
 omit = 
-        *./m2m_postaviz/shiny_app.py*
-        *./m2m_postaviz/bin_exploration_module.py*
-        *./m2m_postaviz/cpd_exploration_module.py*
-        *./m2m_postaviz/pcoa_module.py*
+        *shiny_app.py
+        *bin_exploration_module.py
+        *cpd_exploration_module.py
+        *pcoa_module.py
 [report]
 show_missing = true
 precision = 2
 omit = *migrations*
-        *./m2m_postaviz/shiny_app.py*
-        *./m2m_postaviz/bin_exploration_module.py*
-        *./m2m_postaviz/cpd_exploration_module.py*
-        *./m2m_postaviz/pcoa_module.py*
