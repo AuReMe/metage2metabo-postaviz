@@ -191,6 +191,22 @@ def test_shiny_module():
 
     assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
 
+    # Object is empty check.
+
+    assert production_histplot.data != tuple(), "Production histogram is empty."
+
+    assert production_boxplot.data != tuple(), "Production boxplot is empty."
+
+    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
+
+    assert production_histplot2.data != tuple(), "Production histogram is empty."
+
+    assert production_boxplot2.data != tuple(), "Production boxplot is empty."
+
+    assert abundance_plot.data2 != tuple(), "Abundance barplot is empty."
+
+    # Getter test of DataStorage object.
+
     list_of_bins = data.get_bins_list()
 
     assert list_of_bins, "List of bins is empty."
@@ -206,15 +222,6 @@ def test_shiny_module():
     list_of_factors = data.get_factors()
 
     assert list_of_factors, "List of metadata factors is empty."
-
-    # Object is empty check.
-
-    assert production_histplot.data != tuple(), "Production histogram is empty."
-
-    assert production_boxplot.data != tuple(), "Production boxplot is empty."
-
-    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
-
 
     # Test for custom PCOA
 
@@ -293,6 +300,14 @@ def test_statistic_method():
         metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Group", True, "simes-hochberg", True )
         assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
+    # Test Save function with DF.
+
+    data.save_dataframe(metabolites_production_test_dataframe, "test_save_producers_stat_test")
+
+    saved_path = os.path.join(data.output_path, "test_save_producers_stat_test.tsv")
+
+    if not os.path.isfile(saved_path):
+        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path)
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."

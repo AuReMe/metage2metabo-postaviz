@@ -2,7 +2,7 @@ import os
 from json import load
 from typing import Optional
 from m2m_postaviz.lineage import Lineage
-
+import time
 import pandas as pd
 
 
@@ -457,7 +457,7 @@ class DataStorage:
 
         list_final.insert(0,list(tree.keys())[0])
 
-        return list_final
+        return list_final, lin.level_dict
 
 
     def get_sub_tree_recursive(self, data, id, results):
@@ -533,7 +533,7 @@ class DataStorage:
 
             tree = self.get_cpd_category_tree()
 
-        res = self.get_all_tree_keys(tree)
+        res, level_dict = self.get_all_tree_keys(tree)
 
         final_res = []
 
@@ -556,7 +556,27 @@ class DataStorage:
             new_key = key+" "+"("+f"{len(final_cpd_list)}"+"/"+f"{len(cpd_in_category)}"+")"
 
             final_res.append(new_key)
+        # start = time.time()
 
+        # shiny_dict_level = {}
+        # for key, value in level_dict.items():
+        
+        #     tmp_dict = {}
+
+        #     for val in value:
+
+        #         tmp_dict[val] = val
+
+        #     key_integer = int(key)
+
+        #     new_key = " "
+
+        #     for i in range(key_integer):
+
+        #         new_key += " "
+
+        #     shiny_dict_level[new_key] = tmp_dict
+        # print(f"Took {time.time() - start} sec. --Metacyc_category_list Getter.")
         return final_res
         
 

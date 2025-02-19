@@ -19,25 +19,25 @@ from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
 
-def get_size(obj, seen=None):
-    """Recursively finds size of objects"""
-    size = sys.getsizeof(obj)
-    if seen is None:
-        seen = set()
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0
-    # Important mark as seen *before* entering recursion to gracefully handle
-    # self-referential objects
-    seen.add(obj_id)
-    if isinstance(obj, dict):
-        size += sum([get_size(v, seen) for v in obj.values()])
-        size += sum([get_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, "__dict__"):
-        size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
-        size += sum([get_size(i, seen) for i in obj])
-    return size
+# def get_size(obj, seen=None):
+#     """Recursively finds size of objects"""
+#     size = sys.getsizeof(obj)
+#     if seen is None:
+#         seen = set()
+#     obj_id = id(obj)
+#     if obj_id in seen:
+#         return 0
+#     # Important mark as seen *before* entering recursion to gracefully handle
+#     # self-referential objects
+#     seen.add(obj_id)
+#     if isinstance(obj, dict):
+#         size += sum([get_size(v, seen) for v in obj.values()])
+#         size += sum([get_size(k, seen) for k in obj.keys()])
+#     elif hasattr(obj, "__dict__"):
+#         size += get_size(obj.__dict__, seen)
+#     elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+#         size += sum([get_size(i, seen) for i in obj])
+#     return size
 
 
 def is_valid_dir(dirpath):
@@ -63,22 +63,22 @@ def extract_tarfile(tar_file, outdir):
     #     tar.extractall(outdir)
 
 
-def benchmark_decorator(func):
-    def wrapper(*args, **kwargs):
-        results = []
-        n_repeats = 3
-        for i in range(n_repeats):
-            time_start = time.perf_counter()
-            result = func(*args, **kwargs)
-            time_end = time.perf_counter()
-            time_duration = time_end - time_start
-            results.append(time_duration)
-            print(f">run {i+1} took {time_duration} seconds")
-        avg_duration = sum(results) / n_repeats
-        print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
-        return result
+# def benchmark_decorator(func):
+#     def wrapper(*args, **kwargs):
+#         results = []
+#         n_repeats = 3
+#         for i in range(n_repeats):
+#             time_start = time.perf_counter()
+#             result = func(*args, **kwargs)
+#             time_end = time.perf_counter()
+#             time_duration = time_end - time_start
+#             results.append(time_duration)
+#             print(f">run {i+1} took {time_duration} seconds")
+#         avg_duration = sum(results) / n_repeats
+#         print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
+#         return result
 
-    return wrapper
+#     return wrapper
 
 
 def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
