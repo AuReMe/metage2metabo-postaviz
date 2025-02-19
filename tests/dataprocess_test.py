@@ -203,7 +203,7 @@ def test_shiny_module():
 
     assert production_boxplot2.data != tuple(), "Production boxplot is empty."
 
-    assert abundance_plot.data2 != tuple(), "Abundance barplot is empty."
+    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
     # Getter test of DataStorage object.
 
