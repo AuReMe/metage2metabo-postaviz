@@ -457,7 +457,7 @@ class DataStorage:
 
         list_final.insert(0,list(tree.keys())[0])
 
-        return list_final, lin.level_dict
+        return list_final
 
 
     def get_sub_tree_recursive(self, data, id, results):
