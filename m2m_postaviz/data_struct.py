@@ -533,7 +533,7 @@ class DataStorage:
 
             tree = self.get_cpd_category_tree()
 
-        res, level_dict = self.get_all_tree_keys(tree)
+        res = self.get_all_tree_keys(tree)
 
         final_res = []
 
