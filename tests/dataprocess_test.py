@@ -151,9 +151,23 @@ def test_shiny_module():
                                                                                                         "Clostridia",
                                                                                                         True, "Days")
     
+    production_histplot2, production_boxplot2, df2, timing2, abundance_plot2 = sm.bin_exploration_processing(data,
+                                                                                                    "Group",
+                                                                                                    ["Control","Treatment"],
+                                                                                                    "all",
+                                                                                                    "Clostridia",
+                                                                                                    True, "Days")
+    
+    production_histplot3, production_boxplot3, df3, timing3, abundance_plot3 = sm.bin_exploration_processing(data,
+                                                                                                    "Group",
+                                                                                                    ["Control","Treatment"],
+                                                                                                    "mgs",
+                                                                                                    "MB2bin10 taxonomy",
+                                                                                                    True, "Days")
+    
     # Object type check.
 
-    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "Production histogram is not a plotly express histplot"
+    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
 
     assert isinstance(production_boxplot, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
 
@@ -161,14 +175,53 @@ def test_shiny_module():
 
     assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
 
+    assert isinstance(production_histplot2, plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
+
+    assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot2 is not a plotly express boxplot"
+
+    assert isinstance(df2, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+
+    assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance2 barplot is not a plotly express barplot"
+
+    assert isinstance(production_histplot3, plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
+
+    assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot3 is not a plotly express boxplot"
+
+    assert isinstance(df3, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+
+    assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
+
     # Object is empty check.
 
-    assert production_histplot != tuple(), "Production histogram is empty."
+    assert production_histplot.data != tuple(), "Production histogram is empty."
 
-    assert production_boxplot != tuple(), "Production boxplot is empty."
+    assert production_boxplot.data != tuple(), "Production boxplot is empty."
 
-    assert abundance_plot != tuple(), "Abundance barplot is empty."
+    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
+    assert production_histplot2.data != tuple(), "Production histogram is empty."
+
+    assert production_boxplot2.data != tuple(), "Production boxplot is empty."
+
+    assert abundance_plot.data != tuple(), "Abundance barplot is empty."
+
+    # Getter test of DataStorage object.
+
+    list_of_bins = data.get_bins_list()
+
+    assert list_of_bins, "List of bins is empty."
+
+    taxonomic_rank = data.get_taxonomy_rank()
+
+    assert taxonomic_rank, "List of taxonomic rank is empty."
+
+    converted_bin_list = data.associate_bin_taxonomy(list_of_bins)
+
+    assert converted_bin_list, "List of bins associated with their taxonomy is empty."
+
+    list_of_factors = data.get_factors()
+
+    assert list_of_factors, "List of metadata factors is empty."
 
     # Test for custom PCOA
 
@@ -180,18 +233,27 @@ def test_shiny_module():
 
         custom_pcoa_integer_factor = sm.make_pcoa(data, "Days", [0, 180], False, "Group")
 
-    assert custom_pcoa_category_factor != tuple(), "Custom pcoa function returned empty plot"
+    assert custom_pcoa_category_factor.data != tuple(), "Custom pcoa function returned empty plot"
 
-    assert custom_pcoa_integer_factor != tuple(), "Custom pcoa function returned empty plot"
+    assert custom_pcoa_integer_factor.data != tuple(), "Custom pcoa function returned empty plot"
 
     # Test for total production reactive plot.
 
-    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
     reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot_2 = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
 
     assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 
     assert isinstance(reactive_total_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
+
+    assert isinstance(reactive_total_production_plot_2, plotly.graph_objs._figure.Figure), "reactive_total_production_plot2 is supposed to be a plotly graph object."
+
+    assert reactive_total_production_plot.data != tuple(), "reactive_total_production_plot data empty."
+
+    assert reactive_total_production_plot_abundance.data != tuple(), "reactive_total_production_plot_abundance data empty."
+
+    assert reactive_total_production_plot_2.data != tuple(), "reactive_total_production_plot_2 data empty."
 
     # Test for metabolites production reactive plot.
 
@@ -212,7 +274,7 @@ def test_statistic_method():
 
         # Return None
         total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "None", "Days", True, "simes-hochberg", True)
-        assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should've return None with user_input1 == None."
+        assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should have return None with user_input1 == None."
 
         # Return Wilcoxon/Man-whitney dataframe
         total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Group", "Days", True, "simes-hochberg", True)
@@ -238,6 +300,14 @@ def test_statistic_method():
         metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Group", True, "simes-hochberg", True )
         assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
+    # Test Save function with DF.
+
+    data.save_dataframe(metabolites_production_test_dataframe, "test_save_producers_stat_test")
+
+    saved_path = os.path.join(data.output_path, "test_save_producers_stat_test.tsv")
+
+    if not os.path.isfile(saved_path):
+        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path)
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
@@ -256,9 +326,7 @@ def test_recursive_tree_padmet():
 
     du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
 
-    res = []
-
-    data.get_all_tree_keys_recursive(tree, res)
+    res = data.get_all_tree_keys(tree)
 
     cpd_list = []
 
@@ -271,3 +339,41 @@ def test_recursive_tree_padmet():
     assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
     assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
+
+    list_of_category = data.get_metacyc_category_list()
+
+    assert list_of_category, "List of category is empty."
+
+def test_compounds_exploration_module():
+
+    data = DataStorage(TMP_DIR)
+
+    cpd_short_list = data.get_compound_list()[:50]
+
+    ### Heatmap
+
+    cscope_hm, icscope_hm, added_value_hm = sm.added_value_heatmap(data, cpd_short_list, False, None, None)
+
+    assert isinstance(cscope_hm, plotly.graph_objs._figure.Figure), "cscope heatmap is not a plotly graph object."
+
+    assert cscope_hm.data != tuple(), "cscope heatmap is empty."
+
+    assert isinstance(icscope_hm, plotly.graph_objs._figure.Figure), "iscope heatmap is not a plotly graph object."
+
+    assert icscope_hm.data != tuple(), "iscope heatmap is empty."
+
+    assert isinstance(added_value_hm, plotly.graph_objs._figure.Figure), "added_value heatmap is not a plotly graph object."
+
+    assert added_value_hm.data != tuple(), "added_value heatmap is empty."
+
+    ### Sample producers graph.
+
+    cscope_producers, iscope_producers = sm.percentage_smpl_producing_cpd(data, cpd_short_list, "Days")
+
+    assert isinstance(cscope_producers, plotly.graph_objs._figure.Figure), "Percent of sample producers cscope graph is not an plotly object"
+
+    assert cscope_producers.data != tuple(), "smpl_prod cscope graph empty."
+
+    assert isinstance(iscope_producers, plotly.graph_objs._figure.Figure), "Percent of sample producers iscope graph is not an plotly object"
+
+    assert iscope_producers.data != tuple(), "smpl_prod iscope graph empty."

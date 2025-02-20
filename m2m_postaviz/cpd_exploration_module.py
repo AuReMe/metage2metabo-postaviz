@@ -189,7 +189,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                 return ui.update_selectize("category_choice_input", choices=[])
 
             category_node = []
-
+            print(metacyc_category_first_input)
             Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
 
             category_node = category_node[0]

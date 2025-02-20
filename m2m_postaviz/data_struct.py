@@ -2,7 +2,7 @@ import os
 from json import load
 from typing import Optional
 from m2m_postaviz.lineage import Lineage
-
+import time
 import pandas as pd
 
 
@@ -103,87 +103,48 @@ class DataStorage:
         return pd.concat(all_df)
 
 
-    def get_cpd_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+    # def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
 
-        files = []
-        for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_dataframe_chunk" in i:
-                files.append(i)
+    #     cpd_conditon = [(compound, "=", 1.0)]
+    #     col = ["binID", "smplID", compound]
 
-        if len(files) == 0:
-            print("No chunk of cpd_dataframe has been found in directory.")
-            return None
+    #     files = []
+    #     for i in os.listdir(self.output_path):
+    #         if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
+    #             files.append(i)
 
-        all_df = []
+    #     if len(files) == 0:
+    #         print("No chunk of cpd_dataframe has been found in directory.")
+    #         return None
 
-        for file in files:
+    #     cscope_dataframe = []
+    #     iscope_dataframe = []
 
-            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=columns, condition=condition)
+    #     # Get separate dataframe for each cpd.
 
-            if len(df) == 0:
-                continue
+    #     for file in files:
 
-            all_df.append(df)
+    #         df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
 
-        if len(all_df) == 0:
-            return None
+    #         if len(df) == 0:
+    #             continue
 
-        df = pd.concat(all_df)
-        df.fillna(0, inplace=True)
-        metadata = self.get_metadata()
-        df = df.reset_index().merge(metadata, "inner", "smplID")
+    #         if "cpd_cscope" in file:
 
-        if self.HAS_TAXONOMIC_DATA:
+    #             cscope_dataframe.append(df)
 
-            taxonomy_file = self.get_taxonomic_dataframe()
-            mgs_col_taxonomy = taxonomy_file.columns[0]
-            df = df.merge(taxonomy_file, "inner", left_on="binID", right_on=mgs_col_taxonomy)
+    #         if "cpd_iscope" in file:
 
-        return df
+    #             iscope_dataframe.append(df)
 
+    #     if len(cscope_dataframe) == 0:
+    #         return None
 
-    def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
+    #     dfc = pd.concat(cscope_dataframe).reset_index()
 
-        cpd_conditon = [(compound, "=", 1.0)]
-        col = ["binID", "smplID", compound]
+    #     dfi = pd.concat(iscope_dataframe).reset_index()
 
-        files = []
-        for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
-                files.append(i)
-
-        if len(files) == 0:
-            print("No chunk of cpd_dataframe has been found in directory.")
-            return None
-
-        cscope_dataframe = []
-        iscope_dataframe = []
-
-        # Get separate dataframe for each cpd.
-
-        for file in files:
-
-            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
-
-            if len(df) == 0:
-                continue
-
-            if "cpd_cscope" in file:
-
-                cscope_dataframe.append(df)
-
-            if "cpd_iscope" in file:
-
-                iscope_dataframe.append(df)
-
-        if len(cscope_dataframe) == 0:
-            return None
-
-        dfc = pd.concat(cscope_dataframe).reset_index()
-
-        dfi = pd.concat(iscope_dataframe).reset_index()
-
-        return dfc, dfi
+    #     return dfc, dfi
 
 
     def get_iscope_production(self, bin_id) -> list:
@@ -311,6 +272,16 @@ class DataStorage:
 
 
     def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
+        """Save the dataframe in input. Check for already saved file and change the name accordingly.
+
+        Args:
+            df_to_save (pd.DataFrame): _description_
+            file_name (str): _description_
+            extension (str, optional): _description_. Defaults to "tsv".
+
+        Returns:
+            _type_: _description_
+        """
         path_to_save = self.output_path
         final_file_path = path_to_save + "/" + file_name + "." + extension
         if os.path.isfile(final_file_path):
@@ -347,7 +318,14 @@ class DataStorage:
 
 
     def associate_bin_taxonomy(self, bin_list:list) -> list:
+        """Associate for each bins in the list a taxonomic rank separated by <;>.
 
+        Args:
+            bin_list (list): _description_
+
+        Returns:
+            list: _description_
+        """
         taxonomic_df = self.get_taxonomic_dataframe()
 
         first_col_value = taxonomic_df.columns.values[0]
@@ -482,24 +460,6 @@ class DataStorage:
         return list_final
 
 
-    def get_all_tree_keys_recursive(self, node, results):
-
-        for key, child in node.items():
-
-            # If no child (dict empty)
-            if not bool(child):
-
-                continue
-
-            # If key of node is not already in results list
-            if key not in results:
-
-                results.append(key)
-
-            # Go to the next node.
-            self.get_all_tree_keys_recursive(child, results)
-
-
     def get_sub_tree_recursive(self, data, id, results):
         """Search throught the tree for a match between key and id.
         Return only the part of the tree with the node id as the root.
@@ -560,16 +520,20 @@ class DataStorage:
 
 
     def get_metacyc_category_list(self, tree = None):
+        """Return the category list of the metacyc database. By default it return thel list of the category
+        of the whole tree. If any sub tree is given it return only the sub category of that tree.
 
+        Args:
+            tree (Dict, optional): Sub tree from to get the keys from if None takes the whole tree. Defaults to None.
+
+        Returns:
+            List: _description_
+        """
         if tree is None:
 
             tree = self.get_cpd_category_tree()
 
-        res = []
-
-        self.get_all_tree_keys_recursive(tree, res)
-
-        print(len(res))
+        res = self.get_all_tree_keys(tree)
 
         final_res = []
 
@@ -592,7 +556,27 @@ class DataStorage:
             new_key = key+" "+"("+f"{len(final_cpd_list)}"+"/"+f"{len(cpd_in_category)}"+")"
 
             final_res.append(new_key)
+        # start = time.time()
 
+        # shiny_dict_level = {}
+        # for key, value in level_dict.items():
+        
+        #     tmp_dict = {}
+
+        #     for val in value:
+
+        #         tmp_dict[val] = val
+
+        #     key_integer = int(key)
+
+        #     new_key = " "
+
+        #     for i in range(key_integer):
+
+        #         new_key += " "
+
+        #     shiny_dict_level[new_key] = tmp_dict
+        # print(f"Took {time.time() - start} sec. --Metacyc_category_list Getter.")
         return final_res
         
 

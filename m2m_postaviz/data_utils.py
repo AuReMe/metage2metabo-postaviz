@@ -19,25 +19,25 @@ from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
 
-def get_size(obj, seen=None):
-    """Recursively finds size of objects"""
-    size = sys.getsizeof(obj)
-    if seen is None:
-        seen = set()
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0
-    # Important mark as seen *before* entering recursion to gracefully handle
-    # self-referential objects
-    seen.add(obj_id)
-    if isinstance(obj, dict):
-        size += sum([get_size(v, seen) for v in obj.values()])
-        size += sum([get_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, "__dict__"):
-        size += get_size(obj.__dict__, seen)
-    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
-        size += sum([get_size(i, seen) for i in obj])
-    return size
+# def get_size(obj, seen=None):
+#     """Recursively finds size of objects"""
+#     size = sys.getsizeof(obj)
+#     if seen is None:
+#         seen = set()
+#     obj_id = id(obj)
+#     if obj_id in seen:
+#         return 0
+#     # Important mark as seen *before* entering recursion to gracefully handle
+#     # self-referential objects
+#     seen.add(obj_id)
+#     if isinstance(obj, dict):
+#         size += sum([get_size(v, seen) for v in obj.values()])
+#         size += sum([get_size(k, seen) for k in obj.keys()])
+#     elif hasattr(obj, "__dict__"):
+#         size += get_size(obj.__dict__, seen)
+#     elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+#         size += sum([get_size(i, seen) for i in obj])
+#     return size
 
 
 def is_valid_dir(dirpath):
@@ -63,22 +63,22 @@ def extract_tarfile(tar_file, outdir):
     #     tar.extractall(outdir)
 
 
-def benchmark_decorator(func):
-    def wrapper(*args, **kwargs):
-        results = []
-        n_repeats = 3
-        for i in range(n_repeats):
-            time_start = time.perf_counter()
-            result = func(*args, **kwargs)
-            time_end = time.perf_counter()
-            time_duration = time_end - time_start
-            results.append(time_duration)
-            print(f">run {i+1} took {time_duration} seconds")
-        avg_duration = sum(results) / n_repeats
-        print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
-        return result
+# def benchmark_decorator(func):
+#     def wrapper(*args, **kwargs):
+#         results = []
+#         n_repeats = 3
+#         for i in range(n_repeats):
+#             time_start = time.perf_counter()
+#             result = func(*args, **kwargs)
+#             time_end = time.perf_counter()
+#             time_duration = time_end - time_start
+#             results.append(time_duration)
+#             print(f">run {i+1} took {time_duration} seconds")
+#         avg_duration = sum(results) / n_repeats
+#         print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
+#         return result
 
-    return wrapper
+#     return wrapper
 
 
 def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
@@ -551,7 +551,7 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     bin_dataframe_build(sample_info, cscope_directory, abundance_path, taxonomic_path, save_path)
 
-    cpd_cscope_dataframe_build(sample_info, cscope_directory, abundance_path, save_path)
+    # cpd_cscope_dataframe_build(sample_info, cscope_directory, abundance_path, save_path)
 
     iscope_directory = os.path.join(save_path,"sample_iscope_directory")
 
@@ -565,7 +565,7 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     number_of_producers_iscope_dataframe(save_path, iscope_directory)
 
-    cpd_iscope_dataframe_build(iscope_directory, abundance_path, save_path)
+    # cpd_iscope_dataframe_build(iscope_directory, abundance_path, save_path)
 
     # Sample_info JSON
 
@@ -1151,184 +1151,184 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-def cpd_cscope_dataframe_build(sample_info: dict, cscope_directory, abundance_path = None, savepath = None):
-    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
-    the metadata and the taxonomic rank associated.
+# def cpd_cscope_dataframe_build(sample_info: dict, cscope_directory, abundance_path = None, savepath = None):
+#     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
+#     the metadata and the taxonomic rank associated.
 
-    Args:
-        sample_info (dict): _description_
-        sample_cscope_data (dict): _description_
-        metadata (Dataframe): _description_
-        abundance_file (Dataframe, optional): _description_. Defaults to None.
-        taxonomy_path (Dataframe, optional): _description_. Defaults to None.
+#     Args:
+#         sample_info (dict): _description_
+#         sample_cscope_data (dict): _description_
+#         metadata (Dataframe): _description_
+#         abundance_file (Dataframe, optional): _description_. Defaults to None.
+#         taxonomy_path (Dataframe, optional): _description_. Defaults to None.
 
-    Returns:
-        pd.DataFrame: Pandas dataframe
-    """
+#     Returns:
+#         pd.DataFrame: Pandas dataframe
+#     """
 
-    if "cpd_cscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
-        print("Chunk of cpd_cscope_dataframe already in save directory")
-        return
+#     if "cpd_cscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
+#         print("Chunk of cpd_cscope_dataframe already in save directory")
+#         return
 
-    print("Building cpd_cscope_dataframe...")
+#     print("Building cpd_cscope_dataframe...")
 
-    # Abundance normalisation, give percentage of abundance of bins in samples.
-    if abundance_path is not None:
+#     # Abundance normalisation, give percentage of abundance of bins in samples.
+#     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
+#         abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
 
-    # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-    sample_list = []
-    bin_list = []
-    for bin in sample_info["bins_sample_list"].keys():
-        sample_list += sample_info["bins_sample_list"][bin]
-        bin_list.append(bin)
+#     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
+#     sample_list = []
+#     bin_list = []
+#     for bin in sample_info["bins_sample_list"].keys():
+#         sample_list += sample_info["bins_sample_list"][bin]
+#         bin_list.append(bin)
 
-    #   Delete replicate in list
-    sample_unique_list = os.listdir(cscope_directory)
+#     #   Delete replicate in list
+#     sample_unique_list = os.listdir(cscope_directory)
 
-    # Create Generator to process data by chunks.
-    chunk_generator = chunks(sample_unique_list, 250)
+#     # Create Generator to process data by chunks.
+#     chunk_generator = chunks(sample_unique_list, 250)
 
-    # Loop throught generator
-    chunk_index = 0
-    for current_chunk in chunk_generator:
+#     # Loop throught generator
+#     chunk_index = 0
+#     for current_chunk in chunk_generator:
 
-        chunk_index += 1
-        list_of_dataframe = []
+#         chunk_index += 1
+#         list_of_dataframe = []
 
-    # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
-        for sample in current_chunk:
+#     # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
+#         for sample in current_chunk:
 
-            sample_id = sample.split(".parquet")[0]
+#             sample_id = sample.split(".parquet")[0]
 
-            try:
+#             try:
 
-                df = pd.read_parquet(os.path.join(cscope_directory, sample))
-                # rows = df.loc[df.index.isin(bin_list)]
-                df.insert(0 , "smplID", sample_id)
-                df.index.name = "binID"
-                list_of_dataframe.append(df)
+#                 df = pd.read_parquet(os.path.join(cscope_directory, sample))
+#                 # rows = df.loc[df.index.isin(bin_list)]
+#                 df.insert(0 , "smplID", sample_id)
+#                 df.index.name = "binID"
+#                 list_of_dataframe.append(df)
 
-            except Exception as e:
-                print(f"No dataframe named {sample} in cscope_directory.\n{e}")
+#             except Exception as e:
+#                 print(f"No dataframe named {sample} in cscope_directory.\n{e}")
 
-        results = pd.concat(list_of_dataframe)
-        results.fillna(0,inplace=True)
+#         results = pd.concat(list_of_dataframe)
+#         results.fillna(0,inplace=True)
 
-        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
-        count.name = "Count"
+#         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
+#         count.name = "Count"
 
-        results = results.assign(Count=count)
+#         results = results.assign(Count=count)
 
-        if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
+#         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
 
-            abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
-            abundance.name = "Abundance"
+#             abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
+#             abundance.name = "Abundance"
 
-            count_with_abundance = count * abundance
+#             count_with_abundance = count * abundance
 
-            results = results.assign(Count_with_abundance = count_with_abundance)
+#             results = results.assign(Count_with_abundance = count_with_abundance)
 
-        # Save current chunks into parquet file
+#         # Save current chunks into parquet file
 
-        filename = "cpd_cscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
-        filepath = os.path.join(savepath,filename)
+#         filename = "cpd_cscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
+#         filepath = os.path.join(savepath,filename)
 
-        if len(results) == 0:
-            print(f"Chunks {chunk_index} is empty !")
+#         if len(results) == 0:
+#             print(f"Chunks {chunk_index} is empty !")
 
-        results.to_parquet(filepath, compression="gzip")
+#         results.to_parquet(filepath, compression="gzip")
 
-        del results
+#         del results
 
-    return
+#     return
 
 
-def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, savepath = None):
-    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
-    the metadata and the taxonomic rank associated.
+# def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, savepath = None):
+#     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
+#     the metadata and the taxonomic rank associated.
 
-    Args:
-        sample_info (dict): _description_
-        sample_iscope_data (dict): _description_
-        abundance_file (Dataframe, optional): _description_. Defaults to None.
+#     Args:
+#         sample_info (dict): _description_
+#         sample_iscope_data (dict): _description_
+#         abundance_file (Dataframe, optional): _description_. Defaults to None.
 
-    Returns:
-        pd.DataFrame: Pandas dataframe
-    """
+#     Returns:
+#         pd.DataFrame: Pandas dataframe
+#     """
 
-    if "cpd_iscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
-        print("Chunk of cpd_iscope_dataframe already in save directory")
-        return
+#     if "cpd_iscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
+#         print("Chunk of cpd_iscope_dataframe already in save directory")
+#         return
 
-    print("Building cpd iscope dataframe...")
+#     print("Building cpd iscope dataframe...")
 
-    # Abundance normalisation, give percentage of abundance of bins in samples.
-    if abundance_path is not None:
+#     # Abundance normalisation, give percentage of abundance of bins in samples.
+#     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
+#         abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
 
-    # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-    sample_list = os.listdir(iscope_directory)
+#     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
+#     sample_list = os.listdir(iscope_directory)
 
-    # Create Generator to process data by chunks.
-    chunk_generator = chunks(sample_list, 300)
+#     # Create Generator to process data by chunks.
+#     chunk_generator = chunks(sample_list, 300)
 
-    # Loop throught generator
-    chunk_index = 0
+#     # Loop throught generator
+#     chunk_index = 0
 
-    for current_chunk in chunk_generator:
-        chunk_index += 1
-        list_of_dataframe = []
+#     for current_chunk in chunk_generator:
+#         chunk_index += 1
+#         list_of_dataframe = []
 
-    # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
-        for sample in current_chunk:
+#     # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
+#         for sample in current_chunk:
 
-            sample_name = sample.split(".parquet")[0]
-            parquet_file_path = os.path.join(iscope_directory, sample)
+#             sample_name = sample.split(".parquet")[0]
+#             parquet_file_path = os.path.join(iscope_directory, sample)
 
-            try:
-                df = pd.read_parquet(parquet_file_path)
-                # rows = df.loc[df.index.isin(bin_list)]
-                df.insert(0 , "smplID", sample_name)
-                df.index.name = "binID"
-                list_of_dataframe.append(df)
+#             try:
+#                 df = pd.read_parquet(parquet_file_path)
+#                 # rows = df.loc[df.index.isin(bin_list)]
+#                 df.insert(0 , "smplID", sample_name)
+#                 df.index.name = "binID"
+#                 list_of_dataframe.append(df)
 
-            except Exception as e:
-                print(f"No dataframe named {sample_name} in sample_iscope_data dictionnary\n{e}")
+#             except Exception as e:
+#                 print(f"No dataframe named {sample_name} in sample_iscope_data dictionnary\n{e}")
 
-        results = pd.concat(list_of_dataframe)
-        results.fillna(0,inplace=True)
-        print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
+#         results = pd.concat(list_of_dataframe)
+#         results.fillna(0,inplace=True)
+#         print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
 
-        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
-        count.name = "Count"
+#         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
+#         count.name = "Count"
 
-        results = results.assign(Count=count)
+#         results = results.assign(Count=count)
 
-        if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
+#         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
 
-            abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
-            abundance.name = "Abundance"
+#             abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
+#             abundance.name = "Abundance"
 
-            count_with_abundance = count * abundance
+#             count_with_abundance = count * abundance
 
-            results = results.assign(Count_with_abundance = count_with_abundance)
+#             results = results.assign(Count_with_abundance = count_with_abundance)
 
-        # Save current chunks into parquet file
+#         # Save current chunks into parquet file
 
-        filename = "cpd_iscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
-        filepath = os.path.join(savepath,filename)
+#         filename = "cpd_iscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
+#         filepath = os.path.join(savepath,filename)
 
-        if len(results) == 0:
-            print(f"Chunks {chunk_index} is empty !")
+#         if len(results) == 0:
+#             print(f"Chunks {chunk_index} is empty !")
 
-        results.to_parquet(filepath, compression="gzip")
+#         results.to_parquet(filepath, compression="gzip")
 
-        del results
+#         del results
 
-    return
+#     return
 
 
 def padmet_to_tree(save_path):

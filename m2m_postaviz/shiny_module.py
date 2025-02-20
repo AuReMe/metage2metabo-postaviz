@@ -63,7 +63,8 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     if len(filtered_list_of_bin) == 0:
         print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
-
+        return
+    
     filter_condition=[("binID", "in", filtered_list_of_bin)]
     # if factor != "None" and len(factor_choice) > 0:
     #     filter_condition.append((factor, "in", factor_choice))
@@ -124,16 +125,12 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
             if x1 == "None":
                 return
 
-            multipletests_correction = multiple_test_correction
-
-            if multipletests_correction:
+            if multiple_test_correction:
                 multipletests_method = correction_method
             else:
                 multipletests_method = "hs"
 
-            with_normalised_data = with_abundance
-
-            if with_normalised_data and data.HAS_ABUNDANCE_DATA:
+            if with_abundance and data.HAS_ABUNDANCE_DATA:
                 column_value = "Total_abundance_weighted"
             else:
                 column_value = "Total_production"
@@ -151,7 +148,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
 
                     return res
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multipletests_correction, multipletests_method=multipletests_method)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
                 # all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -184,7 +181,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
 
                         return pd.concat(all_results)
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multipletests_correction, multipletests_method=multipletests_method)
+                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
                 # all_dataframe["global_production_test_dataframe"] = res
 
                 return res
@@ -269,7 +266,19 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
 
 def make_pcoa(data: DataStorage, column, choices, abundance, color):
+    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize 
+    by filtering on specific column, using the abundance data and color the resulting plot.
 
+    Args:
+        data (DataStorage): DataStorage Object.
+        column (str): Column label used for filtering.
+        choices (list): Choice of the unique of the column input to use.
+        abundance (bool): Option to use the column with abundance values instead of the {0 not produced ,1 produced} values.
+        color (str): Column label used for the color option of the plot.
+
+    Returns:
+        px.scatter: Plotly scatter figure.
+    """
     if abundance:
         df = data.get_normalised_abundance_dataframe()
     else:
@@ -315,7 +324,7 @@ def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_meth
         metadata (pd.DataFrame): Metadata's dataframe
 
     Returns:
-        _type_: Ordination results object from skbio's package.
+        pd.DataFrame: Ordination results object from skbio's package.
     """
 
     if not du.is_indexed_by_id(main_dataframe):
@@ -340,7 +349,17 @@ def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_meth
 
 
 def render_reactive_total_production_plot(data: DataStorage, user_input1, user_input2, with_abundance):
+    """Produce and return a plotly figure object. Barplot or Boxplot if there is only unique value in columns.
 
+    Args:
+        data (DataStorage): DataStorage object.
+        user_input1 (_type_): Column label for metadata filtering.
+        user_input2 (_type_): Column label for metadata filtering.
+        with_abundance (bool): Option to use the column with abundance values instead of the {0 not produced ,1 produced} values.
+
+    Returns:
+        px.box: Plotly express object.
+    """
     if with_abundance and data.HAS_ABUNDANCE_DATA:
         column_value = "Total_abundance_weighted"
     else:
@@ -455,81 +474,6 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     return fig
 
 
-def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
-
-    all_cscope_dataframe = []
-    all_iscope_dataframe = []
-
-    for cpd in user_cpd_list:
-
-        try:
-
-            tmp_df = data.get_minimal_cpd_dataframe(cpd)
-            all_cscope_dataframe.append(tmp_df[0])
-            all_iscope_dataframe.append(tmp_df[1])
-
-        except Exception:
-
-            print(f"{cpd} not in icscope dataframe")
-
-    dfc = pd.concat(all_cscope_dataframe,axis=0)
-    dfi = pd.concat(all_iscope_dataframe,axis=0)
-
-    if sample_filtering_enabled and len(sample_filter_value) != 0:
-
-        if sample_filter_button == "Include":
-
-            dfc = dfc.loc[dfc["smplID"].isin(sample_filter_value)]
-            dfi = dfi.loc[dfi["smplID"].isin(sample_filter_value)]
-
-        elif sample_filter_button == "Exclude":
-
-            dfc = dfc.loc[~dfc["smplID"].isin(sample_filter_value)]
-            dfi = dfi.loc[~dfi["smplID"].isin(sample_filter_value)]
-
-    if by == "taxonomy" and user_input1 != "None":
-
-        taxonomy_file = data.get_taxonomic_dataframe()
-
-        mgs_col_taxonomy = taxonomy_file.columns[0]
-
-        dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
-
-        dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
-
-    if by == "metadata" and user_input1 != "None":
-
-        metadata = data.get_metadata()
-
-        dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[user_input1])
-
-        dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[user_input1])
-
-    dfc.fillna(0,inplace=True)
-    # print(dfc)
-
-    dfc.set_index(["binID","smplID"],inplace=True)
-    dfc = dfc.groupby(level="binID").sum()
-
-    dfi.fillna(0,inplace=True)
-    # print(dfi)
-
-    dfi.set_index(["binID","smplID"],inplace=True)
-    dfi = dfi.groupby(level="binID").sum()
-
-
-
-    fig = make_subplots(1,2, subplot_titles=["cscope", "iscope"])
-
-    fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis="coloraxis", ),1,1)
-
-    fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis="coloraxis", ),1,2)
-
-    fig.update_layout(coloraxis=dict(colorscale = "ylgnbu"))
-
-    return fig
-
-
 def df_to_plotly(df):
     return {"z": df.values.tolist(),
             "x": df.columns.tolist(),
@@ -584,7 +528,7 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
 
     iscope_df = pd.concat([iscope_df, temp_df], axis=1)
 
-    # Select only the column of intereset.
+    # Select only the column of interest.
     cscope_df = cscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
     iscope_df = iscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
 
@@ -664,3 +608,77 @@ def col_value_to_percent(col: pd.Series):
     final_val = (sum_val / len_val) * 100
 
     return final_val
+
+
+# def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
+
+#     all_cscope_dataframe = []
+#     all_iscope_dataframe = []
+
+#     for cpd in user_cpd_list:
+
+#         try:
+
+#             tmp_df = data.get_minimal_cpd_dataframe(cpd)
+#             all_cscope_dataframe.append(tmp_df[0])
+#             all_iscope_dataframe.append(tmp_df[1])
+
+#         except Exception:
+
+#             print(f"{cpd} not in iscope dataframe")
+
+#     dfc = pd.concat(all_cscope_dataframe,axis=0)
+#     dfi = pd.concat(all_iscope_dataframe,axis=0)
+
+#     if sample_filtering_enabled and len(sample_filter_value) != 0:
+
+#         if sample_filter_button == "Include":
+
+#             dfc = dfc.loc[dfc["smplID"].isin(sample_filter_value)]
+#             dfi = dfi.loc[dfi["smplID"].isin(sample_filter_value)]
+
+#         elif sample_filter_button == "Exclude":
+
+#             dfc = dfc.loc[~dfc["smplID"].isin(sample_filter_value)]
+#             dfi = dfi.loc[~dfi["smplID"].isin(sample_filter_value)]
+
+#     if by == "taxonomy" and user_input1 != "None":
+
+#         taxonomy_file = data.get_taxonomic_dataframe()
+
+#         mgs_col_taxonomy = taxonomy_file.columns[0]
+
+#         dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
+
+#         dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
+
+#     if by == "metadata" and user_input1 != "None":
+
+#         metadata = data.get_metadata()
+
+#         dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[user_input1])
+
+#         dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[user_input1])
+
+#     dfc.fillna(0,inplace=True)
+#     # print(dfc)
+
+#     dfc.set_index(["binID","smplID"],inplace=True)
+#     dfc = dfc.groupby(level="binID").sum()
+
+#     dfi.fillna(0,inplace=True)
+#     # print(dfi)
+
+#     dfi.set_index(["binID","smplID"],inplace=True)
+#     dfi = dfi.groupby(level="binID").sum()
+
+
+#     fig = make_subplots(1,2, subplot_titles=["cscope", "iscope"])
+
+#     fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis="coloraxis", ),1,1)
+
+#     fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis="coloraxis", ),1,2)
+
+#     fig.update_layout(coloraxis=dict(colorscale = "ylgnbu"))
+
+#     return fig
