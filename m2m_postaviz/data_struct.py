@@ -19,7 +19,7 @@ class DataStorage:
                "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
-    BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
+    # BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
     SRC_DIR = os.path.dirname(os.path.abspath(__file__))
     PADMET_DIR = os.path.join(os.path.dirname(SRC_DIR), "padmet_data")
 
@@ -59,7 +59,16 @@ class DataStorage:
 
 
     def read_parquet_with_pandas(self, path, col: Optional[list] = None, condition: Optional[list] = None) -> pd.DataFrame:
+        """Transfer the column choice and condition as keyword-arguments to the pandas read parquet function.
 
+        Args:
+            path (str): path of the parquet file.
+            col (Optional[list], optional): Label of the column to open. Defaults to None.
+            condition (Optional[list], optional): Nested tuple used to select only rows who matches the conditions. Defaults to None.
+
+        Returns:
+            pd.DataFrame: _description_
+        """
         kargs = {"path": path}
 
         if col is not None:
@@ -76,7 +85,16 @@ class DataStorage:
 
 
     def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+        """Apply read parquet Pandas function on all bin dataframe chunk. columns filter and 
+        conditon are applied.
 
+        Args:
+            columns (str, optional): Columns label. Defaults to None.
+            condition (Tuple, optional): Tuple of conditions. Defaults to None.
+
+        Returns:
+            pd.DataFrame: The concatenated bin_dataframe.
+        """
         files = []
         for i in os.listdir(self.output_path):
             if os.path.isfile(os.path.join(self.output_path,i)) and "bin_dataframe_chunk" in i:
@@ -351,7 +369,17 @@ class DataStorage:
 
 
     def get_bin_list_from_taxonomic_rank(self, rank, choice):
+        """Return a list of bins corresponding to the taxonomic rank given in input.
 
+        EXAMPLE : taxonomic rank = order, choice = Clostideria.
+
+        Args:
+            rank (str): Taxonomic rank
+            choice (str): one of the unique choice in taxonomic rank
+
+        Returns:
+            list: list of bins in the taxonomic scope
+        """
         taxonomy = self.get_taxonomic_dataframe()
 
         mgs_col_label = taxonomy.columns.values[0]
@@ -360,7 +388,19 @@ class DataStorage:
 
 
     def load_files(self, load_path):
+        """Loop through files in save directory and return a dictionnary of True/false for each files.
 
+        If necessary files are not present RaiseRuntimeError
+
+        Args:
+            load_path (_type_): _description_
+
+        Raises:
+            RuntimeError: If required files are absent.
+
+        Returns:
+            dict: _description_
+        """
         all_files = {}
 
         for _root, _dir ,filenames in os.walk(load_path):
@@ -396,8 +436,17 @@ class DataStorage:
         return all_files
 
 
-    def get_added_value_dataframe(self, cpd_input = None, sample_filter_enabled = False, sample_filter_mode = "", sample_filter_value = []):
+    def get_added_value_dataframe(self, cpd_input = None, sample_filter_mode = "", sample_filter_value = []):
+        """Return Cscope producers dataframe, Iscope producers dataframe and the difference of these two dataframes.
 
+        Args:
+            cpd_input (list, optional): list of compounds of intereset. Defaults to None.
+            sample_filter_mode (str, optional): Filter by sample mode. Defaults to "".
+            sample_filter_value (list, optional): Filter by sample list of value. Defaults to [].
+
+        Returns:
+            pd.DataFrame: Tuple of three (producers) dataframes
+        """
         cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
 
         iscope_df = self.get_iscope_metabolite_production_dataframe(False).sort_values("smplID")
@@ -410,7 +459,7 @@ class DataStorage:
 
         iscope_df = pd.concat([iscope_df, temp_df], axis=1)
 
-        if sample_filter_enabled is not False:
+        if not sample_filter_mode == "All":
 
             if sample_filter_mode == "Include":
 

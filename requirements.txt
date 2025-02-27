@@ -5,3 +5,4 @@ plotly>=5.18.0
 shiny>=0.6.0
 shinywidgets>=0.2.3
 scikit-bio>=0.5.9
+seaborn>=0.13.2

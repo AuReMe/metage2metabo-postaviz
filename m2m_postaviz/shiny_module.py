@@ -3,6 +3,11 @@ import time
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import seaborn as sns
+import matplotlib.pyplot as plt
+import matplotlib
+
+from matplotlib.patches import Patch
 from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
@@ -397,7 +402,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input, sample_filtering_enabled = False, sample_filter_button = "None", sample_filter_value = [], with_abundance = None):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):
 
     if len(compounds_input) == 0:
         return
@@ -405,7 +410,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     producer_data = data.get_metabolite_production_dataframe()
     # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
 
-    if sample_filtering_enabled and len(sample_filter_value) != 0:
+    if sample_filter_button != "All" and len(sample_filter_value) != 0:
 
         if sample_filter_button == "Include":
 
@@ -480,29 +485,29 @@ def df_to_plotly(df):
             "y": df.index.tolist()}
 
 
-def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
-    """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
-    The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
-    Make three plotly Heatmap from those dataframe and return them to be rendered. 
-    Args:
-        data (DataStorage): DataStorage object.
-        cpd_input (list): List of compounds selected by user.
-        sample_filtering_enabled (bool): Enable the filtering by sample
-        sample_filter_mode (str): Either Inlcude or Exclude selected by user.
-        sample_filter_value (list): List of sample selected in filter.
+# def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
+#     """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
+#     The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
+#     Make three plotly Heatmap from those dataframe and return them to be rendered. 
+#     Args:
+#         data (DataStorage): DataStorage object.
+#         cpd_input (list): List of compounds selected by user.
+#         sample_filtering_enabled (bool): Enable the filtering by sample
+#         sample_filter_mode (str): Either Inlcude or Exclude selected by user.
+#         sample_filter_value (list): List of sample selected in filter.
 
-    Returns:
-        _type_: _description_
-    """
-    cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+#     Returns:
+#         _type_: _description_
+#     """
+#     cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
 
-    added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
+#     added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
 
-    cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
+#     cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
 
-    iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
+#     iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
 
-    return cscope_fig, iscope_fig, added_value_fig
+#     return cscope_fig, iscope_fig, added_value_fig
 
 
 def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str):
@@ -608,6 +613,58 @@ def col_value_to_percent(col: pd.Series):
     final_val = (sum_val / len_val) * 100
 
     return final_val
+
+
+def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_cluster = False, col_cluster = False, filter_mode = None, filter_values = None):
+    """Produce a customizable Seaborn clustermap. Distance matrix use the jaccard method when clustering enabled.
+
+    Args:
+        data (DataStorage): DataStorage object.
+        cpd_input (list): list of compounds input to filter.
+        metadata_input (str, optional): Column label to filter sample by their metadata. Add a ROW color. Defaults to None.
+        row_cluster (bool, optional): Dendogram for rows from distance matrix. Defaults to False.
+        col_cluster (bool, optional): Dendogram for cols from distance matrix. Defaults to False.
+        filter_mode (str, optional): Mode of sample's filter if enabled. Defaults to None.
+        filter_values (list, optional): list of samples to filter. Defaults to None.
+
+    Returns:
+        list: List of three clustermap matrix object.
+    """
+    matplotlib.use('pdf')
+    plots = []
+
+    for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
+
+        if metadata_input is not None and metadata_input != "None":
+
+            metadata = data.get_metadata()
+            metadata = metadata[["smplID",metadata_input]]
+            metadata.set_index("smplID",inplace=True)
+
+            dataframe = dataframe.merge(metadata, right_index=True, left_index=True)
+            dataframe.dropna(inplace=True)
+            dataframe.sort_values(metadata_input,inplace=True)
+
+            lut_size = sns.husl_palette(len(dataframe[metadata_input].unique().tolist()), s=1, l=0.5)
+            lut = dict(zip(dataframe[metadata_input].unique(), lut_size))
+            row_colors = dataframe[metadata_input].map(lut)
+
+            dataframe.drop(columns=metadata_input,inplace=True)
+
+            g = sns.clustermap(dataframe, row_colors=row_colors, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
+            handles = [Patch(facecolor=lut[name]) for name in lut]
+            plt.legend(handles, lut, title=metadata_input,
+            bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc='upper right')
+
+            plots.append(g)
+
+        else : 
+
+            g = sns.clustermap(dataframe, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
+
+            plots.append(g)
+
+    return plots
 
 
 # def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
