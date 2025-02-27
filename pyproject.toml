@@ -18,7 +18,8 @@ dependencies = [
   'shiny',
   'shinywidgets',
   'scikit-bio',
-  'pyarrow'
+  'pyarrow',
+  'seaborn'
 ]
 
 [project.scripts]
