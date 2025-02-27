@@ -402,7 +402,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filtering_enabled = False, sample_filter_button = "None", sample_filter_value = [], with_abundance = None):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):
 
     if len(compounds_input) == 0:
         return
@@ -410,7 +410,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     producer_data = data.get_metabolite_production_dataframe()
     # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
 
-    if sample_filtering_enabled and len(sample_filter_value) != 0:
+    if sample_filter_button != "All" and len(sample_filter_value) != 0:
 
         if sample_filter_button == "Include":
 
@@ -615,12 +615,25 @@ def col_value_to_percent(col: pd.Series):
     return final_val
 
 
-def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_cluster = False, col_cluster = False, sample_filtering = False, filter_mode = None, filter_values = None):
+def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_cluster = False, col_cluster = False, filter_mode = None, filter_values = None):
+    """Produce a customizable Seaborn clustermap. Distance matrix use the jaccard method when clustering enabled.
 
+    Args:
+        data (DataStorage): DataStorage object.
+        cpd_input (list): list of compounds input to filter.
+        metadata_input (str, optional): Column label to filter sample by their metadata. Add a ROW color. Defaults to None.
+        row_cluster (bool, optional): Dendogram for rows from distance matrix. Defaults to False.
+        col_cluster (bool, optional): Dendogram for cols from distance matrix. Defaults to False.
+        filter_mode (str, optional): Mode of sample's filter if enabled. Defaults to None.
+        filter_values (list, optional): list of samples to filter. Defaults to None.
+
+    Returns:
+        list: List of three clustermap matrix object.
+    """
     matplotlib.use('pdf')
     plots = []
 
-    for dataframe in data.get_added_value_dataframe(cpd_input, sample_filtering, filter_mode, filter_values):
+    for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
 
         if metadata_input is not None and metadata_input != "None":
 

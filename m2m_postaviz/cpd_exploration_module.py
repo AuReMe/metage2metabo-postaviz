@@ -9,10 +9,6 @@ import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 
 
-ui.tags.style(
-    ".card-header { color:white; background:#5F9EA0; }"
-)
-
 @module.ui
 def cpd_tab_ui(Data: DataStorage):
 
@@ -39,20 +35,14 @@ def cpd_tab_ui(Data: DataStorage):
                     ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
                     max_height="400px",
                     min_height="250px",
-                    # theme="lightgrey"
                     ),
                 ui.input_select("metadata_filter_input", "Filter by metadata:", Data.get_factors(remove_smpl_col=True, insert_none=True)),
 
                 ui.input_selectize("color_filter_input", "Add color by metadata: ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
 
-                ui.input_checkbox("sample_filter_enable_input","Filter plot by sample."),
-
-                ui.panel_conditional("input.sample_filter_enable_input",
-
-                    ui.input_radio_buttons("sample_filter_choice_input", "Exclude or include samples into the plot.", ["Include", "Exclude"]),
+                    ui.input_radio_buttons("sample_filter_choice_input", "Include or exclude samples from the plots.", ["All", "Include", "Exclude"]),
                     ui.input_selectize("sample_filter_selection_input", "Selection of samples to filter.", choices=Data.get_sample_list(), multiple=True, remove_button=True),
-                    ui.input_action_button("reset_sample_filter_button", "Reset")
-                    ),
+                    ui.input_action_button("reset_sample_filter_button", "Reset",width="50%"),
 
                 ui.row(
                     ui.input_checkbox("row_cluster", "Add rows clustering on Heatmap."),
@@ -81,14 +71,14 @@ def cpd_tab_ui(Data: DataStorage):
             ui.nav_panel("Cscope", ui.card(ui.output_plot("heatmap_cscope"), full_screen=True)),
             ui.nav_panel("Iscope", ui.card(ui.output_plot("heatmap_iscope"), full_screen=True)),
             ui.nav_panel("Added value", ui.card(ui.output_plot("heatmap_added_value"), full_screen=True)),
-            title= "Heatmap of the number of bins producers of the compounds given in input for each samples (or selected samples). Metadata filtering and hierarchical clustering on both samples and compounds is available."),
+            title= "Heatmap of the number of bins producers of the compounds for each samples (or selected samples). Metadata filtering and hierarchical clustering on both samples and compounds is available."),
 
         ui.navset_card_tab(
             ui.nav_panel("Cscope", ui.card(output_widget("sample_percentage_production_cscope"), full_screen=True)),
             ui.nav_panel("Iscope", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
-            title= "Plots showing the percentage of sample producing the compounds given in input. Both in Cscope and Iscope."),
+            title= "Barplot showing the percentage of sample producing the compounds (at least one genomes producers). Both in Cscope and Iscope."),
 
-        ui.card(ui.card_header(""),
+        ui.card(ui.card_header("Boxplot of the numbers of genomes producers (Y-axis) for each compounds (X-axis) in input. Can be filtered by metadata and grouped by color input."),
             output_widget("cpd_exp_producers_plot"),full_screen=True),
 
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
@@ -129,7 +119,16 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
         @render_widget
         def sample_percentage_production_cscope():
-            return cpd_plot_generation.result()[1][0]
+            try:
+                plot = cpd_plot_generation.result()[1][0]
+            except TypeError as e:
+                ui.notification_show(
+                "Sample Percentage production plot needs a metadata filter input.",
+                type="warning",
+                duration=6,)
+                plot = None
+
+            return plot
 
         @render_widget
         def sample_percentage_production_iscope():
@@ -141,7 +140,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
         @ui.bind_task_button(button_id="run_plot_generation")
         @reactive.extended_task
-        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster):
+        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster):
 
             cpd_filtered_list = []
             for cpd in Data.get_compound_list():
@@ -151,7 +150,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             if len(selected_compounds) == 0:
                 return
 
-            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value) ###
 
             if user_input1 != "None":
 
@@ -170,7 +169,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 stat_dataframe = None
 
-            cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+            cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value) ###
 
             return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
 
@@ -179,7 +178,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.event(input.run_plot_generation, ignore_none=True)
         def handle_click_cpd_exploration():
             cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(),
-                                input.color_filter_input(), input.sample_filter_enable_input(),
+                                input.color_filter_input(),
                                 input.sample_filter_choice_input(), input.sample_filter_selection_input(),
                                 input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
                                 input.multiple_correction_method(), input.row_cluster(), input.col_cluster())
