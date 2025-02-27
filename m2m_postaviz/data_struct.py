@@ -369,7 +369,17 @@ class DataStorage:
 
 
     def get_bin_list_from_taxonomic_rank(self, rank, choice):
+        """Return a list of bins corresponding to the taxonomic rank given in input.
 
+        EXAMPLE : taxonomic rank = order, choice = Clostideria.
+
+        Args:
+            rank (str): Taxonomic rank
+            choice (str): one of the unique choice in taxonomic rank
+
+        Returns:
+            list: list of bins in the taxonomic scope
+        """
         taxonomy = self.get_taxonomic_dataframe()
 
         mgs_col_label = taxonomy.columns.values[0]
@@ -378,7 +388,19 @@ class DataStorage:
 
 
     def load_files(self, load_path):
+        """Loop through files in save directory and return a dictionnary of True/false for each files.
 
+        If necessary files are not present RaiseRuntimeError
+
+        Args:
+            load_path (_type_): _description_
+
+        Raises:
+            RuntimeError: If required files are absent.
+
+        Returns:
+            dict: _description_
+        """
         all_files = {}
 
         for _root, _dir ,filenames in os.walk(load_path):
