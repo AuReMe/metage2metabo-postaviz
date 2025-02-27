@@ -485,29 +485,29 @@ def df_to_plotly(df):
             "y": df.index.tolist()}
 
 
-def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
-    """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
-    The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
-    Make three plotly Heatmap from those dataframe and return them to be rendered. 
-    Args:
-        data (DataStorage): DataStorage object.
-        cpd_input (list): List of compounds selected by user.
-        sample_filtering_enabled (bool): Enable the filtering by sample
-        sample_filter_mode (str): Either Inlcude or Exclude selected by user.
-        sample_filter_value (list): List of sample selected in filter.
+# def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
+#     """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
+#     The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
+#     Make three plotly Heatmap from those dataframe and return them to be rendered. 
+#     Args:
+#         data (DataStorage): DataStorage object.
+#         cpd_input (list): List of compounds selected by user.
+#         sample_filtering_enabled (bool): Enable the filtering by sample
+#         sample_filter_mode (str): Either Inlcude or Exclude selected by user.
+#         sample_filter_value (list): List of sample selected in filter.
 
-    Returns:
-        _type_: _description_
-    """
-    cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
+#     Returns:
+#         _type_: _description_
+#     """
+#     cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
 
-    added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
+#     added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
 
-    cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
+#     cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
 
-    iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
+#     iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
 
-    return cscope_fig, iscope_fig, added_value_fig
+#     return cscope_fig, iscope_fig, added_value_fig
 
 
 def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str):
