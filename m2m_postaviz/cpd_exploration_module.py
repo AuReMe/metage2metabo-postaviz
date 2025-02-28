@@ -40,10 +40,15 @@ def cpd_tab_ui(Data: DataStorage):
 
                 ui.input_selectize("color_filter_input", "Add color by metadata: ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
 
+                ui.card(" ",
+                    ui.card_header("Sample Filtering (Optionnal)"),
                     ui.input_radio_buttons("sample_filter_choice_input", "Include or exclude samples from the plots.", ["All", "Include", "Exclude"]),
+                    ui.input_select("sample_filter_metadata1"," ",choices=Data.get_factors(True)),
+                    ui.input_selectize("sample_filter_metadata2"," ",choices=[],multiple=True),
                     ui.input_selectize("sample_filter_selection_input", "Selection of samples to filter.", choices=Data.get_sample_list(), multiple=True, remove_button=True),
-                    ui.input_action_button("reset_sample_filter_button", "Reset",width="50%"),
-
+                    ui.card_footer(ui.input_action_button("reset_sample_filter_button", "Reset",width="50%")),
+                    
+                    max_height="400px"),
                 ui.row(
                     ui.input_checkbox("row_cluster", "Add rows clustering on Heatmap."),
                     ui.input_checkbox("col_cluster", "Add columns clustering on Heatmap."),
@@ -242,3 +247,29 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
+        @reactive.effect
+        def _update_metadata_sample_filter():
+
+            metadata_input1 = input.sample_filter_metadata1()
+
+            try:
+                metadata = Data.get_metadata()[metadata_input1].unique().tolist()
+            except Exception as e:
+                ui.notification_show(
+                f"Sample filter metadata error, {e}",
+                type="warning",
+                duration=6,)
+                return
+            
+            return ui.update_selectize("sample_filter_metadata2", choices=metadata)
+        
+        @reactive.effect
+        def _update_sample_filter_selection_input():
+
+            sample_metadata_filter1 = input.sample_filter_metadata1()
+            sample_metadata_filter2 = input.sample_filter_metadata2()
+            metadata = Data.get_metadata()
+
+            metadata = metadata.loc[metadata[sample_metadata_filter1].isin(sample_metadata_filter2)]["smplID"].tolist()
+
+            return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)
