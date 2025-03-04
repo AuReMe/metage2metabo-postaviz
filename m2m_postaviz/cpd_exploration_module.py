@@ -16,6 +16,8 @@ def cpd_tab_ui(Data: DataStorage):
 
         cpd_exploration_all_category = Data.get_metacyc_category_list()
 
+        cpd_exploration_all_category.insert(0, Data.get_outsider_cpd()[1])
+
         cpd_exploration_all_category.insert(0,"None")
 
     else:
@@ -196,14 +198,19 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 return
 
+
             metacyc_category_first_input = input.first_category_input().split(" ")[0]
+
+            if metacyc_category_first_input == "Others":
+
+                return ui.update_selectize("category_choice_input", choices=["Others"])
 
             if metacyc_category_first_input == "None" or metacyc_category_first_input == "":
 
                 return ui.update_selectize("category_choice_input", choices=[])
 
             category_node = []
-            print(metacyc_category_first_input)
+
             Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
 
             category_node = category_node[0]
@@ -231,6 +238,10 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
                 return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
 
+            if category_level == "Others":
+
+                return ui.update_selectize("compounds_choice_input", choices=Data.get_outsider_cpd()[0])
+
             category_node = []
 
             Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
@@ -239,7 +250,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             cpds_found = []
 
-            Data.find_compounds_from_category(category_node, cpds_found)
+            Data.get_compounds_from_category(category_node, cpds_found)
 
             cpd_list = Data.get_compound_list(True)
 

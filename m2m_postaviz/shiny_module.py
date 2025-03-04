@@ -19,7 +19,7 @@ from m2m_postaviz.data_struct import DataStorage
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
     """Takes inputs from shiny application to return 3 ploty objects:
-    - hist plot of the unique production of metabolites by bins selected weighted by abundance or not.
+    - hist plot of the unique production of metabolites by selected bins, weighted by abundance or not.
     - box plot of production of metabolites by bin selected.
     - bar plot of the abundance of each bin by samples.
 
