@@ -542,7 +542,7 @@ class DataStorage:
                     return
 
 
-    def find_compounds_from_category(self, data, results):
+    def get_compounds_from_category(self, data, results):
         """Find and return in a list all the leaf of the tree. each leaf is a compounds
         A compounds has not children, but work need te bo done to be sure that category node
         that do not have any children (not supposed to) will be in the result list.
@@ -563,13 +563,13 @@ class DataStorage:
 
             else:
 
-                self.find_compounds_from_category(child, results)
+                self.get_compounds_from_category(child, results)
 
         return
 
 
     def get_metacyc_category_list(self, tree = None):
-        """Return the category list of the metacyc database. By default it return thel list of the category
+        """Return the category list of the metacyc database. By default it return the list of the category
         of the whole tree. If any sub tree is given it return only the sub category of that tree.
 
         Args:
@@ -598,13 +598,14 @@ class DataStorage:
 
             sub_tree = sub_tree[0]
 
-            self.find_compounds_from_category(sub_tree, cpd_in_category)
+            self.get_compounds_from_category(sub_tree, cpd_in_category)
 
             final_cpd_list = [cpd for cpd in data_cpd_list if cpd in cpd_in_category]
 
             new_key = key+" "+"("+f"{len(final_cpd_list)}"+"/"+f"{len(cpd_in_category)}"+")"
 
             final_res.append(new_key)
+
         # start = time.time()
 
         # shiny_dict_level = {}
@@ -629,3 +630,16 @@ class DataStorage:
         return final_res
         
 
+    def get_outsider_cpd(self):
+        """Return the compounds found in data but doesnt fit in OTHERS category
+
+        Returns:
+            Tuple: cpd list / category names
+        """
+        cpd_in_db = []
+        self.get_compounds_from_category(self.get_cpd_category_tree(), cpd_in_db)
+        cpd_in_data = self.get_compound_list(True)
+
+        diff = [cpd for cpd in cpd_in_data if cpd not in cpd_in_db]
+
+        return diff, str("Others " + str(len(diff)) + "/" + str(len(cpd_in_db)))
