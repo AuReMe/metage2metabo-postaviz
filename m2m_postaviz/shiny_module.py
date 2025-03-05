@@ -510,7 +510,7 @@ def df_to_plotly(df):
 #     return cscope_fig, iscope_fig, added_value_fig
 
 
-def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str):
+def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str, sample_filter_button = "All", sample_filter_value = []):
     """Produce two plotly figure barplot from the list of compounds and the column filter given in input.
 
     Args:
@@ -519,7 +519,7 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
         metadata_filter_input (str): Column label of metadata filter
 
     Returns:
-        _type_: _description_
+        Tuple: Tuple with cscope plot and iscope plot
     """
     cscope_df = data.get_metabolite_production_dataframe()
     iscope_df = data.get_iscope_metabolite_production_dataframe()
@@ -536,6 +536,19 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     # Select only the column of interest.
     cscope_df = cscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
     iscope_df = iscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
+
+    # Samples filtering
+    if sample_filter_button != "All":
+
+        if sample_filter_button == "Include":
+
+            cscope_df = cscope_df.loc[cscope_df["smplID"].isin(sample_filter_value)]
+            iscope_df = iscope_df.loc[iscope_df["smplID"].isin(sample_filter_value)]
+
+        if sample_filter_button == "Exclude":
+
+            cscope_df = cscope_df.loc[~cscope_df["smplID"].isin(sample_filter_value)]
+            iscope_df = iscope_df.loc[~iscope_df["smplID"].isin(sample_filter_value)]
 
     # Check for numeric dtype (boolean / int / unsigned / float / complex).
     if cscope_df[metadata_filter_input].dtype.kind in "biufc":

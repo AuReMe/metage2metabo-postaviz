@@ -194,7 +194,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             if user_input1 != "None":
 
-                percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1,)
+                percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
 
             else:
                 percent_barplot = None
