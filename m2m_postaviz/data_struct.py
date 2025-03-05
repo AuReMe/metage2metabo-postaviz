@@ -4,6 +4,7 @@ from typing import Optional
 from m2m_postaviz.lineage import Lineage
 import time
 import pandas as pd
+import seaborn as sns
 
 
 class DataStorage:
@@ -35,6 +36,8 @@ class DataStorage:
         self.HAS_ABUNDANCE_DATA = loaded_files["abundance_file.tsv"]
 
         self.USE_METACYC_PADMET = loaded_files["padmet_compounds_category_tree.json"]
+
+        self.current_plot = {}
 
         if save_path is not None:
 
@@ -312,9 +315,20 @@ class DataStorage:
         return logs
 
 
+    def save_seaborn_plot(self, sns_obj, file_name):
+
+        if os.path.isfile(os.path.join(self.output_path, file_name)):
+            new_file_name = self.check_and_rename(os.path.join(self.output_path, file_name))
+            print(new_file_name)
+            sns_obj.savefig(new_file_name)
+            
+        else:
+            sns_obj.savefig(os.path.join(self.output_path, file_name))
+
+
     def check_and_rename(self, file_path: str, add: int = 0) -> str:
         original_file_path = file_path
-        print(original_file_path)
+        print(add)
         if add != 0:
             file_name, extension = os.path.splitext(file_path)
             file_name = file_name + "_" + str(add)
