@@ -108,7 +108,7 @@ For future update we will use this tab to allow users to change metadata type di
 PCOA tabulation
 ===========
 
-Tabulation with 2 graph.
+Tab with 2 graph.
 - The first one shows the Principal coordinates analysis done with all samples and saves as pcoa_dataframe_postaviz.tsv into the save directory.
 You can use the input color to observe the PCOA in all its shapes. But the PCOA is not recalculated, this is just for observation.
 
@@ -118,7 +118,7 @@ by their metadata values.
 Bins exploration tabulation
 ===========
 
-Tabulation dedicated to the observation of the bins contained into each sample's cscope of Metage2metabo.
+Tab dedicated to the observation of the bins contained into each sample's cscope of Metage2metabo.
 Some pattern in compounds production can be found by the taxonomic belonging of the bins.
 If the taxonomy (-t option) is not provided, this tabulation will be disabled.
 
@@ -126,6 +126,10 @@ If the taxonomy (-t option) is not provided, this tabulation will be disabled.
 Input explanation:
 
 - Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
+
+[!WARNING]
+
+The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
 
 - The second input automatically update from the input above. It allow the selection of the specific group of bins in CATEGORY ???
 
@@ -135,7 +139,15 @@ Input explanation:
 
 - Color grouping option for all plots.
 
--   
+- Use abundance, this options will use the "normalised abundance dataframe" instead of the "main dataframe". Instead of using 0,1 value for production, the abundance dataframe is multi with the abundace of each bins in their respective sample.
+
+Plots explanation :
+
+- Plot 1 the sum of unique metabolites produced by the selected bins in each samples.
+
+- Plot 2 is a boxplot of the unique metabolites production of each selected bins in their samples.
+
+- Plot 3 show the abundance for each selected bins in their respective sample.
 
 
 Compounds exploration tabulation
