@@ -30,6 +30,7 @@ Dependencies
 - shiny
 - shinywidgets
 - pyarrow
+- seaborn
 
 ::
 
@@ -97,3 +98,51 @@ You can interrupt the process if you want and run postaviz with -l load option.
     m2m_postaviz -l save/directory/path
 
 Which will directly launch shiny and skip dataprocessing.
+
+Metadata tabulation
+===========
+
+Tabulation to observe the metadatagiven in CLI.
+For future update we will use this tab to allow users to change metadata type directly inside the application.
+
+PCOA tabulation
+===========
+
+Tabulation with 2 graph.
+- The first one shows the Principal coordinates analysis done with all samples and saves as pcoa_dataframe_postaviz.tsv into the save directory.
+You can use the input color to observe the PCOA in all its shapes. But the PCOA is not recalculated, this is just for observation.
+
+- The second graph allow the calculate directly the PCOA from the samples filtered by the metadata input. The color can be used to regroup samples
+by their metadata values.
+
+Bins exploration tabulation
+===========
+
+Tabulation dedicated to the observation of the bins contained into each sample's cscope of Metage2metabo.
+Some pattern in compounds production can be found by the taxonomic belonging of the bins.
+If the taxonomy (-t option) is not provided, this tabulation will be disabled.
+
+
+Input explanation:
+
+- Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
+
+- The second input automatically update from the input above. It allow the selection of the specific group of bins in CATEGORY ???
+
+- The third input allow a filtering to the samples level, all samples (and associated bins !) will be removed from the plots if excluded by this input.
+
+- Updated from the third input liek the second input, allow a more precise selection ????
+
+- Color grouping option for all plots.
+
+-   
+
+
+Compounds exploration tabulation
+===========
+
+3 GRAPH 1 dataframe
+
+    Same as bins.    
+
+    

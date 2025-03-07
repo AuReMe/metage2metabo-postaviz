@@ -72,9 +72,19 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     
     filter_condition=[("binID", "in", filtered_list_of_bin)]
     # if factor != "None" and len(factor_choice) > 0:
-    #     filter_condition.append((factor, "in", factor_choice))
+    #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. SUBJECT TO CHANGE.
 
     df = data.get_bin_dataframe(condition=filter_condition)
+
+    # METADATA filter applied here instead.
+
+    metadata = data.get_metadata()
+
+    df = df.merge(metadata, "inner", "smplID")
+
+    if factor_choice != "None" and len(factor_choice) > 0:
+
+        df = df.loc[df[factor].isin(factor_choice)]
 
     unique_sample_in_df = df["smplID"].unique()
 
@@ -95,15 +105,6 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
         new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
 
     df = df.merge(new_serie_production, how="inner", on="smplID")
-
-    metadata = data.get_metadata()
-    metadata = metadata.loc[metadata["smplID"].isin(unique_sample_in_df)]
-
-    df = df.merge(metadata, "inner", "smplID")
-
-    if factor_choice == "None":
-
-        df = df.loc[df[factor].isin(factor_choice)]
 
     df.sort_index(inplace=True)
 
