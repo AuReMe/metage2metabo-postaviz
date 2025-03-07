@@ -127,10 +127,6 @@ Input explanation:
 
 - Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
 
-[!WARNING]
-
-The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
-
 - The second input automatically update from the input above. It allow the selection of the specific group of bins in CATEGORY ???
 
 - The third input allow a filtering to the samples level, all samples (and associated bins !) will be removed from the plots if excluded by this input.
@@ -149,6 +145,13 @@ Plots explanation :
 
 - Plot 3 show the abundance for each selected bins in their respective sample.
 
+>[!WARNING]
+
+>The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
+
+>[!TIP]
+>A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only 
+>one bin (mgs) is selected it will display how many samples have this specfic bin.
 
 Compounds exploration tabulation
 ===========
