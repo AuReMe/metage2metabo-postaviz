@@ -1026,10 +1026,8 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
     ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
 
-    sample_list = []
     bin_list = []
     for bin in sample_info["bins_sample_list"].keys():
-        sample_list += sample_info["bins_sample_list"][bin]
         bin_list.append(bin)
 
     #####   Delete replicate

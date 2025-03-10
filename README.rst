@@ -87,6 +87,7 @@ m2m_postaviz can be run in two ways :
                 -a abundance/file/path
                 -t taxonomy/file/path
                 -o save/path
+                --no-metacyc (Optionnal)
 
 This way is required as least one time to produce all dataframe and save them in -o save/path.
 
@@ -102,7 +103,7 @@ Which will directly launch shiny and skip dataprocessing.
 Metadata tabulation
 ===========
 
-Tabulation to observe the metadatagiven in CLI.
+Tabulation to observe the metadata given in CLI.
 For future update we will use this tab to allow users to change metadata type directly inside the application.
 
 PCOA tabulation
@@ -123,7 +124,7 @@ Some pattern in compounds production can be found by the taxonomic belonging of 
 If the taxonomy (-t option) is not provided, this tabulation will be disabled.
 
 
-Input explanation:
+Input:
 
 - Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
 
@@ -137,7 +138,7 @@ Input explanation:
 
 - Use abundance, this options will use the "normalised abundance dataframe" instead of the "main dataframe". Instead of using 0,1 value for production, the abundance dataframe is multi with the abundace of each bins in their respective sample.
 
-Plots explanation :
+Plots :
 
 - Plot 1 the sum of unique metabolites produced by the selected bins in each samples.
 
@@ -156,8 +157,52 @@ Plots explanation :
 Compounds exploration tabulation
 ===========
 
-3 GRAPH 1 dataframe
+Input :
 
-    Same as bins.    
+IF METACYC ENABLED
 
-    
+- Compounds input divided into three sub input:
+    - List of metacyc category ordered from the top to the bottom of the tree.
+    - Any category selected above will update this input to a list of all sub-category.
+    - Automatically filled with the compounds corresponding to the category / sub category selected in the input above.
+    Allow the selection of compounds directly if none of the first input are used or if --no-metacyc option is used in CLI.
+
+The plots generated will only take the compounds selected as input.
+
+- Metadata filter and color
+
+    - Metadata filter
+    - Plot color and regroup
+
+- Sample filter
+    - All (no filter), Inlucde or Exclude from the plots the selection in filter.
+    - Metadata column selection. REDUNDANCY WITH METADATA FILTER ?????
+    - unique choice of the metadata column previously selected.
+    - Automatically filled. Select sample corresponding to previous choices. NO CUSTOM SELECTION BY NAME POSSIBLE !! NONE option in metadata should be enable!!
+
+
+- Enable row/columns clustering (Only for heatmap) will change column and or row order. Optionnal and independant from each other.
+
+- Generate statistical dataframe / Should be enable by default / performance 
+
+Plot
+
+- Heatmap
+
+    Heatmap displaying the number of bins producing the compound in the sample.
+    Cscope / Iscope / Added Value
+
+- Percentage of samples producing selected compounds
+
+    Divided as Cscope / Iscope
+
+- Boxplot of the production of compounds (Y axis) by sample regrouped by metadata (X axis)
+
+- Stats tests dataframe.
+
+    Wilcoxon / Mann-Whitney tests for factor/categoric data.
+    Corrélation test for integers data.
+
+    Tested pair are determined by the metadata input.
+
+    Sample filtering is not applied here.
