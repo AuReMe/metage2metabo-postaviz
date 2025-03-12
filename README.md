@@ -40,44 +40,45 @@ You can also install the in-development version with::
 
 ` pip install -r requirement.txt `
 
+## Quick start
+
+A dataset with test data is available in this repository and can be used to test the main functionalities of the tool.
 
 ##  Documentation
 
 
 
 ### Important
-===========
 
 In metadata file the first column must be the sample identification. Preferably named "smplID".
 
 In taxonomy file the first column must be the metagenomes (mgs). Preferably named "mgs".
 
-### Utilisation
-===========
+### Usage
 
 m2m_postaviz can be run in two ways :
 
-::
-
+```
     m2m_postaviz -d Metage2metabo/samples/scopes/directory/path
                 -m metadata/file/path
                 -a abundance/file/path
                 -t taxonomy/file/path
                 -o save/path
                 --no-metacyc (Optionnal)
+```
 
 This way is required as least one time to produce all dataframe and save them in -o save/path.
 
 Once the dataframes are produced. Shiny will automatically run from the save/path given in -o option.
 You can interrupt the process if you want and run postaviz with -l load option.
 
-::
-
+```
     m2m_postaviz -l save/directory/path
+````
 
 Which will directly launch shiny and skip dataprocessing.
 
-### Metadata tabulation
+### Metadata tab
 
 Tabulation to observe the metadata given in CLI.
 For future update we will use this tab to allow users to change metadata type directly inside the application.
@@ -121,16 +122,16 @@ Plots :
 
 - Plot 3 show the abundance for each selected bins in their respective sample.
 
-.. warning::
-    The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
+#### Warning
+ 
+The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
 
 Note
     A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only 
     one bin (mgs) is selected it will display how many samples have this specfic bin.
 
 
-Compounds exploration tabulation
-===========
+### Compounds exploration tab
 
 Input :
 
@@ -202,3 +203,13 @@ Note, to combine the coverage data from all the tox environments run:
 ```
     PYTEST_ADDOPTS=--cov-append tox
 ```
+
+## Authors
+
+Léonard Brindel and [Clémence Frioux](https://cfrioux.github.io) -- [Inria Pleiade team](https://team.inria.fr/pleiade/) 
+
+### Acknowledgements
+
+- David James Sherman
+- Jean-Marc Frigerio
+- Pleiade team members
