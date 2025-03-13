@@ -182,13 +182,12 @@ Plots :
 
 - Plot 3 show the abundance for each selected bins in their respective sample.
 
->WARNING
-
+> **⚠️ Warning:**
 >The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
 
-> [!NOTE]
 
-> A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specfic bin.
+> **💡 Note:** A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specfic bin.
+e.
 
 #### Method
 
