@@ -83,14 +83,13 @@ Which will directly launch shiny and skip dataprocessing.
 Tabulation to observe the metadata given in CLI.
 For future update we will use this tab to allow users to change metadata type directly inside the application.
 
-### COA tabulation
+### PCOA tabulation
 
-Tab with 2 graph.
-- The first one shows the Principal coordinates analysis done with all samples and saves as pcoa_dataframe_postaviz.tsv into the save directory.
-You can use the input color to observe the PCOA in all its shapes. But the PCOA is not recalculated, this is just for observation.
+- Base PCOA shows the Principal coordinates analysis done with all samples and saves as pcoa_dataframe_postaviz.tsv into the save directory.
 
-- The second graph allow the calculate directly the PCOA from the samples filtered by the metadata input. The color can be used to regroup samples
-by their metadata values.
+You can use the input color to observe the PCOA in all its shapes. But the PCOA is not recalculated, this is just for global observation.
+
+- Customisable PCOA allow to calculate directly the PCOA from the samples filtered by the metadata input. The color can be used to regroup samples by their metadata values.
 
 ### Bins exploration tabulation
 
@@ -99,16 +98,15 @@ Tab dedicated to the observation of the bins contained into each sample's cscope
 Some pattern in compounds production can be found by the taxonomic belonging of the bins.
 If the taxonomy (-t option) is not provided, this tabulation will be disabled.
 
-
 Input:
 
 - Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
 
-- The second input automatically update from the input above. It allow the selection of the specific group of bins in CATEGORY ???
+- The second input automatically update from the selection above. It allow the selection of the specific group of bins in taxonomic rank selected.
 
 - The third input allow a filtering to the samples level, all samples (and associated bins !) will be removed from the plots if excluded by this input.
 
-- Updated from the third input liek the second input, allow a more precise selection ????
+- Updated from the third input like the second input, allow a more precise selection ????
 
 - Color grouping option for all plots.
 
@@ -122,13 +120,23 @@ Plots :
 
 - Plot 3 show the abundance for each selected bins in their respective sample.
 
-#### Warning
- 
-The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
+>WARNING
 
-Note
-    A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only 
-    one bin (mgs) is selected it will display how many samples have this specfic bin.
+>The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
+
+> [!NOTE]
+
+> A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specfic bin.
+
+#### Method
+
+The bins exploration present some challenges, it need to retain the production by the bins inside of each samples.
+
+The individual production of each bins depend of the bins present (community interaction highlighted by **Meta2metabo**) which also differ from the treatment/condition of the sample.
+
+All of this information can scale poorly if a lot of sample are present in input which is the point of the application: being able observe from lots of angles large chunks of data.
+
+In order to keep all this valuable data we choosed to use the hard drive and load/manipulate large dataframe by subset using Parquet format. That way RAM memory is not overload and we can pick what we need from the hard drive, using query similar to a SQL database.
 
 
 ### Compounds exploration tab
@@ -141,7 +149,7 @@ IF METACYC ENABLED
     - List of metacyc category ordered from the top to the bottom of the tree.
     - Any category selected above will update this input to a list of all sub-category.
     - Automatically filled with the compounds corresponding to the category / sub category selected in the input above.
-    Allow the selection of compounds directly if none of the first input are used or if --no-metacyc option is used in CLI.
+    Allow the selection of compounds directly if none of the first input are used or if **--no-metacyc** option is used in CLI.
 
 The plots generated will only take the compounds selected as input.
 
@@ -151,6 +159,7 @@ The plots generated will only take the compounds selected as input.
     - Plot color and regroup
 
 - Sample filter
+
     - All (no filter), Inlucde or Exclude from the plots the selection in filter.
     - Metadata column selection. REDUNDANCY WITH METADATA FILTER ?????
     - unique choice of the metadata column previously selected.
@@ -182,6 +191,20 @@ Plot
     Tested pair are determined by the metadata input.
 
     Sample filtering is not applied here.
+
+#### Method
+
+To produce the plots, m2m-postaviz use several dataframes made in processing part.
+
+The producers_cscope_dataframe and producers_iscope_dataframe are the two main dataframe.
+Both are produced by the sum of each rows (bins) in each sample's cscope/iscope and the concatenation of all Pandas Series produced.
+
+That way we have the number of metagenomes producing the compound (columns) for each rows (samples).
+
+The difference between these dataframe (production in community and individual) gives us the added_value dataframe
+
+
+
 
 ## Development
 

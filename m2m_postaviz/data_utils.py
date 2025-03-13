@@ -1030,7 +1030,6 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
     for bin in sample_info["bins_sample_list"].keys():
         bin_list.append(bin)
 
-    #####   Delete replicate
     sample_unique_list = os.listdir(cscope_directory)
 
     ##### Create Generator to process data by chunks.
