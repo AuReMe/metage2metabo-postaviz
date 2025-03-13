@@ -4,11 +4,11 @@
 
 M2M-PostAViz (_M2M Post-Analysis and Visualization_) is an interactive exploration platform for the exploration of metabolic potential predictions performed by [Metage2Metabo (M2M)](https://github.com/AuReMe/metage2metabo/tree/main). M2M predicts reachable metabolites by communities of microorganisms by computing a Boolean abstract abstraction (Network expansion) of metabolic activity. More precisely, it takes as input a collection of genome-scale metabolic networks (GSMNs) and a description of the nutritional environment, then first compute the molecules reachable (predicted to be producible in the environment) by each GSMN individually, and by the community of GSMNs. In the latter case, it takes into account mutualistic interactions (cross-feeding) that may occur within the community, and therefore increase its overall metabolic potential. As such, several outputs can be distinguished: what is produced by each member alone or _individual scope_, what becomes producible only through metabolic interactions _added-value_ and the union of both that is the community metabolic potential, or _community scope_. For each compound in one of the _scopes_, the information related to the producer(s) -- i.e. which GSMNs -- of the compound is retrieved by M2M and provided in dedicated tables. The overview of M2M pipeline is illustrated below:
 
-<img src="./docs/pictures/m2m_overview.png" alt="General overview of Metage2Metabo's pipeline" width="50%"/>
+<img src="./docs/pictures/m2m_overview.png" alt="General overview of Metage2Metabo's pipeline" width="70%"/>
 
 M2M-PostAViz integrates and analyses all these outputs, especially in a context when multiple runs of M2M are performed, each one aiming at studying the metabolic potential of a microbial community. A typical use-case would be to run M2M for a cohort of microbiome samples, each described by a collection of GSMNs, for instance. In a cohort, the data comes with metadata that is used by M2M-PostAViz to analyse M2M's results and explore whether the predicted metabolic potential is statistically associated with metadata variables. 
 
-<img src="./docs/pictures/postaviz_overview.png" alt="General overview of M2M-PostAViz" width="50%"/>
+<img src="./docs/pictures/postaviz_overview.png" alt="General overview of M2M-PostAViz" width="70%"/>
 
 
 ### License 
@@ -44,15 +44,77 @@ You can also install the in-development version with::
 
 A dataset with test data is available in this repository and can be used to test the main functionalities of the tool.
 
+#TODO
+
 ##  Documentation
 
+### Input data 
+
+The main input data are the outputs of Metage2Metabo for each sample/microbial community, and the metadata associated to each of them. 
+
+In practice, other input data can be provided, included precomputed M2M-PostAViz tables which allow for a much faster restart when rerunning the app on previously analyzed data.
+
+We detail below the input data:
+
+- M2M output for each sample
+  - It should be in the following format
+
+     ```
+    |- sample_1
+    |- sample_2
+    |- sample_3
+    |- etc. # use tree to show the structure
+    ```
+- Metadata associated to samples
+  - This file should be a table where the first column is the sample identifier matching the output of M2M. For instance as below
+
+    | smplID    | Age | Country  |
+    |-----------|----:|----------|
+    | sample_1  |  2  | France   |
+    | sample_2  |  30 | Canada   |
+    | sample_3  |  68 | Germany  |
+  - The expected format is a tabulated file
+
+- Taxonomy of the MAGs/genomes corresponding to the metabolic networks used in the analysis. 
+  - This file should be a table where the first column is the identifier matching the IDs of the metabolic networks that were analyses by M2M. For instance as below
+
+    | Identifier | Domain      | Phylum          | Class          | Order           | Family            | Genus      | Species        |
+    |------------|------------|----------------|---------------|----------------|-------------------|------------|---------------|
+    | MAG_1      | Bacteria   | Proteobacteria  | Gammaproteobacteria | Enterobacterales | Enterobacteriaceae | Escherichia | Escherichia coli |
+    | Genome_1   | Bacteria   | Firmicutes      | Bacilli       | Lactobacillales | Lactobacillaceae  | Lactobacillus | Lactobacillus casei |
+    | MAG_2      | Archaea    | Euryarchaeota   | Methanobacteria | Methanobacteriales | Methanobacteriaceae | Methanobacterium | Methanobacterium formicicum |
+
+  - The expected format is a tabulated file
+- Metacyc database in padmet format
+  - This optional input file is used to take advantage of the ontology of compound categories provided in the Metacyc database. 
+  - This input is relevant only if the metabolic networks analysed in M2M were generated with the PathwayTools software.
+  - The Metacyc database flat files can be downloaded provided subscription. Once downloaded, they can be integrated into a single file in the padmet format using the following command line 
+  ```{sh}
+  # install padmet
+  pip install padmet
+  # move to the directory were the Metacyc data is stored (unzipped). The data is in a directory named by the version of the database, for instance `28.5/data`
+  padmet pgdb_to_padmet --pgdb 28.5/data --version 28.5 --db metacyc --output metacyc28_5.padmet
+  ```
+- Precomputed data for M2M-PostAViz
+  - #TODO This data can be stored when running the tool with the `-o` flag. It will be saved in the directory of your choice and can be loaded for future runs of M2M-PostAViz.
+
+  ```{sh}
+    # Run the tool once on the data and provide a path for saving the tables
+    m2m_postaviz -d Metage2metabo/samples/scopes/directory/path
+                -m metadata/file/path
+                -a abundance/file/path
+                -t taxonomy/file/path
+                -o save/directory/path
+    # for future runs, if data has not changed you can simply resume exploration with
+    m2m_postaviz -l save/directory/path
+    ```
 
 
-### Important
+<!-- ### Important
 
 In metadata file the first column must be the sample identification. Preferably named "smplID".
 
-In taxonomy file the first column must be the metagenomes (mgs). Preferably named "mgs".
+In taxonomy file the first column must be the metagenomes (mgs). Preferably named "mgs". -->
 
 ### Usage
 
