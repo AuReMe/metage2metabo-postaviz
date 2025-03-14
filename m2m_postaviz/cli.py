@@ -16,6 +16,7 @@ Why does this file exist, and why not put this in __main__?
 """
 import argparse
 import os
+import tempfile
 
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
@@ -58,11 +59,15 @@ def main(args=None):
         metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
         abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
-        save_path = "/home/lbrindel/postaviz_test_run/smpl100"
+        tempdir = tempfile.TemporaryDirectory()
+        save_path = tempdir.name
+        print(save_path)
+        print("Used as tmp dir")
+        # save_path = "/home/lbrindel/postaviz_test_run/smpl100"
         du.build_dataframes(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
         Data = DataStorage(save_path)
         sh.run_shiny(Data)
-
+        tempdir.cleanup()
     elif arg_parser.dev:
 
         dir_path = "/home/lbrindel/postaviz_data/res_smpl1/"
