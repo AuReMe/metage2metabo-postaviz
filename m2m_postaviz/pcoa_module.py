@@ -17,7 +17,7 @@ def pcoa_module_ui(Data: DataStorage):
     metadata_label = Data.get_factors()
     metadata_label.remove("smplID")
 
-    pcoa_card = ui.card(
+    pcoa_card = ui.card(ui.card_header("Principal Coordinates Analysis made with all samples. Change color input to see different clusters."),
         ui.layout_sidebar(
             ui.sidebar(
                 ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
@@ -25,14 +25,17 @@ def pcoa_module_ui(Data: DataStorage):
                 ui.help_text(ui.output_text("display_warning_pcoa")),
                 width=300,
                 gap=30,
+                bg="lightgrey",
+                
             ),
         output_widget("pcoa_plot")
         ),
-        full_screen=True
+        full_screen=True,
+        min_height="600px"
         )
 
 
-    custom_pcoa_card = ui.card(ui.card_header("Make a custom pcoa filtered by columns values."),
+    custom_pcoa_card = ui.card(ui.card_header("Customize the Principal Coordinates Analysis by filtering samples with their metadata value."),
         ui.layout_sidebar(
             ui.sidebar(
 
@@ -41,14 +44,15 @@ def pcoa_module_ui(Data: DataStorage):
                 ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
                 ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
 
-
                 ui.input_task_button("run_custom_pcoa","Go"),
                 width=300,
                 gap=35,
+                bg="lightgrey"
             ),
         output_widget("pcoa_custom_plot"),
         ),
-        full_screen=True
+        full_screen=True,
+        min_height="600px"
     )
 
     return pcoa_card, custom_pcoa_card
