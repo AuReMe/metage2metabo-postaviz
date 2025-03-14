@@ -589,6 +589,7 @@ def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
         return
     else:
         metadata = open_tsv(metadata_path)
+        metadata = metadata.rename(columns={metadata.columns[0]: "smplID"})
         metadata.to_csv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
 
 
