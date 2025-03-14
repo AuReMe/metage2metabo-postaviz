@@ -28,8 +28,8 @@ parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data"
 parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
 parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. If created if not valid. If not provided, save options disabled.")
 parser.add_argument("-l", "--load", help="Run postaviz from save directory")
+parser.add_argument("-c", "--metacyc", help="Run postaviz with the metacyc database as padmet file. This is usefull when the metabolite ID from the scopes use metacyc ID. Enable the research by category of metabolites.")
 
-parser.add_argument("--no-metacyc", help="Run postaviz without the metacyc padmet database. This is necessary when the metabolite ID from the scopes do not use metacyc ID. Deactivate the research by category of metabolites.", action="store_true")
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
 
@@ -85,7 +85,7 @@ def main(args=None):
         taxonomic_path = arg_parser["taxonomy"]
         abundance_path = arg_parser["abundance"]
         save_path = arg_parser["output"]
-        metacyc = arg_parser["no_metacyc"]
+        metacyc = arg_parser["metacyc"]
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path, metacyc)
 
         Data = DataStorage(save_path)

@@ -503,7 +503,7 @@ def build_main_dataframe(save_path, cscope_directory):
     print("Main dataframe done and saved.")
 
 
-def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None, metacyc: Optional[bool] = False):
+def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None, metacyc: Optional[str] = None):
     """
     Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
     in save_path given in CLI.
@@ -549,7 +549,7 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     build_pcoa_dataframe(save_path)
 
-    bin_dataframe_build(sample_info, cscope_directory, abundance_path, taxonomic_path, save_path)
+    bin_dataframe_build(cscope_directory, abundance_path, taxonomic_path, save_path)
 
     # cpd_cscope_dataframe_build(sample_info, cscope_directory, abundance_path, save_path)
 
@@ -578,9 +578,9 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     # Metacyc database TREE
 
-    if not metacyc:
+    if metacyc is not None:
 
-        padmet_to_tree(save_path)
+        padmet_to_tree(save_path, metacyc)
 
 
 def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
@@ -985,7 +985,7 @@ def iscope_production(dir_path: str, sample_info_dict: dict):
     return sample_info_dict
 
 
-def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = None, taxonomy_path = None, savepath = None):
+def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path = None, savepath = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
     the metadata and the taxonomic rank associated.
 
@@ -1024,12 +1024,6 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
 
         mgs_col_taxonomy = taxonomy_file.columns[0]
 
-    ##### Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-
-    bin_list = []
-    for bin in sample_info["bins_sample_list"].keys():
-        bin_list.append(bin)
-
     sample_unique_list = os.listdir(cscope_directory)
 
     ##### Create Generator to process data by chunks.
@@ -1056,10 +1050,9 @@ def bin_dataframe_build(sample_info: dict, cscope_directory, abundance_path = No
             try:
 
                 df = pd.read_parquet(os.path.join(cscope_directory, sample))
-                rows = df.loc[df.index.isin(bin_list)] # Why
-                rows.insert(0 , "smplID", sample_id)
-                rows.index.name = "binID"
-                list_of_dataframe.append(rows)
+                df.insert(0 , "smplID", sample_id)
+                df.index.name = "binID"
+                list_of_dataframe.append(df)
 
             except Exception as e:
 
@@ -1328,7 +1321,7 @@ def chunks(lst, n):
 #     return
 
 
-def padmet_to_tree(save_path):
+def padmet_to_tree(save_path, metacyc_file_path):
     """Build a tree to be used in the Shiny application.
     Allow the user to select directly a compounds or a category of compounds and fill a list
     with all the compounds corresponding to that category.
@@ -1346,11 +1339,7 @@ def padmet_to_tree(save_path):
 
     print("Building compounds category tree...")
 
-    MODULE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    metacyc_padmet_directory = os.path.join(MODULE_DIR, "padmet_data")
-    metacyc_padmet_file = os.path.join(metacyc_padmet_directory, "metacyc28_5.padmet")
-
-    padmet = PadmetRef(metacyc_padmet_file)
+    padmet = PadmetRef(metacyc_file_path)
 
     cpd_id = [node.id for node in padmet.dicOfNode.values() if node.type == "compound"]
 
