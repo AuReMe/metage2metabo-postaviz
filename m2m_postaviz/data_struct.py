@@ -433,8 +433,6 @@ class DataStorage:
 
                     all_files[df_files] = False
 
-                # print(df_files, "IS \t", all_files[df_files])
-
         required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
                         "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                         "pcoa_dataframe_postaviz.tsv", "sample_info.json"]

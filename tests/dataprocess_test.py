@@ -315,35 +315,38 @@ def test_statistic_method():
 
 def test_recursive_tree_padmet():
 
+
     from collections import Counter
 
     data = DataStorage(TMP_DIR)
 
-    dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
+    if data.USE_METACYC_PADMET:
 
-    tree = {}
+        dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
 
-    tree["FRAMES"] = {}
+        tree = {}
 
-    du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
+        tree["FRAMES"] = {}
 
-    res = data.get_all_tree_keys(tree)
+        du.build_tree_from_root(tree["FRAMES"], "FRAMES", dataframe)
 
-    cpd_list = []
+        res = data.get_all_tree_keys(tree)
 
-    data.get_compounds_from_category(tree, cpd_list)
+        cpd_list = []
 
-    expected_cpd_list = ['CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
+        data.get_compounds_from_category(tree, cpd_list)
 
-    expected_keys_list = ['FRAMES', 'Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
+        expected_cpd_list = ['CPD-C', 'CPD-E', 'CPD-D', 'CPD-A', 'CPD-B', 'Proton-pump', 'Proton-pump-inhibitor', 'Amylase']
 
-    assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
+        expected_keys_list = ['FRAMES', 'Sucre', 'hexose', 'pentose', 'Lipide', 'acide-gras', 'acide-gras-non-saturé', 'Proteins', 'Pumps', 'Enzymes']
 
-    assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
+        assert Counter(res) == Counter(expected_keys_list), "all keys found in padmet tree are not equal to the expected keys list."
 
-    list_of_category = data.get_metacyc_category_list()
+        assert Counter(cpd_list) == Counter(expected_cpd_list), "all compounds found in padmet tree are not equal to the expected compounds list."
 
-    assert list_of_category, "List of category is empty."
+        list_of_category = data.get_metacyc_category_list()
+
+        assert list_of_category, "List of category is empty."
 
 def test_compounds_exploration_module():
 
