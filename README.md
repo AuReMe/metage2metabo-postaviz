@@ -16,16 +16,32 @@ GNU Lesser General Public License v3 (LGPLv3)
 
 ## Installation
 
-```pip install .```
+M2M-PostAViz is tested with Python vXXX.
+You can install the application:
 
+- By cloning and installing this repository for the latest version
+    ```
+    git clone git@gitlab.inria.fr:postaviz/m2m-postaviz.git # or git clone https://gitlab.inria.fr/postaviz/m2m-postaviz.git
+    ```
+    Then install the tool:
+    ```
+    pip install .
+    ```
+
+    
+- Directly from the last release on Python Pypi with `pip`
+    ```
     pip install m2m-postaviz
-
-You can also install the in-development version with::
-
+    ```
+    Or as an alternative you can also directly install the in-development version with:
+    ```
     pip install git+ssh://git@gitlab.inria.fr/postaviz/m2m-postaviz.git@main
+    ```
+
 
 ### Dependencies
 
+M2M-PostAViz has a few dependencies that are listed below:
 
 - pandas
 - padmet
@@ -38,7 +54,10 @@ You can also install the in-development version with::
 - pyarrow
 - seaborn
 
-` pip install -r requirement.txt `
+You can install them with
+```
+pip install -r requirement.txt
+``` 
 
 ## Quick start
 
@@ -54,9 +73,11 @@ The main input data are the outputs of Metage2Metabo for each sample/microbial c
 
 In practice, other input data can be provided, included precomputed M2M-PostAViz tables which allow for a much faster restart when rerunning the app on previously analyzed data.
 
+As a summary, for a first run you can provide all individual inputs (📄 below), but once this is processed, M2M-PostAViz can save the pre-processed data for a fast startover later (🚀 below)
+
 We detail below the input data:
 
-- M2M output for each sample
+- 📄 M2M output for each sample
   - It should be in the following format
 
      ```
@@ -65,7 +86,7 @@ We detail below the input data:
     |- sample_3
     |- etc. # use tree to show the structure
     ```
-- Metadata associated to samples
+- 📄 Metadata associated to samples
   - This file should be a table where the first column is the sample identifier matching the output of M2M. For instance as below
 
     | smplID    | Age | Country  |
@@ -75,7 +96,7 @@ We detail below the input data:
     | sample_3  |  68 | Germany  |
   - The expected format is a tabulated file
 
-- Taxonomy of the MAGs/genomes corresponding to the metabolic networks used in the analysis. 
+- 📄 Taxonomy of the MAGs/genomes corresponding to the metabolic networks used in the analysis.
   - This file should be a table where the first column is the identifier matching the IDs of the metabolic networks that were analyses by M2M. For instance as below
 
     | Identifier | Domain      | Phylum          | Class          | Order           | Family            | Genus      | Species        |
@@ -85,7 +106,21 @@ We detail below the input data:
     | MAG_2      | Archaea    | Euryarchaeota   | Methanobacteria | Methanobacteriales | Methanobacteriaceae | Methanobacterium | Methanobacterium formicicum |
 
   - The expected format is a tabulated file
-- Metacyc database in padmet format
+
+- 📄 Abundance of the MAGs/genomes in the samples/communities.
+  - Tabulated file. 
+  - It will be **normalised by column sum** during processing.
+  - Data is used to normalise the Boolean prediction of metabolite producibility (0 non producible, 1 producible) by the relative abundance of the compound producer.
+
+    |            | Sample_1 | Sample_2 | Sample_3 |
+    |------------|----------|----------|----------|
+    | MAG_1      | 12.5     | 8.3      | 15.2     |
+    | Genome_1   | 5.8      | 10.1     | 7.6      |
+    | MAG_2      | 20.3     | 14.7     | 18.9     |
+
+  - The expected format is a tabulated file
+  
+- 📄 Metacyc database in padmet format
   - This optional input file is used to take advantage of the ontology of compound categories provided in the Metacyc database. 
   - This input is relevant only if the metabolic networks analysed in M2M were generated with the PathwayTools software.
   - The Metacyc database flat files can be downloaded provided subscription. Once downloaded, they can be integrated into a single file in the padmet format using the following command line 
@@ -95,7 +130,8 @@ We detail below the input data:
   # move to the directory were the Metacyc data is stored (unzipped). The data is in a directory named by the version of the database, for instance `28.5/data`
   padmet pgdb_to_padmet --pgdb 28.5/data --version 28.5 --db metacyc --output metacyc28_5.padmet
   ```
-- Precomputed data for M2M-PostAViz
+
+- 🚀 Precomputed data for M2M-PostAViz
   - #TODO This data can be stored when running the tool with the `-o` flag. It will be saved in the directory of your choice and can be loaded for future runs of M2M-PostAViz.
 
   ```{sh}
@@ -118,27 +154,38 @@ In taxonomy file the first column must be the metagenomes (mgs). Preferably name
 
 ### Usage
 
-m2m_postaviz can be run in two ways :
+Based on the input listed above, `m2m_postaviz` can be run in two ways:
 
-```
+- 📄 🐢 by providing all input data. To avoid doing this at each run -- pre-processing of all data by the application can be quite lengthy if many samples are provided --, we advise users to use the `-o` flag and save the precomputed data for future runs. In that case, users can resume the analysis directly by loading the processed data (see item below). This procedure is needed at least once, for the first run with new datasets, or when datasets are altered. Note that metadata changes do not need to re-run the whole preprocessing: you can directly modify the file in the saved directory.
+  
+    ```
     m2m_postaviz -d Metage2metabo/samples/scopes/directory/path
                 -m metadata/file/path
                 -a abundance/file/path
                 -t taxonomy/file/path
                 -o save/path
                 --no-metacyc (Optionnal)
-```
+    ```
+- 🚀 by providing the preprocessed data
 
-This way is required as least one time to produce all dataframe and save them in -o save/path.
+    ```
+        m2m_postaviz -l save/directory/path
+    ````
+
+<!-- This way is required as least one time to produce all dataframe and save them in -o save/path.
 
 Once the dataframes are produced. Shiny will automatically run from the save/path given in -o option.
 You can interrupt the process if you want and run postaviz with -l load option.
 
-```
-    m2m_postaviz -l save/directory/path
-````
 
-Which will directly launch shiny and skip dataprocessing.
+
+Which will directly launch shiny and skip dataprocessing. -->
+
+> **💡 Note:** The preprocessed dataset is stored in a directory in the form of dataframes and xxxxxx Parquet format. This format enables an efficient storage and data access by the application
+> 
+> Below is the structure of the preprocessed directory.
+>
+> #TODO add a tree of the preprocessed dir
 
 ### Metadata tab
 
