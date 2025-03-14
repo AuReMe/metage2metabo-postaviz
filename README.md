@@ -16,11 +16,11 @@ GNU Lesser General Public License v3 (LGPLv3)
 
 ## Installation
 
-M2M-PostAViz is tested with Python vXXX.
+M2M-PostAViz is tested with Python v3.12.
 You can install the application:
 
 - By cloning and installing this repository for the latest version
-    ```
+    ```{sh}
     git clone git@gitlab.inria.fr:postaviz/m2m-postaviz.git # or git clone https://gitlab.inria.fr/postaviz/m2m-postaviz.git
     ```
     Then install the tool:
@@ -41,6 +41,8 @@ You can install the application:
 
 ### Dependencies
 
+<details>
+  <summary>Click to expand</summary>
 M2M-PostAViz has a few dependencies that are listed below:
 
 - pandas
@@ -59,19 +61,42 @@ You can install them with
 pip install -r requirement.txt
 ``` 
 
+They should be installed automatically when installing the application though. 
+
+If you use the application for research, do not forget to cite the works associated to those dependencies.
+</details>
+
 ## Quick start
 
-A dataset with test data is available in this repository and can be used to test the main functionalities of the tool.
+> **⚠️ Warning:** 
+> 
+> We assume that you arrive at this step having installed the tool first (see above section), for instance in a Python virtual environment, or conda (mamba) environment.
 
-#TODO
+📁 A dataset with test data is available in this repository in `postaviz_test_data` and can be used to test the main functionalities of the tool.
+
+The data is preprocessed to facilitate loading and save time. 
+
+The test can be run with the following command:
+
+```
+m2m_postaviz --test
+```
+
+It takes a few seconds to launch because data needs to be uncompressed in a temporary directory.
+
+#TODO continue
 
 ##  Documentation
 
 ### Input data 
 
-The main input data are the outputs of Metage2Metabo for each sample/microbial community, and the metadata associated to each of them. 
+The mandatory input data are the outputs of Metage2Metabo for each sample/microbial community, and the metadata associated to each of them. Additional facultative inputs are advised to gain the most out of the analysis: taxonomy of the genomes associated to the metabolic networks, abundance of these genomes in the samples/community. It is also possible to provide the Metacyc ontology of the metabolic compounds to analyse the predictions at the level of metabolite families. The latter is only relevant if the metabolic networks were obtained with PathwayTools, i.e. are made of compound identifiers that fit the Metacyc database. 
 
-In practice, other input data can be provided, included precomputed M2M-PostAViz tables which allow for a much faster restart when rerunning the app on previously analyzed data.
+> **💡 Note:** Metage2Metabo has a first pipeline step dedicated to the reconstruction of metabolic networks with Pathway Tools.
+>
+> If you used `m2m recon`, your metabolic networks are compatible with the Metacyc database and PostAViz can use the Metacyc ontology of compound families. 
+
+In practice, other input data can be provided, included precomputed M2M-PostAViz tables which allow for a much faster restart when rerunning the app on previously analyszed data.
 
 As a summary, for a first run you can provide all individual inputs (📄 below), but once this is processed, M2M-PostAViz can save the pre-processed data for a fast startover later (🚀 below)
 
@@ -81,10 +106,38 @@ We detail below the input data:
   - It should be in the following format
 
      ```
-    |- sample_1
-    |- sample_2
-    |- sample_3
-    |- etc. # use tree to show the structure
+    │   ├── sample_1
+    │   ├── community_analysis
+    │   │   ├── addedvalue.json
+    │   │   ├── comm_scopes.json
+    │   │   ├── contributions_of_microbes.json
+    │   │   ├── mincom.json
+    │   │   ├── rev_cscope.json
+    │   │   ├── rev_cscope.tsv
+    │   │   └── targets.sbml
+    │   ├── indiv_scopes
+    │   │   ├── indiv_scopes.json
+    │   │   ├── rev_iscope.json
+    │   │   ├── rev_iscope.tsv
+    │   │   └── seeds_in_indiv_scopes.json
+    │   ├── m2m_metacom.log
+    │   └── producibility_targets.json
+    └──  sample_2
+         ├── community_analysis
+         │   ├── addedvalue.json
+         │   ├── comm_scopes.json
+         │   ├── contributions_of_microbes.json
+         │   ├── mincom.json
+         │   ├── rev_cscope.json
+         │   ├── rev_cscope.tsv
+         │   └── targets.sbml
+         ├── indiv_scopes
+         │   ├── indiv_scopes.json
+         │   ├── rev_iscope.json
+         │   ├── rev_iscope.tsv
+         │   └── seeds_in_indiv_scopes.json
+         ├── m2m_metacom.log
+         └── producibility_targets.json
     ```
 - 📄 Metadata associated to samples
   - This file should be a table where the first column is the sample identifier matching the output of M2M. For instance as below
@@ -99,7 +152,7 @@ We detail below the input data:
 - 📄 Taxonomy of the MAGs/genomes corresponding to the metabolic networks used in the analysis.
   - This file should be a table where the first column is the identifier matching the IDs of the metabolic networks that were analyses by M2M. For instance as below
 
-    | Identifier | Domain      | Phylum          | Class          | Order           | Family            | Genus      | Species        |
+    | Genome_ID  | Domain      | Phylum          | Class          | Order           | Family            | Genus      | Species        |
     |------------|------------|----------------|---------------|----------------|-------------------|------------|---------------|
     | MAG_1      | Bacteria   | Proteobacteria  | Gammaproteobacteria | Enterobacterales | Enterobacteriaceae | Escherichia | Escherichia coli |
     | Genome_1   | Bacteria   | Firmicutes      | Bacilli       | Lactobacillales | Lactobacillaceae  | Lactobacillus | Lactobacillus casei |
@@ -112,7 +165,7 @@ We detail below the input data:
   - It will be **normalised by column sum** during processing.
   - Data is used to normalise the Boolean prediction of metabolite producibility (0 non producible, 1 producible) by the relative abundance of the compound producer.
 
-    |            | Sample_1 | Sample_2 | Sample_3 |
+    | identifier | Sample_1 | Sample_2 | Sample_3 |
     |------------|----------|----------|----------|
     | MAG_1      | 12.5     | 8.3      | 15.2     |
     | Genome_1   | 5.8      | 10.1     | 7.6      |
@@ -187,6 +240,14 @@ Which will directly launch shiny and skip dataprocessing. -->
 >
 > #TODO add a tree of the preprocessed dir
 
+## Application presentation
+
+The application starts in a web browser and enables user to analyse metabolic potential predictions in the light of sample metadata, genome taxonomy and possibly taking genome abundance into account to weight producibility of metabolites. Several tabs dedicated to different analyses can be browsed. 
+
+Users can modify the visualisations and the statistical analyses by selecting and filtering data and metadata. 
+
+We detail below the contents of each tab and the analyses it enables to perform. 
+
 ### Metadata tab
 
 Tabulation to observe the metadata given in CLI.
@@ -233,7 +294,7 @@ Plots :
 >The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
 
 
-> **💡 Note:** A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specfic bin.
+> **💡 Note:** A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specific bin.
 e.
 
 #### Method
@@ -244,7 +305,7 @@ The individual production of each bins depend of the bins present (community int
 
 All of this information can scale poorly if a lot of sample are present in input which is the point of the application: being able observe from lots of angles large chunks of data.
 
-In order to keep all this valuable data we choosed to use the hard drive and load/manipulate large dataframe by subset using Parquet format. That way RAM memory is not overload and we can pick what we need from the hard drive, using query similar to a SQL database.
+In order to keep all this valuable data we choosed to use the hard drive and load/manipulate large dataframe by subset using Parquet format. That way RAM memory is not overload, and we can pick what we need from the hard drive, using query similar to a SQL database.
 
 
 ### Compounds exploration tab
@@ -274,7 +335,7 @@ The plots generated will only take the compounds selected as input.
     - Automatically filled. Select sample corresponding to previous choices. NO CUSTOM SELECTION BY NAME POSSIBLE !! NONE option in metadata should be enable!!
 
 
-- Enable row/columns clustering (Only for heatmap) will change column and or row order. Optionnal and independant from each other.
+- Enable row/columns clustering (Only for heatmap) will change column and or row order. Optional and independent from each other.
 
 - Generate statistical dataframe / Should be enable by default / performance 
 
