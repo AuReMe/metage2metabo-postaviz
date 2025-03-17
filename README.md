@@ -74,7 +74,6 @@ If you use the application for research, do not forget to cite the works associa
 
 📁 A dataset with test data is available in this repository in `postaviz_test_data` and can be used to test the main functionalities of the tool.
 
-The data is preprocessed to facilitate loading and save time. 
 
 The test can be run with the following command:
 
@@ -82,9 +81,17 @@ The test can be run with the following command:
 m2m_postaviz --test
 ```
 
-It takes a few seconds to launch because data needs to be uncompressed in a temporary directory.
+It takes a few seconds to launch because data needs to be uncompressed and processed in a temporary directory.
 
-#TODO continue
+Shiny will launch automatically afterward.
+
+<img src="./docs/pictures/postaviz_first_tab.png" alt="Homepage of Postaviz" width="70%"/>
+
+Once on the homepage you're free to explore the test data.
+
+Metacyc database is not include in test option.
+
+The differents tabulation will be explain below.
 
 ##  Documentation
 
