@@ -32,14 +32,12 @@ parser.add_argument("-l", "--load", help="Run postaviz from save directory")
 parser.add_argument("-c", "--metacyc", help="Run postaviz with the metacyc database as padmet file. This is usefull when the metabolite ID from the scopes use metacyc ID. Enable the research by category of metabolites.")
 
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
-parser.add_argument("--dev", help="Run postaviz for dev only", action="store_true")
 
 SRC_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(os.path.dirname(SRC_DIR))
 TESTS_DIR = os.path.join(SRC_DIR, "postaviz_test_data/")
 
 data_table_filepath = os.path.join(TESTS_DIR, "table_test_postaviz.tar.gz")
-
 
 def main(args=None):
     arg_parser = parser.parse_args()
@@ -61,26 +59,14 @@ def main(args=None):
         taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
         tempdir = tempfile.TemporaryDirectory()
         save_path = tempdir.name
-        print(save_path)
-        print("Used as tmp dir")
-        # save_path = "/home/lbrindel/postaviz_test_run/smpl100"
+
         du.build_dataframes(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
+        
         Data = DataStorage(save_path)
+
         sh.run_shiny(Data)
+
         tempdir.cleanup()
-    elif arg_parser.dev:
-
-        dir_path = "/home/lbrindel/postaviz_data/res_smpl1/"
-
-        metadata_path = "~/postaviz_data/all_data/postaviz_metadata_processed.tsv"
-        abundance_path = "~/postaviz_data/all_data/specI.mat"
-        taxonomic_path = "/home/lbrindel/Downloads/gtdbtk.summary_split.tsv"
-
-        save_path = "/home/lbrindel/postaviz_test_run/testou/"
-
-        du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path)
-        Data = DataStorage(save_path)
-        sh.run_shiny(Data)
 
     else:
 
@@ -94,4 +80,5 @@ def main(args=None):
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path, metacyc)
 
         Data = DataStorage(save_path)
+
         sh.run_shiny(Data)
