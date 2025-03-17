@@ -541,6 +541,8 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     build_main_dataframe(save_path, cscope_directory)
 
+    build_compounds_index(save_path)
+
     relative_abundance_calc(abundance_path, save_path, cscope_directory)
 
     taxonomy_processing(taxonomic_path, save_path)
@@ -1009,6 +1011,8 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
     start = time.time()
 
+    cpd_index = pd.read_csv(os.path.join(savepath,"compounds_index.tsv"), sep="\t")
+
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
@@ -1062,10 +1066,12 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
 
-        s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
+        # s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
+
+        s = results.apply(lambda x: x.index[x == 1].tolist(), axis=1)
         s.name = "Production"
 
-        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
+        count = results.apply(lambda x: len(x.index[x == 1].tolist()), axis=1)
         count.name = "Count"
 
         results = pd.concat([results["smplID"],count,s],axis=1)
@@ -1441,3 +1447,15 @@ def build_tree_from_root(node, id, df):
         build_tree_from_root(node[child], child, df)
 
 
+def build_compounds_index(save_path):
+
+    main_dataframe = pd.read_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"), sep="\t")
+
+    cpd_list = main_dataframe.columns.tolist()
+    if "smplID" in cpd_list:
+        cpd_list.remove("smplID")
+    cpd_index = pd.Series(cpd_list, range(0, len(cpd_list)))
+    print(cpd_index)
+    saving_path = os.path.join(save_path, "compounds_index.tsv")
+
+    cpd_index.to_csv(saving_path, sep="\t", index=False)
