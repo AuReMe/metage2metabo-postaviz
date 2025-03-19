@@ -1,6 +1,5 @@
 import json
 import os
-import os.path
 import sys
 import tarfile
 import time
@@ -378,7 +377,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     return pd.Series(serie_value,index=serie_index,name=sample)
 
 
-def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # Need rework
+def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save_path): # Need rework
     """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
     dataframe.
 
@@ -389,6 +388,9 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # N
         dict: sample_data dictionnary
     """
 
+    if os.path.isfile(os.path.join(save_path,"sample_info.json")):
+        return
+    
     print("Converting cscope dataframe into parquet file...")
 
     nb_cpu = cpu_count() - 1
@@ -431,6 +433,9 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format): # N
 
     # Remove duplicate from list
     sample_info["bins_list"] = list(dict.fromkeys(sample_info["bins_list"]))
+
+    with open(os.path.join(save_path,"sample_info.json"), "w") as f:
+            json.dump(sample_info, f)
 
     print("Done.")
 
@@ -533,13 +538,15 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
         os.makedirs(cscope_directory)
 
-        cscope_file_format = ".parquet.gzip"
+    cscope_file_format = ".parquet.gzip"
 
-        sample_info = load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format)
+    load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save_path)
 
     number_of_producers_cscope_dataframe(save_path, cscope_directory)
 
     build_main_dataframe(save_path, cscope_directory)
+
+    build_compounds_index(save_path)
 
     relative_abundance_calc(abundance_path, save_path, cscope_directory)
 
@@ -566,15 +573,6 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
     number_of_producers_iscope_dataframe(save_path, iscope_directory)
 
     # cpd_iscope_dataframe_build(iscope_directory, abundance_path, save_path)
-
-    # Sample_info JSON
-
-    if os.path.isfile(os.path.join(save_path,"sample_info.json")):
-        print(os.path.join(save_path,"sample_info.json"), "directory already exist in save_path.")
-
-    else:
-        with open(os.path.join(save_path,"sample_info.json"), "w") as f:
-            json.dump(sample_info, f)
 
     # Metacyc database TREE
 
@@ -1009,6 +1007,9 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
     start = time.time()
 
+    cpd_index = pd.read_csv(os.path.join(savepath,"compounds_index.tsv"), sep="\t").squeeze()
+    print(cpd_index)
+    print(type(cpd_index))
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
@@ -1062,15 +1063,15 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
 
-        s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
-        s.name = "Production"
+        # s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
+        tmp = results.apply(lambda x: x.index[x == 1].tolist(), axis=1)
 
-        count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
-        count.name = "Count"
+        results["Production"] = tmp.apply(lambda value: get_cpd_index(cpd_index, value))
 
-        results = pd.concat([results["smplID"],count,s],axis=1)
-        del count
-        del s
+        results["Count"] = results.apply(lambda x: len(x.index[x == 1].tolist()), axis=1)
+        results = results[["smplID","Production","Count"]]
+        print(results)
+        del tmp
 
         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
 
@@ -1439,5 +1440,27 @@ def build_tree_from_root(node, id, df):
         node[child] = {}
 
         build_tree_from_root(node[child], child, df)
+
+
+def build_compounds_index(save_path):
+
+    main_dataframe = pd.read_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"), sep="\t")
+
+    cpd_list = main_dataframe.columns.tolist()
+    if "smplID" in cpd_list:
+        cpd_list.remove("smplID")
+    cpd_index = pd.Series(cpd_list, range(0, len(cpd_list)))
+    saving_path = os.path.join(save_path, "compounds_index.tsv")
+
+    cpd_index.to_csv(saving_path, sep="\t", index=False)
+
+
+def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
+
+    return cpd_index[cpd_list_index]
+
+def get_cpd_index(cpd_index: pd.Series, cpd_list_label):
+
+    return cpd_index.index[cpd_index.isin(cpd_list_label)].tolist()
 
 
