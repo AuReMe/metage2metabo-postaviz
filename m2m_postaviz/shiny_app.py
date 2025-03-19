@@ -31,8 +31,7 @@ def run_shiny(data: DataStorage):
     factor_list_no_smpl.remove("smplID")
     factor_list_no_smpl.insert(0, "None")
 
-    metadata_label = data.get_factors()
-    metadata_label.remove("smplID")
+    metadata_label = data.get_factors(with_dtype=True)
 
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
@@ -221,7 +220,7 @@ def run_shiny(data: DataStorage):
         @reactive.event(input.dtype_change)
         def update_metadata_log():
             
-            factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
+            factor_choice, dtype_choice = input.metadata_factor().split("/")[0], input.metadata_dtype()
 
             df = data.get_metadata()
             print(df[factor_choice].dtype)
