@@ -75,7 +75,6 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. SUBJECT TO CHANGE.
 
     df = data.get_bin_dataframe(condition=filter_condition)
-
     # METADATA filter applied here instead.
 
     metadata = data.get_metadata()
@@ -672,7 +671,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
 
             plots.append(g)
 
-        else : 
+        else :
 
             g = sns.clustermap(dataframe, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
 
