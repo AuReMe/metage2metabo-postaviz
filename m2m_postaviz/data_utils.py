@@ -583,12 +583,12 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
 def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
 
-    if "metadata_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "metadata_dataframe_postaviz.parquet.gzip" in os.listdir(save_path):
         return
     else:
         metadata = open_tsv(metadata_path)
         metadata = metadata.rename(columns={metadata.columns[0]: "smplID"})
-        metadata.to_csv(os.path.join(save_path,"metadata_dataframe_postaviz.tsv"),sep="\t", index= True if is_indexed_by_id(metadata) else False)
+        metadata.to_parquet(os.path.join(save_path,"metadata_dataframe_postaviz.parquet.gzip"), index= True if is_indexed_by_id(metadata) else False)
 
 
 def list_to_series(model_list: list, with_quantity: bool = True):
@@ -637,7 +637,7 @@ def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
     print("Building total production dataframe...")
 
     main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
-    metadata_dataframe = open_tsv(os.path.join(save_path, "metadata_dataframe_postaviz.tsv"))
+    metadata_dataframe = pd.read_parquet(os.path.join(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
 
     if not is_indexed_by_id(main_dataframe):
         main_dataframe.set_index("smplID",inplace=True,drop=True)
@@ -860,7 +860,7 @@ def build_pcoa_dataframe(save_path) -> pd.DataFrame:
 
     main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
 
-    metadata = open_tsv(os.path.join(save_path, "metadata_dataframe_postaviz.tsv"))
+    metadata = pd.read_parquet(os.path.join(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
 
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
@@ -1008,8 +1008,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
     start = time.time()
 
     cpd_index = pd.read_csv(os.path.join(savepath,"compounds_index.tsv"), sep="\t").squeeze()
-    print(cpd_index)
-    print(type(cpd_index))
+
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
@@ -1070,7 +1069,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
         results["Count"] = results.apply(lambda x: len(x.index[x == 1].tolist()), axis=1)
         results = results[["smplID","Production","Count"]]
-        print(results)
+
         del tmp
 
         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
