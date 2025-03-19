@@ -655,3 +655,8 @@ class DataStorage:
         diff = [cpd for cpd in cpd_in_data if cpd not in cpd_in_db]
 
         return diff, str("Others " + str(len(diff)) + "/" + str(len(cpd_in_db)))
+    
+
+    def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
+
+        return cpd_index[cpd_list_index]
