@@ -268,7 +268,7 @@ class DataStorage:
         return True if df.index.name == "smplID" else False
 
 
-    def get_factors(self, remove_smpl_col = False, insert_none = False) -> list:
+    def get_factors(self, remove_smpl_col = False, insert_none = False, with_dtype = False) -> list:
 
         result = self.get_metadata().columns.tolist()
 
@@ -279,6 +279,16 @@ class DataStorage:
         if insert_none:
 
             result.insert(0, "None")
+
+        if with_dtype:
+
+            metadata = self.get_metadata()
+            new_name = []
+            for col in metadata.columns.tolist():
+
+                new_name.append(str(col) + "/" + str(metadata[col].dtype))
+
+            return new_name
 
         return result
 

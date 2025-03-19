@@ -31,8 +31,7 @@ def run_shiny(data: DataStorage):
     factor_list_no_smpl.remove("smplID")
     factor_list_no_smpl.insert(0, "None")
 
-    metadata_label = data.get_factors()
-    metadata_label.remove("smplID")
+    metadata_label = data.get_factors(with_dtype=True)
 
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
@@ -72,14 +71,16 @@ def run_shiny(data: DataStorage):
         )
 
     metadata_table = ui.card(
-        ui.row(
+        ui.layout_sidebar(
+            ui.sidebar(
                 ui.input_select("metadata_factor", "Current column: ", metadata_label, selected=metadata_label[0]),
                 ui.input_select("metadata_dtype", "dtype: ", ["category", "str", "int", "float"]),
-                ui.input_action_button("dtype_change", "Update")
+                ui.input_action_button("dtype_change", "Update", style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
+                bg="lightgrey"
                ),
         ui.output_text_verbatim("update_metadata_log", True),
         ui.output_data_frame("metadata_table")
-        )
+        ),full_screen=True, min_height="800px")
 
     ### APPLICATION TREE ###
 
@@ -221,7 +222,7 @@ def run_shiny(data: DataStorage):
         @reactive.event(input.dtype_change)
         def update_metadata_log():
             
-            factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
+            factor_choice, dtype_choice = input.metadata_factor().split("/")[0], input.metadata_dtype()
 
             df = data.get_metadata()
             print(df[factor_choice].dtype)
@@ -234,6 +235,9 @@ def run_shiny(data: DataStorage):
             except ValueError as e:
 
                 text = f"Cannot perform changes, {e}"
+                
+            new_metadata_label = data.get_factors(with_dtype=True)
+            ui.update_select("metadata_factor", choices=new_metadata_label)
 
             return text
 
