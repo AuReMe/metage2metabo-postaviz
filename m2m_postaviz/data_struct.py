@@ -16,7 +16,7 @@ class DataStorage:
     # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
-    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
                "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
@@ -233,7 +233,10 @@ class DataStorage:
 
 
     def get_metadata(self) -> pd.DataFrame:
-        return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
+
+        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+
+        return pd.read_parquet(metadata_path)
 
 
     def get_pcoa_dataframe(self) -> pd.DataFrame:
@@ -243,8 +246,12 @@ class DataStorage:
     def get_list_of_tests(self):
         return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
-    # def set_main_metadata(self, new_metadata):
-    #     self.metadata = new_metadata
+
+    def set_metadata(self, new_metadata: pd.DataFrame):
+
+        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+
+        new_metadata.to_parquet(metadata_path, compression="gzip")
 
     def get_taxonomic_dataframe(self) -> pd.DataFrame:
         if not self.HAS_TAXONOMIC_DATA:
@@ -433,7 +440,7 @@ class DataStorage:
 
                     all_files[df_files] = False
 
-        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
+        required_files = ["metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv",
                         "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                         "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
