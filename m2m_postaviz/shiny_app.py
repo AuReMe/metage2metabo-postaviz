@@ -71,14 +71,16 @@ def run_shiny(data: DataStorage):
         )
 
     metadata_table = ui.card(
-        ui.row(
+        ui.layout_sidebar(
+            ui.sidebar(
                 ui.input_select("metadata_factor", "Current column: ", metadata_label, selected=metadata_label[0]),
                 ui.input_select("metadata_dtype", "dtype: ", ["category", "str", "int", "float"]),
-                ui.input_action_button("dtype_change", "Update")
+                ui.input_action_button("dtype_change", "Update", style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
+                bg="lightgrey"
                ),
         ui.output_text_verbatim("update_metadata_log", True),
         ui.output_data_frame("metadata_table")
-        )
+        ),full_screen=True, min_height="800px")
 
     ### APPLICATION TREE ###
 
@@ -233,6 +235,9 @@ def run_shiny(data: DataStorage):
             except ValueError as e:
 
                 text = f"Cannot perform changes, {e}"
+                
+            new_metadata_label = data.get_factors(with_dtype=True)
+            ui.update_select("metadata_factor", choices=new_metadata_label)
 
             return text
 
