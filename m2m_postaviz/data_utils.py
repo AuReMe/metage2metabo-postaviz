@@ -534,9 +534,9 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     cscope_directory = os.path.join(save_path,"sample_cscope_directory")
 
-    # if not os.path.isdir(cscope_directory):
+    if not os.path.isdir(cscope_directory):
 
-    #     os.makedirs(cscope_directory)
+        os.makedirs(cscope_directory)
 
     cscope_file_format = ".parquet.gzip"
 
