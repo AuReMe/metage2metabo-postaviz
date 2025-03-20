@@ -31,8 +31,7 @@ def run_shiny(data: DataStorage):
     factor_list_no_smpl.remove("smplID")
     factor_list_no_smpl.insert(0, "None")
 
-    metadata_label = data.get_factors()
-    metadata_label.remove("smplID")
+    metadata_label = data.get_factors(with_dtype=True)
 
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
@@ -72,14 +71,16 @@ def run_shiny(data: DataStorage):
         )
 
     metadata_table = ui.card(
-        ui.row(
+        ui.layout_sidebar(
+            ui.sidebar(
                 ui.input_select("metadata_factor", "Current column: ", metadata_label, selected=metadata_label[0]),
                 ui.input_select("metadata_dtype", "dtype: ", ["category", "str", "int", "float"]),
-                ui.input_action_button("dtype_change", "Update")
+                ui.input_action_button("dtype_change", "Update", style="color: #fff; background-color: #337ab7; border-color: #2e6da4"),
+                bg="lightgrey"
                ),
         ui.output_text_verbatim("update_metadata_log", True),
         ui.output_data_frame("metadata_table")
-        )
+        ),full_screen=True, min_height="800px")
 
     ### APPLICATION TREE ###
 
@@ -149,65 +150,6 @@ def run_shiny(data: DataStorage):
         @render.text
         def total_unique_cpd():
             return str(data.get_main_dataframe().shape[1])
-
-        @render_widget
-        def taxonomic_boxplot():
-
-            if not data.HAS_TAXONOMIC_DATA:
-                return
-
-            df = data.get_taxonomic_dataframe()
-            x1, x2, y1 = input.tax_inpx1(), input.tax_inpx2(), input.tax_inpy1()
-
-            if len(y1) == 0:
-                y1 = df["Taxa"].unique()
-
-            if x1 == "None":
-                return px.box(df, y="Nb_taxon")
-
-            if x2 == "None":
-                fig = px.box(
-                    df,
-                    x=x1,
-                    y="Nb_taxon",
-                    color=x1,
-                )
-
-                return fig
-
-            else:
-
-                conditionx2 = df[x2].unique()
-
-                fig = go.Figure()
-
-                for condition in conditionx2:
-                    fig.add_trace(
-                        go.Box(
-                            x=df.loc[df[x2] == condition][x1],
-                            y=df["Nb_taxon"],
-                            name=str(condition),
-                        )
-                    )
-
-                fig.update_layout(boxmode="group")
-
-                return fig
-
-        @render.data_frame
-        def producer_test_dataframe():
-
-            return sm.metabolites_production_statistical_dataframe(data, list(input.box_inputy1()),
-                                                                 input.box_inputx1(), input.box_inputx2(),
-                                                                 input.multiple_correction_metabo_plot(),
-                                                                 input.multiple_test_method_metabo(),
-                                                                 False
-                                                                 )
-
-        @render_widget
-        def producer_plot():
-
-            return sm.render_reactive_metabolites_production_plot(data, list(input.box_inputy1()), input.box_inputx1(), input.box_inputx2(), False)
 
         @render.data_frame
         def production_test_dataframe():
@@ -279,29 +221,23 @@ def run_shiny(data: DataStorage):
         @render.text()
         @reactive.event(input.dtype_change)
         def update_metadata_log():
-            return
-            text = "No changes applied."
-
-            factor_choice, dtype_choice = input.metadata_factor(), input.metadata_dtype()
+            
+            factor_choice, dtype_choice = input.metadata_factor().split("/")[0], input.metadata_dtype()
 
             df = data.get_metadata()
-
-            df_prod = data.get_metabolite_production_dataframe
-
-            df_tot = data.get_global_production_dataframe()
-
-            df_pcoa = data.get_pcoa_dataframe()
-
+            print(df[factor_choice].dtype)
             try:
                 df[factor_choice] = df[factor_choice].astype(dtype_choice)
-                df_prod[factor_choice] = df_prod[factor_choice].astype(dtype_choice)
-                df_tot[factor_choice] = df_tot[factor_choice].astype(dtype_choice)
-                df_pcoa[factor_choice] = df_pcoa[factor_choice].astype(dtype_choice)
+
                 text = f"Column {factor_choice} changed to {dtype_choice}."
-                data.set_main_metadata(df)
+                data.set_metadata(df)
 
             except ValueError as e:
+
                 text = f"Cannot perform changes, {e}"
+                
+            new_metadata_label = data.get_factors(with_dtype=True)
+            ui.update_select("metadata_factor", choices=new_metadata_label)
 
             return text
 

@@ -16,7 +16,7 @@ class DataStorage:
     # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
-    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
+    ALL_FILE_NAMES = ("metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
                "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
@@ -233,7 +233,10 @@ class DataStorage:
 
 
     def get_metadata(self) -> pd.DataFrame:
-        return self.open_tsv(key="metadata_dataframe_postaviz.tsv")
+
+        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+
+        return pd.read_parquet(metadata_path)
 
 
     def get_pcoa_dataframe(self) -> pd.DataFrame:
@@ -243,8 +246,12 @@ class DataStorage:
     def get_list_of_tests(self):
         return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
-    # def set_main_metadata(self, new_metadata):
-    #     self.metadata = new_metadata
+
+    def set_metadata(self, new_metadata: pd.DataFrame):
+
+        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+
+        new_metadata.to_parquet(metadata_path, compression="gzip")
 
     def get_taxonomic_dataframe(self) -> pd.DataFrame:
         if not self.HAS_TAXONOMIC_DATA:
@@ -261,7 +268,7 @@ class DataStorage:
         return True if df.index.name == "smplID" else False
 
 
-    def get_factors(self, remove_smpl_col = False, insert_none = False) -> list:
+    def get_factors(self, remove_smpl_col = False, insert_none = False, with_dtype = False) -> list:
 
         result = self.get_metadata().columns.tolist()
 
@@ -272,6 +279,16 @@ class DataStorage:
         if insert_none:
 
             result.insert(0, "None")
+
+        if with_dtype:
+
+            metadata = self.get_metadata()
+            new_name = []
+            for col in metadata.columns.tolist():
+
+                new_name.append(str(col) + "/" + str(metadata[col].dtype))
+
+            return new_name
 
         return result
 
@@ -433,7 +450,7 @@ class DataStorage:
 
                     all_files[df_files] = False
 
-        required_files = ["metadata_dataframe_postaviz.tsv", "main_dataframe_postaviz.tsv",
+        required_files = ["metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv",
                         "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
                         "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
@@ -655,3 +672,8 @@ class DataStorage:
         diff = [cpd for cpd in cpd_in_data if cpd not in cpd_in_db]
 
         return diff, str("Others " + str(len(diff)) + "/" + str(len(cpd_in_db)))
+    
+
+    def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
+
+        return cpd_index[cpd_list_index]

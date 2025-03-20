@@ -258,7 +258,12 @@ We detail below the contents of each tab and the analyses it enables to perform.
 ### Metadata tab
 
 Tabulation to observe the metadata given in CLI.
-For future update we will use this tab to allow users to change metadata type directly inside the application.
+
+From this tab the metadata's column dtype can be changed.
+
+This can be helpfull when you are not certain of your metadata types in CLI.
+
+Sometime Plotly and seaborn do not treat numeric / not numeric columns the same when building plot's axes.
 
 ### PCOA tabulation
 
