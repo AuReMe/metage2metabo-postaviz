@@ -15,11 +15,11 @@ Why does this file exist, and why not put this in __main__?
   Also see (1) from http://click.pocoo.org/5/setuptools/#setuptools-integration
 """
 import argparse
-import os
 import tempfile
 
 import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_app as sh
+from pathlib import Path
 from m2m_postaviz.data_struct import DataStorage
 
 parser = argparse.ArgumentParser()
@@ -33,11 +33,11 @@ parser.add_argument("-c", "--metacyc", help="Run postaviz with the metacyc datab
 
 parser.add_argument("--test", help="Run postaviz with test files only", action="store_true")
 
-SRC_DIR = os.path.dirname(os.path.abspath(__file__))
-PROJECT_DIR = os.path.dirname(os.path.dirname(SRC_DIR))
-TESTS_DIR = os.path.join(SRC_DIR, "postaviz_test_data/")
+SRC_DIR = Path(__file__).parent
+PROJECT_DIR = Path(SRC_DIR).parent
+TESTS_DIR = Path(SRC_DIR, "postaviz_test_data/")
 
-data_table_filepath = os.path.join(TESTS_DIR, "table_test_postaviz.tar.gz")
+data_table_filepath = Path(TESTS_DIR, "table_test_postaviz.tar.gz")
 
 def main(args=None):
     arg_parser = parser.parse_args()
@@ -49,16 +49,16 @@ def main(args=None):
 
     elif arg_parser.test:
 
-        if not os.path.isdir(os.path.join(TESTS_DIR, "palleja/")):
+        if not Path(TESTS_DIR, "palleja/").is_dir:
             print("No data_test/ directory found. \nExtract test data tarfile...")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
 
-        data_test_dir = os.path.join(TESTS_DIR, "palleja/")
-        metadata_path = os.path.join(data_test_dir, "metadata_test_data.tsv")
-        abundance_path = os.path.join(data_test_dir, "abundance_test_data.tsv")
-        taxonomy_path = os.path.join(data_test_dir, "taxonomy_test_data.tsv")
+        data_test_dir = Path(TESTS_DIR, "palleja/")
+        metadata_path = Path(data_test_dir, "metadata_test_data.tsv")
+        abundance_path = Path(data_test_dir, "abundance_test_data.tsv")
+        taxonomy_path = Path(data_test_dir, "taxonomy_test_data.tsv")
         tempdir = tempfile.TemporaryDirectory()
-        save_path = tempdir.name
+        save_path = Path(tempdir.name)
 
         du.build_dataframes(data_test_dir, metadata_path, abundance_path, taxonomy_path, save_path)
         
@@ -71,12 +71,12 @@ def main(args=None):
     else:
 
         arg_parser = vars(parser.parse_args())
-        dir_path = arg_parser["dir"]
-        metadata_path = arg_parser["metadata"]
-        taxonomic_path = arg_parser["taxonomy"]
-        abundance_path = arg_parser["abundance"]
-        save_path = arg_parser["output"]
-        metacyc = arg_parser["metacyc"]
+        dir_path = Path(arg_parser["dir"])
+        metadata_path = Path(arg_parser["metadata"])
+        taxonomic_path = Path(arg_parser["taxonomy"])
+        abundance_path = Path(arg_parser["abundance"])
+        save_path = Path(arg_parser["output"])
+        metacyc = Path(arg_parser["metacyc"])
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path, metacyc)
 
         Data = DataStorage(save_path)

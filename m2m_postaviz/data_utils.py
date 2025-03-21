@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 import tarfile
 import time
@@ -9,6 +8,7 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
+from pathlib import Path
 from padmet.classes import PadmetRef
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
@@ -39,7 +39,7 @@ from statsmodels.stats.multitest import multipletests
 #     return size
 
 
-def is_valid_dir(dirpath):
+def is_valid_dir(dirpath: Path):
     """Return True if directory exists or not
 
     Args:
@@ -47,7 +47,7 @@ def is_valid_dir(dirpath):
     Returns:
         bool: True if dir exists, False otherwise
     """
-    if os.path.isdir(dirpath):
+    if dirpath.is_dir:
         return True
     else:
         return False
@@ -99,7 +99,7 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
         return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
-def relative_abundance_calc(abundance_path: str, save_path, cscope_directory) -> pd.DataFrame:
+def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directory: Path) -> pd.DataFrame:
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
     Args:
@@ -113,7 +113,7 @@ def relative_abundance_calc(abundance_path: str, save_path, cscope_directory) ->
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
 
-    if "normalised_abundance_dataframe_postaviz.tsv" in os.listdir(save_path) and "abundance_file.tsv" in os.listdir(save_path):
+    if "normalised_abundance_dataframe_postaviz.tsv" in save_path.iterdir() and "abundance_file.tsv" in save_path.iterdir():
         print("normalised_abundance_dataframe already exist in save directory.")
         return
 
@@ -140,11 +140,11 @@ def relative_abundance_calc(abundance_path: str, save_path, cscope_directory) ->
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
 
     # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix.
-    for sample_filename in os.listdir(cscope_directory):
+    for sample_filename in cscope_directory.iterdir():
 
-        sample_id = sample_filename.split(".parquet")[0]
+        sample_id = sample_filename.name.split(".parquet")[0]
 
-        sample_matrix = pd.read_parquet(os.path.join(cscope_directory, sample_filename))
+        sample_matrix = pd.read_parquet(Path(cscope_directory, sample_filename))
 
         if not is_indexed_by_id(sample_matrix):
             sample_matrix.set_index("smplID", inplace=True)
@@ -161,18 +161,18 @@ def relative_abundance_calc(abundance_path: str, save_path, cscope_directory) ->
     main_dataframe_abundance_weigthed = main_dataframe_abundance_weigthed.T
     main_dataframe_abundance_weigthed.index.name = "smplID"
 
-    main_dataframe_abundance_weigthed.to_csv(os.path.join(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
-    abundance_matrix.to_csv(os.path.join(save_path,"abundance_file.tsv"),sep="\t")
+    main_dataframe_abundance_weigthed.to_csv(Path(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+    abundance_matrix.to_csv(Path(save_path,"abundance_file.tsv"),sep="\t")
 
-    abundance_matrix_normalised.to_csv(os.path.join(save_path,"abundance_file_normalised.tsv"),sep="\t")
+    abundance_matrix_normalised.to_csv(Path(save_path,"abundance_file_normalised.tsv"),sep="\t")
 
     print("Abundance dataframes done and saved.")
 
 
-def open_added_value(file_name, path):
-    for root, _dirs, files in os.walk(path):
+def open_added_value(file_name, path: Path):
+    for root, _dirs, files in path.walk():
         if file_name in files:
-            added_file = sbml_to_classic(open_json(os.path.join(root, file_name))["addedvalue"])
+            added_file = sbml_to_classic(open_json(Path(root, file_name))["addedvalue"])
             return added_file
 
 
@@ -202,10 +202,10 @@ def open_tsv(file_name: str, convert_cpd_id: bool = False, rename_columns: bool 
     return data
 
 
-def get_scopes(file_name, path) -> pd.DataFrame:
-    for root, _dirs, files in os.walk(path):
+def get_scopes(file_name, path: Path) -> pd.DataFrame:
+    for root, _dirs, files in path.walk():
         if file_name in files:
-            scope_matrix = open_tsv(os.path.join(root, file_name), convert_cpd_id=True, rename_columns=True)
+            scope_matrix = open_tsv(Path(root, file_name), convert_cpd_id=True, rename_columns=True)
             return scope_matrix
 
 
@@ -233,14 +233,14 @@ def contribution_processing(file_opened: dict):
 
 
 def get_contributions(file_name, path):
-    for root, _dirs, files in os.walk(path):
+    for root, _dirs, files in path.walk():
         if file_name in files:
-            contributions_file = open_json(os.path.join(root, file_name))
+            contributions_file = open_json(Path(root, file_name))
             contributions_file = contribution_processing(contributions_file)
             return contributions_file
 
 
-def retrieve_all_cscope(sample, dir_path, cscope_directoy, cscope_file_format):
+def retrieve_all_cscope(sample, dir_path: Path, cscope_directoy: Path, cscope_file_format):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
     Args:
@@ -250,18 +250,18 @@ def retrieve_all_cscope(sample, dir_path, cscope_directoy, cscope_file_format):
         dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
 
-    sample_directory_path = os.path.join(dir_path, sample)
+    sample_directory_path = Path(dir_path, sample)
 
     cscope_dataframe = get_scopes("rev_cscope.tsv", sample_directory_path)
 
     if isinstance(cscope_dataframe,pd.DataFrame):
 
         bin_list = cscope_dataframe.index.tolist()
-        cscope_dataframe.to_parquet(os.path.join(cscope_directoy, sample + cscope_file_format), compression="gzip")
+        cscope_dataframe.to_parquet(Path(cscope_directoy, sample + cscope_file_format), compression="gzip")
         return bin_list, sample
 
     else:
-        print(sample, "returned None", cscope_dataframe)
+        
         return None, sample
 
 
@@ -275,24 +275,18 @@ def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
         dict: Return a nested dict object where each key is a dictionnary of a sample. The key of those second layer dict [iscope, cscope, advalue, contribution] give acces to these files.
     """
 
-    sample_directory_path = os.path.join(dir_path, sample)
+    sample_directory_path = Path(dir_path, sample)
 
-    if os.path.isdir(sample_directory_path):
+    if sample_directory_path.is_dir():
 
         iscope_dataframe = get_scopes("rev_iscope.tsv", sample_directory_path)
 
         if isinstance(iscope_dataframe,pd.DataFrame):
 
-            iscope_dataframe.to_parquet(os.path.join(iscope_directoy, sample+iscope_file_format), compression="gzip")
-
-        else:
-            print(sample, "Iscope dataframe is not an instance of Pandas DataFrame Object.")
-
-    else:
-        print(sample," Sample_directory path is not valid.")
+            iscope_dataframe.to_parquet(Path(iscope_directoy, sample+iscope_file_format), compression="gzip")
 
 
-def number_of_producers_cscope_dataframe(save_path, cscope_directory):
+def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path):
     """Create and save a dataframe which sum all the compounds produced by each genome in sample cscope for each sample.
 
     Args:
@@ -303,7 +297,7 @@ def number_of_producers_cscope_dataframe(save_path, cscope_directory):
         Exception: Empty sample directory (-d given in CLI).
     """
 
-    if "producers_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "producers_dataframe_postaviz.tsv" in save_path.iterdir():
         print("producers dataframe already in save directory.")
         return
 
@@ -313,7 +307,7 @@ def number_of_producers_cscope_dataframe(save_path, cscope_directory):
         cpu_available = 1
 
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = os.path.join(cscope_directory, sample)), sample) for sample in os.listdir(cscope_directory)])
+    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = sample), sample.name) for sample in cscope_directory.iterdir()])
     pool.close()
     pool.join()
 
@@ -323,12 +317,12 @@ def number_of_producers_cscope_dataframe(save_path, cscope_directory):
     res.reset_index(inplace=True)
     res["smplID"] = res["smplID"].apply(lambda x: x.split(".parquet")[0]) ## Should resolve .parquet.gzip simplID unwanted name.
 
-    res.to_csv(os.path.join(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
+    res.to_csv(Path(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
 
 
-def number_of_producers_iscope_dataframe(save_path, iscope_directory):
+def number_of_producers_iscope_dataframe(save_path: Path, iscope_directory: Path):
 
-    if "producers_iscope_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "producers_iscope_dataframe_postaviz.tsv" in save_path.iterdir():
         print("producers dataframe already in save directory.")
         return
 
@@ -338,7 +332,7 @@ def number_of_producers_iscope_dataframe(save_path, iscope_directory):
         cpu_available = 1
 
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = os.path.join(iscope_directory, sample)), sample) for sample in os.listdir(iscope_directory)])
+    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = sample), sample.name) for sample in iscope_directory.iterdir()])
     pool.close()
     pool.join()
 
@@ -349,7 +343,7 @@ def number_of_producers_iscope_dataframe(save_path, iscope_directory):
     res["smplID"] = res["smplID"].apply(lambda x: x.split(".parquet")[0]) ## Should resolve .parquet.gzip simplID unwanted name.
     # res = res.merge(metadata,"inner","smplID")
 
-    res.to_csv(os.path.join(save_path,"producers_iscope_dataframe_postaviz.tsv"),sep="\t",index=False)
+    res.to_csv(Path(save_path,"producers_iscope_dataframe_postaviz.tsv"),sep="\t",index=False)
 
 
 def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
@@ -362,7 +356,6 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     Returns:
         pd.Series: Pandas serie with all metabolites columns sum
     """
-
     if not isinstance(sample_cscope, pd.DataFrame):
         print("sample dataframe is not a pandas dataframe object.", sample_cscope)
         return
@@ -377,7 +370,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
     return pd.Series(serie_value,index=serie_index,name=sample)
 
 
-def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save_path): # Need rework
+def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_format, save_path: Path): # Need rework
     """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
     dataframe.
 
@@ -388,7 +381,7 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save
         dict: sample_data dictionnary
     """
 
-    if os.path.isfile(os.path.join(save_path,"sample_info.json")):
+    if Path(save_path,"sample_info.json").is_file():
         return
     
     print("Converting cscope dataframe into parquet file...")
@@ -399,7 +392,7 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save
     pool = Pool(nb_cpu)
 
     pool = Pool(nb_cpu)
-    results_list = pool.starmap(retrieve_all_cscope,[(sample, dir_path, cscope_directory, cscope_file_format) for sample in os.listdir(dir_path)])
+    results_list = pool.starmap(retrieve_all_cscope,[(sample.name, dir_path, cscope_directory, cscope_file_format) for sample in dir_path.iterdir()])
 
     pool.close()
     pool.join()
@@ -414,7 +407,6 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save
     for all_bins_in_sample, sample in results_list:
 
         if type(all_bins_in_sample) != list:  # noqa: E721
-            print(all_bins_in_sample)
             continue
 
         sample_info["bins_list"] = sample_info["bins_list"] + all_bins_in_sample
@@ -434,7 +426,7 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save
     # Remove duplicate from list
     sample_info["bins_list"] = list(dict.fromkeys(sample_info["bins_list"]))
 
-    with open(os.path.join(save_path,"sample_info.json"), "w") as f:
+    with open(Path(save_path,"sample_info.json"), "w") as f:
             json.dump(sample_info, f)
 
     print("Done.")
@@ -442,7 +434,7 @@ def load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save
     return sample_info
 
 
-def load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format):
+def load_sample_iscope_data(dir_path: Path, iscope_directory: Path, iscope_file_format):
 
     print("Converting cscope dataframe into parquet file...")
 
@@ -452,7 +444,7 @@ def load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format):
     pool = Pool(nb_cpu)
 
     pool = Pool(nb_cpu)
-    pool.starmap(retrieve_all_iscope,[(sample, dir_path, iscope_directory, iscope_file_format) for sample in os.listdir(dir_path)])
+    pool.starmap(retrieve_all_iscope,[(sample.name, dir_path, iscope_directory, iscope_file_format) for sample in dir_path.iterdir()])
 
     pool.close()
     pool.join()
@@ -460,7 +452,7 @@ def load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format):
     print("Done.")
 
 
-def build_main_dataframe(save_path, cscope_directory):
+def build_main_dataframe(save_path: Path, cscope_directory: Path):
     """Create and save the main dataframe. Samples in rows and compounds in columns.
     It takes the compounds production in each samples cscope and return a pandas Series with 1 produced or 0 absent for each compounds.
     Merge all the series returned into a dataframe.
@@ -470,7 +462,7 @@ def build_main_dataframe(save_path, cscope_directory):
         save_path (_type_): Save path given in CLI.
     """
 
-    if "main_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "main_dataframe_postaviz.tsv" in save_path.iterdir():
         print("main dataframe already in save directory.")
         return
 
@@ -478,11 +470,11 @@ def build_main_dataframe(save_path, cscope_directory):
 
     all_series = []
 
-    for sample_filename in os.listdir(cscope_directory):
+    for sample_filename in cscope_directory.iterdir():
 
-        sample_id = sample_filename.split(".parquet")[0]
+        sample_id = sample_filename.name.split(".parquet")[0]
 
-        current_sample_df = pd.read_parquet(os.path.join(cscope_directory, sample_filename))
+        current_sample_df = pd.read_parquet(Path(cscope_directory, sample_filename))
 
         # Get all the compounds produced in this cscope.
         serie_index = current_sample_df.columns.values
@@ -503,12 +495,12 @@ def build_main_dataframe(save_path, cscope_directory):
     results = results.astype(int)
     results.index.name = "smplID"
 
-    results.to_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"),sep="\t")
+    results.to_csv(Path(save_path, "main_dataframe_postaviz.tsv"),sep="\t")
 
     print("Main dataframe done and saved.")
 
 
-def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str] = None, taxonomic_path: Optional[str] = None, save_path: Optional[str] = None, metacyc: Optional[str] = None):
+def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Optional[Path] = None, taxonomic_path: Optional[Path] = None, save_path: Optional[Path] = None, metacyc: Optional[Path] = None):
     """
     Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
     in save_path given in CLI.
@@ -528,15 +520,15 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
         sys.exit(1)
 
     if not is_valid_dir(save_path):
-        os.makedirs(save_path)
+        save_path.mkdir(parents=True,exist_ok=True)
 
     metadata_processing(metadata_path, save_path)
 
-    cscope_directory = os.path.join(save_path,"sample_cscope_directory")
+    cscope_directory = Path(save_path,"sample_cscope_directory")
 
-    if not os.path.isdir(cscope_directory):
+    if not cscope_directory.is_dir():
 
-        os.makedirs(cscope_directory)
+        cscope_directory.mkdir()
 
     cscope_file_format = ".parquet.gzip"
 
@@ -560,11 +552,11 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
 
     # cpd_cscope_dataframe_build(sample_info, cscope_directory, abundance_path, save_path)
 
-    iscope_directory = os.path.join(save_path,"sample_iscope_directory")
+    iscope_directory = Path(save_path,"sample_iscope_directory")
 
-    if not os.path.isdir(iscope_directory):
+    if not iscope_directory.is_dir():
 
-        os.makedirs(iscope_directory)
+        iscope_directory.mkdir()
 
         iscope_file_format = ".parquet.gzip"
 
@@ -581,14 +573,14 @@ def build_dataframes(dir_path, metadata_path: str, abundance_path: Optional[str]
         padmet_to_tree(save_path, metacyc)
 
 
-def metadata_processing(metadata_path, save_path) -> pd.DataFrame:
+def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
 
-    if "metadata_dataframe_postaviz.parquet.gzip" in os.listdir(save_path):
+    if "metadata_dataframe_postaviz.parquet.gzip" in save_path.iterdir():
         return
     else:
         metadata = open_tsv(metadata_path)
         metadata = metadata.rename(columns={metadata.columns[0]: "smplID"})
-        metadata.to_parquet(os.path.join(save_path,"metadata_dataframe_postaviz.parquet.gzip"), index= True if is_indexed_by_id(metadata) else False)
+        metadata.to_parquet(Path(save_path,"metadata_dataframe_postaviz.parquet.gzip"), index= True if is_indexed_by_id(metadata) else False)
 
 
 def list_to_series(model_list: list, with_quantity: bool = True):
@@ -618,7 +610,7 @@ def list_to_series(model_list: list, with_quantity: bool = True):
     return pd.Series(results)
 
 
-def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
+def total_production_by_sample(save_path: Path, abundance_path: Optional[Path] = None):
     """Create and save the total production dataframe. This dataframe contain all samples in row and all compounds in columns.
     For each samples the compounds produced by each bins is add up to get the estimated total production of compound by samples
     and the number of bins who produced those compounds.
@@ -630,14 +622,14 @@ def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
         save_path (_type_): Save path given in CLI
         abundance_path (str, optional): Abundance file path fiven in CLI. Defaults to None.
     """
-    if "total_production_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "total_production_dataframe_postaviz.tsv" in save_path.iterdir():
         print("total_production_dataframe_postaviz already in save directory")
         return
 
     print("Building total production dataframe...")
 
-    main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
-    metadata_dataframe = pd.read_parquet(os.path.join(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
+    main_dataframe = open_tsv(Path(save_path, "main_dataframe_postaviz.tsv"))
+    metadata_dataframe = pd.read_parquet(Path(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
 
     if not is_indexed_by_id(main_dataframe):
         main_dataframe.set_index("smplID",inplace=True,drop=True)
@@ -646,7 +638,7 @@ def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
     results = pd.DataFrame(main_dataframe["Total_production"])
 
     if abundance_path is not None:
-        abundance_dataframe = open_tsv(os.path.join(save_path, "normalised_abundance_dataframe_postaviz.tsv"))
+        abundance_dataframe = open_tsv(Path(save_path, "normalised_abundance_dataframe_postaviz.tsv"))
 
         if not is_indexed_by_id(abundance_dataframe):
             abundance_dataframe.set_index("smplID",inplace=True,drop=True)
@@ -659,7 +651,7 @@ def total_production_by_sample(save_path, abundance_path: Optional[str] = None):
     results.reset_index(inplace=True)
     results = results.merge(metadata_dataframe,"inner","smplID")
 
-    results.to_csv(os.path.join(save_path, "total_production_dataframe_postaviz.tsv"),sep="\t", index=False)
+    results.to_csv(Path(save_path, "total_production_dataframe_postaviz.tsv"),sep="\t", index=False)
 
     print("Total production dataframe done and saved.")
 
@@ -843,7 +835,7 @@ def get_significance_symbol(pval: float) -> str:
         return "***"
 
 
-def build_pcoa_dataframe(save_path) -> pd.DataFrame:
+def build_pcoa_dataframe(save_path: Path) -> pd.DataFrame:
     """Comptute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
 
     Args:
@@ -854,13 +846,13 @@ def build_pcoa_dataframe(save_path) -> pd.DataFrame:
         pd.DataFrame: Pcoa dataframe with sample ID as index, PC1 and PC2 results and all metadata.
     """
 
-    if "pcoa_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "pcoa_dataframe_postaviz.tsv" in save_path.iterdir():
         print("Pcoa dataframe already in save directory.")
         return
 
-    main_dataframe = open_tsv(os.path.join(save_path, "main_dataframe_postaviz.tsv"))
+    main_dataframe = open_tsv(Path(save_path, "main_dataframe_postaviz.tsv"))
 
-    metadata = pd.read_parquet(os.path.join(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
+    metadata = pd.read_parquet(Path(save_path, "metadata_dataframe_postaviz.parquet.gzip"))
 
     if not is_indexed_by_id(main_dataframe):
         main_dataframe = main_dataframe.set_index("smplID")
@@ -880,7 +872,7 @@ def build_pcoa_dataframe(save_path) -> pd.DataFrame:
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
 
-    df_pcoa.to_csv(os.path.join(save_path,"pcoa_dataframe_postaviz.tsv"),sep="\t")
+    df_pcoa.to_csv(Path(save_path,"pcoa_dataframe_postaviz.tsv"),sep="\t")
 
     return
 
@@ -906,13 +898,16 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
 
 def serie_is_float(ser: pd.Series):
 
+    if ser.dtype.name == "category":
+        return False
+
     if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
         return True
 
     return False
 
 
-def taxonomy_processing(taxonomy_filepath, save_path):
+def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
     """Open taxonomy file and process it if in txt format.
 
     Args:
@@ -925,17 +920,17 @@ def taxonomy_processing(taxonomy_filepath, save_path):
         pd.DataFrame: Pandas dataframe
     """
 
-    if "taxonomic_dataframe_postaviz.tsv" in os.listdir(save_path):
+    if "taxonomic_dataframe_postaviz.tsv" in save_path.iterdir():
         print("Taxonomic dataframe already exist in save directory.")
         return
 
     print("Building taxonomic dataframe...")
 
-    if taxonomy_filepath.endswith(".tsv"):
+    if taxonomy_filepath.name.endswith(".tsv"):
 
         df = open_tsv(taxonomy_filepath)
         df = df.rename(columns={df.columns[0]: "mgs"})
-        df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
+        df.to_csv(Path(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
 
         return
 
@@ -959,12 +954,12 @@ def taxonomy_processing(taxonomy_filepath, save_path):
         df.loc[len(df)] = [mgs,k,p,c,o,f,g]
 
 
-    df.to_csv(os.path.join(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
+    df.to_csv(Path(save_path,"taxonomic_dataframe_postaviz.tsv"), sep="\t", index=False)
 
     print("Taxonomic dataframe done and saved.")
 
 
-def iscope_production(dir_path: str, sample_info_dict: dict):
+def iscope_production(dir_path: Path, sample_info_dict: dict):
 
     indiv_scope_path = "indiv_scopes/rev_iscope.tsv"
     sample_info_dict["iscope"] = {}
@@ -975,7 +970,7 @@ def iscope_production(dir_path: str, sample_info_dict: dict):
             continue
 
         sample_used = sample_info_dict["bins_sample_list"][bin][0]
-        file_path = os.path.join(os.path.join(dir_path, sample_used), indiv_scope_path)
+        file_path = Path(Path(dir_path, sample_used), indiv_scope_path)
         df = open_tsv(file_path,True,True)
         bin_row = df.loc[bin]
 
@@ -984,7 +979,7 @@ def iscope_production(dir_path: str, sample_info_dict: dict):
     return sample_info_dict
 
 
-def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path = None, savepath = None):
+def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, taxonomy_path: Path = None, savepath: Path = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
     the metadata and the taxonomic rank associated.
 
@@ -999,7 +994,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
         pd.DataFrame: Pandas dataframe
     """
 
-    if "bin_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
+    if "bin_dataframe_chunk_1.parquet.gzip" in savepath.iterdir():
         print("Chunk of bin_dataframe already in save directory")
         return
 
@@ -1007,16 +1002,16 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
     start = time.time()
 
-    cpd_index = pd.read_csv(os.path.join(savepath,"compounds_index.tsv"), sep="\t").squeeze()
+    cpd_index = pd.read_csv(Path(savepath,"compounds_index.tsv"), sep="\t").squeeze()
 
     ##### Abundance normalisation, give percentage of abundance of bins in samples.
     if abundance_path is not None:
 
-        abundance_file_normalised = pd.read_csv(os.path.join(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
+        abundance_file_normalised = pd.read_csv(Path(savepath,"abundance_file_normalised.tsv"),sep="\t",index_col=0)
 
     if taxonomy_path is not None:
 
-        taxonomy_file = open_tsv(os.path.join(savepath,"taxonomic_dataframe_postaviz.tsv"))
+        taxonomy_file = open_tsv(Path(savepath,"taxonomic_dataframe_postaviz.tsv"))
 
         ##### Checks if taxonomy file has default index which mean it is not indexed. TEMPORARY until found better way to deal with open/save from -t option OR load taxonomic_df option which return non indexed / indexed df
 
@@ -1025,7 +1020,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
         mgs_col_taxonomy = taxonomy_file.columns[0]
 
-    sample_unique_list = os.listdir(cscope_directory)
+    sample_unique_list = list(cscope_directory.iterdir())
 
     ##### Create Generator to process data by chunks.
     print("Making chunk of sample list...")
@@ -1046,11 +1041,11 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
 
         for sample in current_chunk:
 
-            sample_id = sample.split(".parquet")[0]
+            sample_id = sample.name.split(".parquet")[0]
 
             try:
 
-                df = pd.read_parquet(os.path.join(cscope_directory, sample))
+                df = pd.read_parquet(Path(cscope_directory, sample))
                 df.insert(0 , "smplID", sample_id)
                 df.index.name = "binID"
                 list_of_dataframe.append(df)
@@ -1096,7 +1091,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
         ##### Save current chunks into parquet file
 
         filename = "bin_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
-        filepath = os.path.join(savepath,filename)
+        filepath = Path(savepath,filename)
 
         if len(final_result) == 0:
             print(f"Chunks {chunk_index} is empty !")
@@ -1108,7 +1103,7 @@ def bin_dataframe_build(cscope_directory, abundance_path = None, taxonomy_path =
     print("Took: ", time.time() - start, "Before saving")
 
     if len(logs) != 0:
-        with open(os.path.join(savepath,"bin_dataframe_logs.txt"),"w") as log_file:
+        with open(Path(savepath,"bin_dataframe_logs.txt"),"w") as log_file:
             for line in logs:
                 log_file.write(f"{line}\n")
 
@@ -1142,187 +1137,7 @@ def chunks(lst, n):
         yield lst[i:i + n]
 
 
-# def cpd_cscope_dataframe_build(sample_info: dict, cscope_directory, abundance_path = None, savepath = None):
-#     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
-#     the metadata and the taxonomic rank associated.
-
-#     Args:
-#         sample_info (dict): _description_
-#         sample_cscope_data (dict): _description_
-#         metadata (Dataframe): _description_
-#         abundance_file (Dataframe, optional): _description_. Defaults to None.
-#         taxonomy_path (Dataframe, optional): _description_. Defaults to None.
-
-#     Returns:
-#         pd.DataFrame: Pandas dataframe
-#     """
-
-#     if "cpd_cscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
-#         print("Chunk of cpd_cscope_dataframe already in save directory")
-#         return
-
-#     print("Building cpd_cscope_dataframe...")
-
-#     # Abundance normalisation, give percentage of abundance of bins in samples.
-#     if abundance_path is not None:
-
-#         abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
-
-#     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-#     sample_list = []
-#     bin_list = []
-#     for bin in sample_info["bins_sample_list"].keys():
-#         sample_list += sample_info["bins_sample_list"][bin]
-#         bin_list.append(bin)
-
-#     #   Delete replicate in list
-#     sample_unique_list = os.listdir(cscope_directory)
-
-#     # Create Generator to process data by chunks.
-#     chunk_generator = chunks(sample_unique_list, 250)
-
-#     # Loop throught generator
-#     chunk_index = 0
-#     for current_chunk in chunk_generator:
-
-#         chunk_index += 1
-#         list_of_dataframe = []
-
-#     # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
-#         for sample in current_chunk:
-
-#             sample_id = sample.split(".parquet")[0]
-
-#             try:
-
-#                 df = pd.read_parquet(os.path.join(cscope_directory, sample))
-#                 # rows = df.loc[df.index.isin(bin_list)]
-#                 df.insert(0 , "smplID", sample_id)
-#                 df.index.name = "binID"
-#                 list_of_dataframe.append(df)
-
-#             except Exception as e:
-#                 print(f"No dataframe named {sample} in cscope_directory.\n{e}")
-
-#         results = pd.concat(list_of_dataframe)
-#         results.fillna(0,inplace=True)
-
-#         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
-#         count.name = "Count"
-
-#         results = results.assign(Count=count)
-
-#         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
-
-#             abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
-#             abundance.name = "Abundance"
-
-#             count_with_abundance = count * abundance
-
-#             results = results.assign(Count_with_abundance = count_with_abundance)
-
-#         # Save current chunks into parquet file
-
-#         filename = "cpd_cscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
-#         filepath = os.path.join(savepath,filename)
-
-#         if len(results) == 0:
-#             print(f"Chunks {chunk_index} is empty !")
-
-#         results.to_parquet(filepath, compression="gzip")
-
-#         del results
-
-#     return
-
-
-# def cpd_iscope_dataframe_build(iscope_directory: str, abundance_path = None, savepath = None):
-#     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
-#     the metadata and the taxonomic rank associated.
-
-#     Args:
-#         sample_info (dict): _description_
-#         sample_iscope_data (dict): _description_
-#         abundance_file (Dataframe, optional): _description_. Defaults to None.
-
-#     Returns:
-#         pd.DataFrame: Pandas dataframe
-#     """
-
-#     if "cpd_iscope_dataframe_chunk_1.parquet.gzip" in os.listdir(savepath):
-#         print("Chunk of cpd_iscope_dataframe already in save directory")
-#         return
-
-#     print("Building cpd iscope dataframe...")
-
-#     # Abundance normalisation, give percentage of abundance of bins in samples.
-#     if abundance_path is not None:
-
-#         abundance_file_normalised = pd.read_csv(abundance_path,sep="\t",index_col=0)
-
-#     # Iterate thought the bins key in sample_info_dict to get list of sample where they are present.
-#     sample_list = os.listdir(iscope_directory)
-
-#     # Create Generator to process data by chunks.
-#     chunk_generator = chunks(sample_list, 300)
-
-#     # Loop throught generator
-#     chunk_index = 0
-
-#     for current_chunk in chunk_generator:
-#         chunk_index += 1
-#         list_of_dataframe = []
-
-#     # Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
-#         for sample in current_chunk:
-
-#             sample_name = sample.split(".parquet")[0]
-#             parquet_file_path = os.path.join(iscope_directory, sample)
-
-#             try:
-#                 df = pd.read_parquet(parquet_file_path)
-#                 # rows = df.loc[df.index.isin(bin_list)]
-#                 df.insert(0 , "smplID", sample_name)
-#                 df.index.name = "binID"
-#                 list_of_dataframe.append(df)
-
-#             except Exception as e:
-#                 print(f"No dataframe named {sample_name} in sample_iscope_data dictionnary\n{e}")
-
-#         results = pd.concat(list_of_dataframe)
-#         results.fillna(0,inplace=True)
-#         print(f"Chunk {chunk_index} first concat with {sys.getsizeof(results)/1000000000} Gb memory size")
-
-#         count = results.drop("smplID", axis=1).apply(np.sum,axis=1,raw=True)
-#         count.name = "Count"
-
-#         results = results.assign(Count=count)
-
-#         if abundance_path is not None: # If abundance is provided, multiply each Count column with the relative abundance of the bins in their samples.
-
-#             abundance = results.apply(lambda row: abundance_file_normalised.at[row.name,row["smplID"]],axis=1)
-#             abundance.name = "Abundance"
-
-#             count_with_abundance = count * abundance
-
-#             results = results.assign(Count_with_abundance = count_with_abundance)
-
-#         # Save current chunks into parquet file
-
-#         filename = "cpd_iscope_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
-#         filepath = os.path.join(savepath,filename)
-
-#         if len(results) == 0:
-#             print(f"Chunks {chunk_index} is empty !")
-
-#         results.to_parquet(filepath, compression="gzip")
-
-#         del results
-
-#     return
-
-
-def padmet_to_tree(save_path, metacyc_file_path):
+def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
     """Build a tree to be used in the Shiny application.
     Allow the user to select directly a compounds or a category of compounds and fill a list
     with all the compounds corresponding to that category.
@@ -1334,7 +1149,7 @@ def padmet_to_tree(save_path, metacyc_file_path):
         save_path (str): Path of the save directory.
     """
 
-    if "padmet_compounds_category_tree.json" in os.listdir(save_path) or "padmet_child_parent_dataframe.tsv" in os.listdir(save_path):
+    if "padmet_compounds_category_tree.json" in save_path.iterdir() or "padmet_child_parent_dataframe.tsv" in save_path.iterdir:
         print("Padmet category tree already exist.")
         return
 
@@ -1363,7 +1178,7 @@ def padmet_to_tree(save_path, metacyc_file_path):
     build_tree_from_root(root["FRAMES"], "FRAMES", df)
     root["All_metabolites"] = root.pop("FRAMES")
 
-    with open(os.path.join(save_path, "padmet_compounds_category_tree.json"), "w") as fp:
+    with open(Path(save_path, "padmet_compounds_category_tree.json"), "w") as fp:
         json.dump(root, fp)
 
     print("Compounds category tree done.")
@@ -1441,15 +1256,15 @@ def build_tree_from_root(node, id, df):
         build_tree_from_root(node[child], child, df)
 
 
-def build_compounds_index(save_path):
+def build_compounds_index(save_path: Path):
 
-    main_dataframe = pd.read_csv(os.path.join(save_path, "main_dataframe_postaviz.tsv"), sep="\t")
+    main_dataframe = pd.read_csv(Path(save_path, "main_dataframe_postaviz.tsv"), sep="\t")
 
     cpd_list = main_dataframe.columns.tolist()
     if "smplID" in cpd_list:
         cpd_list.remove("smplID")
     cpd_index = pd.Series(cpd_list, range(0, len(cpd_list)))
-    saving_path = os.path.join(save_path, "compounds_index.tsv")
+    saving_path = Path(save_path, "compounds_index.tsv")
 
     cpd_index.to_csv(saving_path, sep="\t", index=False)
 
