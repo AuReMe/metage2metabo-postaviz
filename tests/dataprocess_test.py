@@ -37,7 +37,9 @@ TMP_DIR = Path(TEST_DATA_CONTAINER,"test_save_dir")
 if TMP_DIR.is_dir():
     shutil.rmtree(TMP_DIR)
     TMP_DIR.mkdir()
-
+else:
+    TMP_DIR.mkdir(parents=True)
+    
 metadata_file = Path(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = Path(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = Path(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
