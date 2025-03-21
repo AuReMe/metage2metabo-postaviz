@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from json import load
 from typing import Optional
 from m2m_postaviz.lineage import Lineage
@@ -21,12 +21,12 @@ class DataStorage:
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
 
     # BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
-    SRC_DIR = os.path.dirname(os.path.abspath(__file__))
-    PADMET_DIR = os.path.join(os.path.dirname(SRC_DIR), "padmet_data")
+    SRC_DIR = Path(__file__).parent
+    PADMET_DIR = Path(SRC_DIR.parent, "padmet_data")
 
-    def __init__(self, save_path: str):
+    def __init__(self, save_path: Path):
 
-        if os.path.isdir(save_path) is not True:
+        if save_path.is_dir() is not True:
             raise FileNotFoundError(f"{save_path} is not a directory.")
 
         loaded_files = self.load_files(save_path)
@@ -56,12 +56,12 @@ class DataStorage:
             pd.Dataframe: Pandas dataframe
         """
 
-        for root, _dirname, filename in os.walk(self.output_path):
+        for root, _dirname, filename in self.output_path.walk():
             if key in filename:
-                return pd.read_csv(os.path.join(root,key),sep="\t")
+                return pd.read_csv(Path(root,key),sep="\t")
 
 
-    def read_parquet_with_pandas(self, path, col: Optional[list] = None, condition: Optional[list] = None) -> pd.DataFrame:
+    def read_parquet_with_pandas(self, path: Path, col: Optional[list] = None, condition: Optional[list] = None) -> pd.DataFrame:
         """Transfer the column choice and condition as keyword-arguments to the pandas read parquet function.
 
         Args:
@@ -99,8 +99,8 @@ class DataStorage:
             pd.DataFrame: The concatenated bin_dataframe.
         """
         files = []
-        for i in os.listdir(self.output_path):
-            if os.path.isfile(os.path.join(self.output_path,i)) and "bin_dataframe_chunk" in i:
+        for i in self.output_path.iterdir():
+            if i.is_file() and "bin_dataframe_chunk" in i.name:
                 files.append(i)
 
         if len(files) == 0:
@@ -111,7 +111,7 @@ class DataStorage:
 
         for file in files:
 
-            df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=columns, condition=condition)
+            df = self.read_parquet_with_pandas(Path(self.output_path, file), col=columns, condition=condition)
 
             if len(df) == 0:
                 continue
@@ -169,28 +169,28 @@ class DataStorage:
 
 
     def get_iscope_production(self, bin_id) -> list:
-        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+        with open(Path(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
 
         return sample_info["iscope"][bin_id]
 
 
     def get_bins_list(self) -> list:
-        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+        with open(Path(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
 
         return sample_info["bins_list"]
 
 
     def get_bins_count(self) -> int:
-        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+        with open(Path(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
 
         return sample_info["bins_count"]
 
 
     def get_total_unique_bins_count(self) -> str:
-        with open(os.path.join(self.output_path, self.JSON_FILENAME)) as f:
+        with open(Path(self.output_path, self.JSON_FILENAME)) as f:
             sample_info = load(f)
 
         return str(len(sample_info["bins_list"]))
@@ -234,7 +234,7 @@ class DataStorage:
 
     def get_metadata(self) -> pd.DataFrame:
 
-        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+        metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
         return pd.read_parquet(metadata_path)
 
@@ -249,7 +249,7 @@ class DataStorage:
 
     def set_metadata(self, new_metadata: pd.DataFrame):
 
-        metadata_path = os.path.join(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
+        metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
         new_metadata.to_parquet(metadata_path, compression="gzip")
 
@@ -321,11 +321,11 @@ class DataStorage:
             _type_: _description_
         """
         path_to_save = self.output_path
-        final_file_path = path_to_save + "/" + file_name + "." + extension
-        if os.path.isfile(final_file_path):
+        final_file_path = Path(path_to_save, file_name).with_suffix(extension)
+        if final_file_path.is_file():
             final_file_path = self.check_and_rename(final_file_path)
         try:
-            df_to_save.to_csv(final_file_path)
+            df_to_save.to_csv(final_file_path, sep="\t")
             logs = f"Saved in :\n{final_file_path}"
         except Exception as e:
             logs = e
@@ -334,23 +334,23 @@ class DataStorage:
 
     def save_seaborn_plot(self, sns_obj, file_name):
 
-        if os.path.isfile(os.path.join(self.output_path, file_name)):
-            new_file_name = self.check_and_rename(os.path.join(self.output_path, file_name))
+        if Path(self.output_path, file_name).is_file():
+            new_file_name = self.check_and_rename(Path(self.output_path, file_name))
             print(new_file_name)
             sns_obj.savefig(new_file_name)
             
         else:
-            sns_obj.savefig(os.path.join(self.output_path, file_name))
+            sns_obj.savefig(Path(self.output_path, file_name))
 
 
-    def check_and_rename(self, file_path: str, add: int = 0) -> str:
+    def check_and_rename(self, file_path: Path, add: int = 0) -> Path:
         original_file_path = file_path
-        print(add)
         if add != 0:
-            file_name, extension = os.path.splitext(file_path)
+            file_name = file_path.stem
+            extension = file_path.suffix
             file_name = file_name + "_" + str(add)
-            file_path = file_name + extension
-        if not os.path.isfile(file_path):
+            file_path = file_path.with_name(file_name + extension)
+        if not file_path.is_file():
             return file_path
         else:
             return self.check_and_rename(original_file_path, add + 1)
@@ -358,7 +358,7 @@ class DataStorage:
 
     def get_taxonomy_rank(self) -> list:
 
-        taxonomy_col = pd.read_csv(os.path.join(self.output_path, "taxonomic_dataframe_postaviz.tsv"),sep="\t").columns.tolist()
+        taxonomy_col = pd.read_csv(Path(self.output_path, "taxonomic_dataframe_postaviz.tsv"),sep="\t").columns.tolist()
 
         if taxonomy_col is None:
             return ["Taxonomy not provided"]
@@ -418,7 +418,7 @@ class DataStorage:
         return taxonomy.loc[taxonomy[rank] == choice][mgs_col_label].tolist()
 
 
-    def load_files(self, load_path):
+    def load_files(self, load_path: Path):
         """Loop through files in save directory and return a dictionnary of True/false for each files.
 
         If necessary files are not present RaiseRuntimeError
@@ -434,7 +434,7 @@ class DataStorage:
         """
         all_files = {}
 
-        for _root, _dir ,filenames in os.walk(load_path):
+        for _root, _dir ,filenames in load_path.walk():
 
             for df_files in self.ALL_FILE_NAMES:
 
@@ -515,7 +515,7 @@ class DataStorage:
 
 
     def get_cpd_category_tree(self) -> dict:
-        with open(os.path.join(self.output_path, "padmet_compounds_category_tree.json")) as fp:
+        with open(Path(self.output_path, "padmet_compounds_category_tree.json")) as fp:
             tree = load(fp)
 
         return tree

@@ -285,12 +285,6 @@ def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
 
             iscope_dataframe.to_parquet(Path(iscope_directoy, sample+iscope_file_format), compression="gzip")
 
-        else:
-            print(sample, "Iscope dataframe is not an instance of Pandas DataFrame Object.")
-
-    else:
-        print(sample," Sample_directory path is not valid.")
-
 
 def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path):
     """Create and save a dataframe which sum all the compounds produced by each genome in sample cscope for each sample.
@@ -313,7 +307,7 @@ def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path
         cpu_available = 1
 
     pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = Path(cscope_directory, sample.name)), sample.name) for sample in cscope_directory.iterdir()])
+    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = sample), sample.name) for sample in cscope_directory.iterdir()])
     pool.close()
     pool.join()
 
@@ -903,6 +897,9 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
 
 
 def serie_is_float(ser: pd.Series):
+
+    if ser.dtype.name == "category":
+        return False
 
     if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
         return True

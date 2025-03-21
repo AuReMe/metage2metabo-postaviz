@@ -1,5 +1,6 @@
 import pandas as pd
-import os
+# import os
+from pathlib import Path
 import warnings
 import plotly.express as px
 import plotly
@@ -11,43 +12,35 @@ from m2m_postaviz.data_struct import DataStorage
 from m2m_postaviz import shiny_module as sm
 
 # From this test file, get to the test directory then the POSTAVIZ dir.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODULE_DIR = os.path.dirname(BASE_DIR)
+BASE_DIR = Path(__file__).parent
+MODULE_DIR = BASE_DIR.parent
 
 # From Postaviz directory go the m2m_postaviz then postaviz test_data.
-SOURCE_DIR = os.path.join(MODULE_DIR, "m2m_postaviz")
-TEST_DIR = os.path.join(SOURCE_DIR, "postaviz_test_data")
+SOURCE_DIR = Path(MODULE_DIR, "m2m_postaviz")
+TEST_DIR = Path(SOURCE_DIR, "postaviz_test_data")
 
 # If test_data dir doest not contain 'palleja' directory who contain the test data then extract tarfile.
-if not os.path.isdir(os.path.join(TEST_DIR, "palleja/")):
+if not Path(TEST_DIR, "palleja/").is_dir():
     # Extracting
-    du.extract_tarfile(os.path.join(TEST_DIR, "table_test_postaviz.tar.gz"), TEST_DIR)
+    du.extract_tarfile(Path(TEST_DIR, "table_test_postaviz.tar.gz"), TEST_DIR)
     # Load path of newly extracted dir into variable
-    TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
+    TEST_DATA_CONTAINER = Path(TEST_DIR, "palleja/")
 
 else:
     print("Palleja test directory exist.")
-    TEST_DATA_CONTAINER = os.path.join(TEST_DIR, "palleja/")
+    TEST_DATA_CONTAINER = Path(TEST_DIR, "palleja/")
 
-TMP_DIR = os.path.join(TEST_DATA_CONTAINER,"test_save_dir")
+TMP_DIR = Path(TEST_DATA_CONTAINER,"test_save_dir")
 
 # If the directory already exist, directory must be removed with all content. This is usefull for local test since most of data-processing is ignored due to previous local test that already created files.
 
-if os.path.isdir(TMP_DIR):
+if TMP_DIR.is_dir():
     shutil.rmtree(TMP_DIR)
-    os.makedirs(TMP_DIR)
+    TMP_DIR.mkdir()
 
-metadata_file = os.path.join(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
-taxonomy_file = os.path.join(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
-abundance_file = os.path.join(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
-
-# CSCOPE_DIR = os.path.join(TMP_DIR, "cscope_directory")
-
-# os.makedirs(CSCOPE_DIR)
-
-# ISCOPE_DIR = os.path.join(TMP_DIR, "iscope_directory")
-
-# os.makedirs(ISCOPE_DIR)
+metadata_file = Path(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
+taxonomy_file = Path(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
+abundance_file = Path(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -305,9 +298,9 @@ def test_statistic_method():
 
     data.save_dataframe(metabolites_production_test_dataframe, "test_save_producers_stat_test")
 
-    saved_path = os.path.join(data.output_path, "test_save_producers_stat_test.tsv")
+    saved_path = Path(data.output_path, "test_save_producers_stat_test.tsv")
 
-    if not os.path.isfile(saved_path):
+    if not saved_path.is_file():
         raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path)
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
@@ -322,7 +315,7 @@ def test_recursive_tree_padmet():
 
     if data.USE_METACYC_PADMET:
 
-        dataframe = pd.read_csv(os.path.join(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
+        dataframe = pd.read_csv(Path(TEST_DIR,"padmet_dataframe_unit_test.tsv"), sep="\t")
 
         tree = {}
 

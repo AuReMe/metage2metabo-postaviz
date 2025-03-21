@@ -1,7 +1,5 @@
 import warnings
 
-import plotly.express as px
-import plotly.graph_objects as go
 from shiny import App
 from shiny import reactive
 from shiny import render
