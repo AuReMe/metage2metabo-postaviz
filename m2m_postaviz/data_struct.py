@@ -309,7 +309,7 @@ class DataStorage:
         return query
 
 
-    def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = "tsv"):
+    def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = ".tsv"):
         """Save the dataframe in input. Check for already saved file and change the name accordingly.
 
         Args:
