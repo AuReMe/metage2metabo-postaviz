@@ -43,11 +43,12 @@ else:
 metadata_file = Path(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = Path(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = Path(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
+metacyc_file = Path(TEST_DATA_CONTAINER, "metacyc28_5.padmet")
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,metacyc_file)
 
 
 
