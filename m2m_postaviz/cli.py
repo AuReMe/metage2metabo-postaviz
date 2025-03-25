@@ -71,12 +71,12 @@ def main(args=None):
     else:
 
         arg_parser = vars(parser.parse_args())
-        dir_path = Path(arg_parser["dir"])
-        metadata_path = Path(arg_parser["metadata"])
-        taxonomic_path = Path(arg_parser["taxonomy"])
-        abundance_path = Path(arg_parser["abundance"])
-        save_path = Path(arg_parser["output"])
-        metacyc = Path(arg_parser["metacyc"])
+        dir_path = Path(arg_parser["dir"]).resolve()
+        metadata_path = Path(arg_parser["metadata"]).resolve()
+        taxonomic_path = Path(arg_parser["taxonomy"]).resolve()
+        abundance_path = Path(arg_parser["abundance"]).resolve()
+        save_path = Path(arg_parser["output"]).resolve()
+        metacyc = Path(arg_parser["metacyc"]).resolve()
         du.build_dataframes(dir_path, metadata_path, abundance_path, taxonomic_path, save_path, metacyc)
 
         Data = DataStorage(save_path)

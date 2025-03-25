@@ -32,8 +32,6 @@ else:
 
 TMP_DIR = Path(TEST_DATA_CONTAINER,"test_save_dir")
 
-# If the directory already exist, directory must be removed with all content. This is usefull for local test since most of data-processing is ignored due to previous local test that already created files.
-
 if TMP_DIR.is_dir():
     shutil.rmtree(TMP_DIR)
     TMP_DIR.mkdir()

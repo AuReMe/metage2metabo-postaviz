@@ -926,7 +926,7 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
 
     print("Building taxonomic dataframe...")
 
-    if taxonomy_filepath.name.endswith(".tsv"):
+    if taxonomy_filepath.suffix == ".tsv":
 
         df = open_tsv(taxonomy_filepath)
         df = df.rename(columns={df.columns[0]: "mgs"})
@@ -934,7 +934,7 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
 
         return
 
-    if not taxonomy_filepath.endswith(".txt"):
+    if not taxonomy_filepath.suffix == ".txt":
         raise RuntimeError("Taxonomy file must be either a txt file or tsv file.")
 
     with open(taxonomy_filepath) as f:
@@ -1036,8 +1036,6 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, tax
         chunk_index += 1
         list_of_dataframe = []
         logs = []
-
-    ##### Loop in sample unique list, get their index (where bins are listed) then select row with isin(bins)
 
         for sample in current_chunk:
 
