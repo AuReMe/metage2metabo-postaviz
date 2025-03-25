@@ -1149,7 +1149,7 @@ def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
         save_path (str): Path of the save directory.
     """
 
-    if "padmet_compounds_category_tree.json" in save_path.iterdir() or "padmet_child_parent_dataframe.tsv" in save_path.iterdir:
+    if "padmet_compounds_category_tree.json" in save_path.iterdir() or "padmet_child_parent_dataframe.tsv" in save_path.iterdir():
         print("Padmet category tree already exist.")
         return
 
