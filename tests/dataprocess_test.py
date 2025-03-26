@@ -12,7 +12,7 @@ from m2m_postaviz.data_struct import DataStorage
 from m2m_postaviz import shiny_module as sm
 
 # From this test file, get to the test directory then the POSTAVIZ dir.
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).parent.resolve()
 MODULE_DIR = BASE_DIR.parent
 
 # From Postaviz directory go the m2m_postaviz then postaviz test_data.
