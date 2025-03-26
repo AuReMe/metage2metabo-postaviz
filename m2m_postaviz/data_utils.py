@@ -1153,7 +1153,7 @@ def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
 
     print("Building compounds category tree...")
     print(metacyc_file_path)
-    padmet = PadmetRef(metacyc_file_path)
+    padmet = PadmetRef(str(metacyc_file_path))
 
     cpd_id = [node.id for node in padmet.dicOfNode.values() if node.type == "compound"]
 
