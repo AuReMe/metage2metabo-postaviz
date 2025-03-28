@@ -569,8 +569,10 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
     # Metacyc database TREE
 
     if metacyc is not None:
-        print(metacyc)
+
         padmet_to_tree(save_path, metacyc)
+
+        # update_cpd_index_with_common_name(save_path, metacyc)
 
 
 def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
@@ -1055,7 +1057,6 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, tax
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
 
-        # s = results.apply(lambda row: get_production_list_from_bin_dataframe(row), axis=1)
         tmp = results.apply(lambda x: x.index[x == 1].tolist(), axis=1)
 
         results["Production"] = tmp.apply(lambda value: get_cpd_index(cpd_index, value))
@@ -1108,27 +1109,6 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, tax
     return
 
 
-def get_production_list_from_bin_dataframe(serie: pd.Series) -> list:
-    """Return the list of column label where the value if superior to 1.
-    Used to get the metabolites production of a Sample or Bin.
-
-    Args:
-        serie (pd.Series): Series to process.
-
-    Returns:
-        list: List of metabolites produced.
-    """
-    list_of_cpd_produced = []
-
-    for label, value in serie.items():
-        if label == "smplID":
-            continue
-        if value > 0:
-            list_of_cpd_produced.append(label)
-
-    return list_of_cpd_produced
-
-
 def chunks(lst, n):
     """Yield successive n-sized chunks from list."""
     for i in range(0, len(lst), n):
@@ -1152,8 +1132,8 @@ def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
         return
 
     print("Building compounds category tree...")
-    print(metacyc_file_path)
-    padmet = PadmetRef(str(metacyc_file_path))
+
+    padmet = PadmetRef(metacyc_file_path)
 
     cpd_id = [node.id for node in padmet.dicOfNode.values() if node.type == "compound"]
 

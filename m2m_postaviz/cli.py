@@ -44,7 +44,7 @@ def main(args=None):
 
     if arg_parser.load:
 
-        Data = DataStorage(arg_parser.load)
+        Data = DataStorage(Path(arg_parser.load))
         sh.run_shiny(Data)
 
     elif arg_parser.test:
