@@ -17,26 +17,41 @@ from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
+import cProfile, pstats, io
+from pstats import SortKey
 
-# def get_size(obj, seen=None):
-#     """Recursively finds size of objects"""
-#     size = sys.getsizeof(obj)
-#     if seen is None:
-#         seen = set()
-#     obj_id = id(obj)
-#     if obj_id in seen:
-#         return 0
-#     # Important mark as seen *before* entering recursion to gracefully handle
-#     # self-referential objects
-#     seen.add(obj_id)
-#     if isinstance(obj, dict):
-#         size += sum([get_size(v, seen) for v in obj.values()])
-#         size += sum([get_size(k, seen) for k in obj.keys()])
-#     elif hasattr(obj, "__dict__"):
-#         size += get_size(obj.__dict__, seen)
-#     elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
-#         size += sum([get_size(i, seen) for i in obj])
-#     return size
+
+
+def file_exist(filename: str, directory_path: Path) -> bool:
+
+    for file in directory_path.iterdir():
+
+        if filename == file.name:
+
+            return True
+        
+    return False
+
+
+def get_size(obj, seen=None):
+    """Recursively finds size of objects"""
+    size = sys.getsizeof(obj)
+    if seen is None:
+        seen = set()
+    obj_id = id(obj)
+    if obj_id in seen:
+        return 0
+    # Important mark as seen *before* entering recursion to gracefully handle
+    # self-referential objects
+    seen.add(obj_id)
+    if isinstance(obj, dict):
+        size += sum([get_size(v, seen) for v in obj.values()])
+        size += sum([get_size(k, seen) for k in obj.keys()])
+    elif hasattr(obj, "__dict__"):
+        size += get_size(obj.__dict__, seen)
+    elif hasattr(obj, "__iter__") and not isinstance(obj, (str, bytes, bytearray)):
+        size += sum([get_size(i, seen) for i in obj])
+    return size
 
 
 def is_valid_dir(dirpath: Path):
@@ -113,7 +128,7 @@ def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directo
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
 
-    if "normalised_abundance_dataframe_postaviz.tsv" in save_path.iterdir() and "abundance_file.tsv" in save_path.iterdir():
+    if file_exist("normalised_abundance_dataframe_postaviz.tsv", save_path) and file_exist("abundance_file.tsv", save_path):
         print("normalised_abundance_dataframe already exist in save directory.")
         return
 
@@ -297,9 +312,11 @@ def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path
         Exception: Empty sample directory (-d given in CLI).
     """
 
-    if "producers_dataframe_postaviz.tsv" in save_path.iterdir():
+    if file_exist("producers_dataframe_postaviz.tsv", save_path):
         print("producers dataframe already in save directory.")
         return
+    else:
+        print("Building producers dataframe...")
 
     cpu_available = cpu_count() - 1
 
@@ -322,9 +339,11 @@ def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path
 
 def number_of_producers_iscope_dataframe(save_path: Path, iscope_directory: Path):
 
-    if "producers_iscope_dataframe_postaviz.tsv" in save_path.iterdir():
+    if file_exist("producers_iscope_dataframe_postaviz.tsv", save_path):
         print("producers dataframe already in save directory.")
         return
+
+    print("Building producers iscope dataframe...")
 
     cpu_available = cpu_count() - 1
 
@@ -357,7 +376,7 @@ def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
         pd.Series: Pandas serie with all metabolites columns sum
     """
     if not isinstance(sample_cscope, pd.DataFrame):
-        print("sample dataframe is not a pandas dataframe object.", sample_cscope)
+        print("sample dataframe is not a pandas dataframe object.", sample_cscope,"\n individual producers function.")
         return
 
     serie_value = []
@@ -397,13 +416,11 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
     pool.close()
     pool.join()
 
-    print("Extracting sample's info")
-
     sample_info = {}
     sample_info["bins_list"] = []
     sample_info["bins_count"] = {}
     sample_info["bins_sample_list"] = {}
-
+    
     for all_bins_in_sample, sample in results_list:
 
         if type(all_bins_in_sample) != list:  # noqa: E721
@@ -436,7 +453,7 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
 
 def load_sample_iscope_data(dir_path: Path, iscope_directory: Path, iscope_file_format):
 
-    print("Converting cscope dataframe into parquet file...")
+    print("Converting iscope dataframe into parquet file...")
 
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
@@ -461,8 +478,7 @@ def build_main_dataframe(save_path: Path, cscope_directory: Path):
         sample_data (dict): Samples's cscope.
         save_path (_type_): Save path given in CLI.
     """
-
-    if "main_dataframe_postaviz.tsv" in save_path.iterdir():
+    if file_exist("main_dataframe_postaviz.tsv", save_path):
         print("main dataframe already in save directory.")
         return
 
@@ -576,8 +592,7 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
 
 def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
-
-    if "metadata_dataframe_postaviz.parquet.gzip" in save_path.iterdir():
+    if file_exist("metadata_dataframe_postaviz.parquet.gzip", save_path):
         return
     else:
         metadata = open_tsv(metadata_path)
@@ -624,7 +639,8 @@ def total_production_by_sample(save_path: Path, abundance_path: Optional[Path] =
         save_path (_type_): Save path given in CLI
         abundance_path (str, optional): Abundance file path fiven in CLI. Defaults to None.
     """
-    if "total_production_dataframe_postaviz.tsv" in save_path.iterdir():
+
+    if file_exist("total_production_dataframe_postaviz.tsv", save_path):
         print("total_production_dataframe_postaviz already in save directory")
         return
 
@@ -848,7 +864,7 @@ def build_pcoa_dataframe(save_path: Path) -> pd.DataFrame:
         pd.DataFrame: Pcoa dataframe with sample ID as index, PC1 and PC2 results and all metadata.
     """
 
-    if "pcoa_dataframe_postaviz.tsv" in save_path.iterdir():
+    if file_exist("pcoa_dataframe_postaviz.tsv", save_path):
         print("Pcoa dataframe already in save directory.")
         return
 
@@ -922,7 +938,7 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
         pd.DataFrame: Pandas dataframe
     """
 
-    if "taxonomic_dataframe_postaviz.tsv" in save_path.iterdir():
+    if file_exist("taxonomic_dataframe_postaviz.tsv", save_path):
         print("Taxonomic dataframe already exist in save directory.")
         return
 
@@ -996,7 +1012,7 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, tax
         pd.DataFrame: Pandas dataframe
     """
 
-    if "bin_dataframe_chunk_1.parquet.gzip" in savepath.iterdir():
+    if file_exist("bin_dataframe_chunk_1.parquet.gzip",savepath):
         print("Chunk of bin_dataframe already in save directory")
         return
 
@@ -1127,7 +1143,7 @@ def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
         save_path (str): Path of the save directory.
     """
 
-    if "padmet_compounds_category_tree.json" in save_path.iterdir() or "padmet_child_parent_dataframe.tsv" in save_path.iterdir():
+    if file_exist("padmet_compounds_category_tree.json",save_path):
         print("Padmet category tree already exist.")
         return
 
