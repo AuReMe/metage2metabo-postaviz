@@ -1,5 +1,4 @@
 import pandas as pd
-# import os
 from pathlib import Path
 import warnings
 import plotly.express as px
@@ -46,7 +45,7 @@ metacyc_file = Path(TEST_DATA_CONTAINER, "metacyc28_5.padmet")
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,metacyc_file)
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,None)
 
 
 
@@ -306,6 +305,7 @@ def test_statistic_method():
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
+
 
 def test_recursive_tree_padmet():
 
