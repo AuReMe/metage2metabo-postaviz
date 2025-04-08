@@ -2,12 +2,15 @@ import json
 import sys
 import tarfile
 import time
+import tempfile
+
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+import polars as pl
 from pathlib import Path
 from padmet.classes import PadmetRef
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
@@ -556,9 +559,13 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     build_compounds_index(save_path)
 
-    relative_abundance_calc(abundance_path, save_path, cscope_directory)
+    if abundance_path is not None:
 
-    taxonomy_processing(taxonomic_path, save_path)
+        relative_abundance_calc(abundance_path, save_path, cscope_directory)
+
+    if taxonomic_path is not None:
+
+        taxonomy_processing(taxonomic_path, save_path)
 
     total_production_by_sample(save_path, abundance_path)
 
@@ -1271,4 +1278,61 @@ def get_cpd_index(cpd_index: pd.Series, cpd_list_label):
 
     return cpd_index.index[cpd_index.isin(cpd_list_label)].tolist()
 
+
+def concat_chunk(chunk_dir: Path, save_path: Path, scope_type: str):
+    """Concatenation of all sub_dataframes produced.
+
+    Args:
+        chunk_dir (Path): _description_
+        save_path (Path): _description_
+        scope_type (str): _description_
+    """
+    filename = "producers_"+scope_type+"_dataframe.parquet.gzip"
+    df = None
+    for chunk in chunk_dir.iterdir():
+        if df is None:
+            df = pl.read_parquet(chunk)
+        else:
+            tmp_df = pl.read_parquet(chunk)
+            df = pl.concat([df,tmp_df], how="diagonal")
+
+    df = df.fill_null(0)
+    df.write_parquet(Path(save_path,filename), compression="gzip")
+    
+
+def sum_and_concat_by_chunk(directory_path: Path):
+    """Produce dataframe from chunk of 250 samples, BETTER memory usage small performance price.
+
+    Args:
+        directory_path (Path): _description_
+    """
+    tmp_dir = tempfile.TemporaryDirectory(directory_path.name)
+
+    tmp_dir_path = Path(tmp_dir.name)
+
+    sample_unique_list = list(directory_path.iterdir())
+
+    chunk_generator = chunks(sample_unique_list, 250)
+    chunk_index = 0
+
+    for current_chunk in chunk_generator:
+
+        chunk_index += 1
+        res = []
+
+        for sample in current_chunk:
+            sample_id = sample.name.split(".parquet")[0]
+            sample_dataframe = pl.read_parquet(sample)
+            sample_dataframe = sample_dataframe.sum()
+            sample_dataframe._replace("smplID", pl.Series("smplID",[sample_id])) # replace_column(-1, pl.Series("smplID",[sample_id])) Could also replace smplID col by index since polar put index from parquet to the last column.
+            res.append(sample_dataframe)
+
+        final_dataframe = pl.concat(res, how="diagonal")
+        final_dataframe = final_dataframe.drop("smplID").insert_column(0, final_dataframe.get_column("smplID")) # Not necessary at all but i'm used to smplID col index with pandas.
+        final_dataframe = final_dataframe.fill_null(0)
+        
+        filename = "producers_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
+        final_dataframe.write_parquet(Path(tmp_dir_path,filename), compression = "gzip")
+        
+    return tmp_dir_path, tmp_dir
 
