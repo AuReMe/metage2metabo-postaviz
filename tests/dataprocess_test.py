@@ -1,5 +1,4 @@
 import pandas as pd
-# import os
 from pathlib import Path
 import warnings
 import plotly.express as px
@@ -32,8 +31,6 @@ else:
 
 TMP_DIR = Path(TEST_DATA_CONTAINER,"test_save_dir")
 
-# If the directory already exist, directory must be removed with all content. This is usefull for local test since most of data-processing is ignored due to previous local test that already created files.
-
 if TMP_DIR.is_dir():
     shutil.rmtree(TMP_DIR)
     TMP_DIR.mkdir()
@@ -43,11 +40,12 @@ else:
 metadata_file = Path(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = Path(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = Path(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
+metacyc_file = Path(TEST_DATA_CONTAINER, "metacyc28_5.padmet")
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR)
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,None)
 
 
 
@@ -307,6 +305,7 @@ def test_statistic_method():
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
+
 
 def test_recursive_tree_padmet():
 
