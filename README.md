@@ -16,7 +16,7 @@ GNU Lesser General Public License v3 (LGPLv3)
 
 ## Installation
 
-M2M-PostAViz is tested with Python v3.12.
+M2M-PostAViz is tested with Python version 3.10, 3.11 and 3.12.
 You can install the application:
 
 - By cloning and installing this repository for the latest version
