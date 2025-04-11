@@ -85,7 +85,7 @@ def cpd_tab_ui(Data: DataStorage):
             ui.nav_panel("Iscope", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
             title= "Barplot showing the percentage of sample producing the compounds (at least one genomes producers). Both in Cscope and Iscope."),
 
-        ui.card(ui.card_header("Boxplot of the numbers of genomes producers (Y-axis) for each compounds (X-axis) in input. Can be filtered by metadata and grouped by color input."),
+        ui.card(ui.card_header("Boxplot of the numbers of genomes producers (Y-axis) for all compounds selected in input (X-axis). Can be filtered by metadata and grouped by color input."),
             output_widget("cpd_exp_producers_plot"),full_screen=True),
 
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
@@ -230,7 +230,6 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             if not Data.USE_METACYC_PADMET:
 
                 return
-
 
             metacyc_category_first_input = input.first_category_input().split(" ")[0]
 

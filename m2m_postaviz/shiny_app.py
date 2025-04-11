@@ -1,7 +1,5 @@
 import warnings
 
-import plotly.express as px
-import plotly.graph_objects as go
 from shiny import App
 from shiny import reactive
 from shiny import render
@@ -86,7 +84,7 @@ def run_shiny(data: DataStorage):
 
     app_ui = ui.page_fillable(
         ui.navset_tab(
-            ui.nav_panel("Exploration",
+            ui.nav_panel("Overview",
                 ui.layout_column_wrap(
 
                     ui.value_box(
@@ -109,24 +107,25 @@ def run_shiny(data: DataStorage):
 
                 fill=False,
                 ),
-                total_production_plot
-                ),
-
-            ui.nav_panel("Metadata",
-                metadata_table
-                ),
-
-            ui.nav_panel("PCOA",
+                total_production_plot,
                 pcoa_module_ui("module_pcoa", data)
-            ),
+                ),
 
-            ui.nav_panel("Bins",
+            # ui.nav_panel("PCOA",
+                
+            # ),
+
+            ui.nav_panel("Taxonomy-based exploration",
                 bin_exp_ui("module_bin_exp", data)
             ),
 
-            ui.nav_panel("Cpd",
+            ui.nav_panel("Metabolite-based exploration",
                 cpd_tab_ui("module_cpd_exp", data)
-            )
+            ),
+
+            ui.nav_panel("Metadata management",
+                metadata_table
+                ),
 
             ),
         )
