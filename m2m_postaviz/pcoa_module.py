@@ -1,4 +1,5 @@
 import plotly.express as px
+import polars as pl
 from shiny import module
 from shiny import reactive
 from shiny import render
@@ -84,14 +85,14 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
     def pcoa_custom_choice():
 
         df = Data.get_metadata()
-        value = df[input.custom_pcoa_selection()]
+        values = df.get_column(input.custom_pcoa_selection())
 
-        if not du.serie_is_float(value):
+        if not df.get_column(input.custom_pcoa_selection()).dtype.is_numeric():
 
             return ui.TagList(
                     ui.card(" ",
-                        ui.input_selectize("pcoa_custom_choice", "Get only in column:", value.unique().tolist(),
-                                            selected=value.unique().tolist(),
+                        ui.input_selectize("pcoa_custom_choice", "Get only in column:", values.unique().to_list(),
+                                            selected=values.unique().to_list(),
                                             multiple=True,
                                             options={"plugins": ["clear_button"]})
                     ,max_height="400px"
@@ -99,7 +100,7 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
         else:
 
             return ui.TagList(
-                        ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
+                        ui.input_slider("pcoa_custom_choice", "Set min/max filter:", min=values.min(), max=values.max(), value=[values.min(),values.max()]),)
 
     @render_widget
     def pcoa_plot():
@@ -109,19 +110,19 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
         df = Data.get_pcoa_dataframe()
 
         # Check column dtype.
-        if du.serie_is_float(df[selected_col]):
+        if df.get_column(selected_col).dtype.is_numeric():
 
             min_limit = input.pcoa_slider()[0]
 
             max_limit = input.pcoa_slider()[1]
 
-            df = df.loc[(df[selected_col] <= max_limit) & (df[selected_col] >= min_limit)]
+            df = df.filter((pl.col(selected_col) <= max_limit) & (pl.col(selected_col) >= min_limit))
 
         else:
 
             show_only = input.pcoa_selectize()
 
-            df = df.loc[df[selected_col].isin(show_only)]
+            df = df.filter(pl.col(selected_col).is_in(show_only))
 
         fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
 
@@ -132,14 +133,14 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
     def pcoa_ui():
 
         df = Data.get_pcoa_dataframe()
-        value = df[input.pcoa_color()]
+        values = df.get_column(input.pcoa_color())
 
-        if not du.serie_is_float(value):
+        if not df.get_column(input.pcoa_color()).dtype.is_numeric():
 
             return ui.TagList(
                     ui.card(" ",
-                        ui.input_selectize("pcoa_selectize", "Show only:", value.unique().tolist(),
-                                            selected=value.unique().tolist(),
+                        ui.input_selectize("pcoa_selectize", "Show only:", values.unique().to_list(),
+                                            selected=values.unique().to_list(),
                                             multiple=True,
                                             options={"plugins": ["clear_button"]}),
                         max_height="400px"
@@ -147,4 +148,4 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
         else:
 
             return ui.TagList(
-                        ui.input_slider("pcoa_slider", "Set min/max filter:", min=value.min(), max=value.max(), value=[value.min(),value.max()]),)
+                        ui.input_slider("pcoa_slider", "Set min/max filter:", min=values.min(), max=values.max(), value=[values.min(),values.max()]),)

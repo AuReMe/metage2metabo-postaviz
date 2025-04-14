@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib
+import polars as pl
 
 from matplotlib.patches import Patch
 from plotly.subplots import make_subplots
@@ -407,18 +408,18 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     if len(compounds_input) == 0:
         return
 
-    producer_data = data.get_metabolite_production_dataframe()
+    producer_data = data.get_cscope_producers_dataframe()
     # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
 
     if sample_filter_button != "All" and len(sample_filter_value) != 0:
 
         if sample_filter_button == "Include":
 
-            producer_data = producer_data.loc[producer_data["smplID"].isin(sample_filter_value)]
+            producer_data = producer_data.filter(pl.col("smplID").is_in(sample_filter_value))
 
         elif sample_filter_button == "Exclude":
 
-            producer_data = producer_data.loc[~producer_data["smplID"].isin(sample_filter_value)]
+            producer_data = producer_data.filter(~pl.col("smplID").is_in(sample_filter_value))
 
     # producer_data = producer_data.set_index("smplID")
 
@@ -426,12 +427,12 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
         if color_input == "None":
 
-            df = producer_data[[*compounds_input]]
+            df = producer_data.select([*compounds_input])
             return px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of mgs producers for each samples")
 
         else:
 
-            df = producer_data[[*compounds_input, color_input]]
+            df = producer_data.select([*compounds_input, color_input])
             has_unique_value = du.has_only_unique_value(df, color_input)
 
             if has_unique_value:
@@ -444,14 +445,16 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if color_input == "None" or user_input1 == color_input: # If only the filtering by metadata has been selected (no color).
 
-        df = producer_data[[*compounds_input,user_input1]]
-        df = df.dropna()
+        df = producer_data.select([*compounds_input,user_input1])
+        df = df.drop_nulls()
 
         has_unique_value = du.has_only_unique_value(df, user_input1)
 
-        if df[user_input1].dtypes == float or df[user_input1].dtypes == int:
+        if df.get_column(user_input1).dtype.is_numeric():
 
-            df[user_input1] = df[user_input1].astype(str)
+            df = df.sort(user_input1)
+
+            df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
         if has_unique_value:
 
@@ -461,14 +464,16 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
         return fig
 
-    df = producer_data[[*compounds_input,user_input1,color_input]]
-    df = df.dropna()
+    df = producer_data.select([*compounds_input,user_input1,color_input])
+    df = df.drop_nulls()
 
     has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
 
-    if df[user_input1].dtypes == float or df[user_input1].dtypes == int:
+    if df.get_column(user_input1).dtype.is_numeric():
 
-        df[user_input1] = df[user_input1].astype(str)
+        df = df.sort(user_input1)
+
+        df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
     if has_unique_value:
 
@@ -521,58 +526,66 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     Returns:
         Tuple: Tuple with cscope plot and iscope plot
     """
-    cscope_df = data.get_metabolite_production_dataframe()
-    iscope_df = data.get_iscope_metabolite_production_dataframe()
+    cscope_df = data.get_cscope_producers_dataframe(["smplID", *cpd_input], with_metadata=True)
+    iscope_df = data.get_iscope_producers_dataframe(["smplID", *cpd_input], with_metadata=True)
 
     # Check if the iscope dataframe contain all the cpd in cscope dataframe. IF not add them as column filled with 0 value.
-    col_diff = cscope_df.columns.difference(iscope_df.columns)
+    ccol = cscope_df.columns
+    icol = iscope_df.columns
 
-    col_diff_dict = dict.fromkeys(col_diff, 0.0)
+    columns_difference = list(set(ccol) - set(icol))
 
-    temp_df = pd.DataFrame(col_diff_dict, index=iscope_df.index)
+    for col in columns_difference:
 
-    iscope_df = pd.concat([iscope_df, temp_df], axis=1)
+        iscope_df = iscope_df.with_columns(pl.lit(0).alias(col))
 
     # Select only the column of interest.
-    cscope_df = cscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
-    iscope_df = iscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
+    cscope_df = cscope_df.select(pl.col("smplID", *cpd_input, metadata_filter_input)).drop_nulls()
+    iscope_df = iscope_df.select(pl.col("smplID", *cpd_input, metadata_filter_input)).drop_nulls()
 
     # Samples filtering
     if sample_filter_button != "All":
 
         if sample_filter_button == "Include":
 
-            cscope_df = cscope_df.loc[cscope_df["smplID"].isin(sample_filter_value)]
-            iscope_df = iscope_df.loc[iscope_df["smplID"].isin(sample_filter_value)]
+            cscope_df = cscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
+            iscope_df = iscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
 
         if sample_filter_button == "Exclude":
 
-            cscope_df = cscope_df.loc[~cscope_df["smplID"].isin(sample_filter_value)]
-            iscope_df = iscope_df.loc[~iscope_df["smplID"].isin(sample_filter_value)]
+            cscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
+            iscope_df = iscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
 
-    # Check for numeric dtype (boolean / int / unsigned / float / complex).
-    if cscope_df[metadata_filter_input].dtype.kind in "biufc":
-        cscope_df[metadata_filter_input] = cscope_df[metadata_filter_input].astype("str")
+    # Check for numeric dtype (boolean / int / unsigned / float / complex). DISABLED FOR NOW POLARS
+    # if cscope_df[metadata_filter_input].dtype.kind in "biufc":
+    #     cscope_df[metadata_filter_input] = cscope_df[metadata_filter_input].astype("str")
 
-    if iscope_df[metadata_filter_input].dtype.kind in "biufc":
-        iscope_df[metadata_filter_input] = iscope_df[metadata_filter_input].astype("str")
-
-    # Set Id and metadata column as index to get the matrix.
-    cscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
-    iscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
+    # if iscope_df[metadata_filter_input].dtype.kind in "biufc":
+    #     iscope_df[metadata_filter_input] = iscope_df[metadata_filter_input].astype("str")
 
     # Replace any value above 0 by 1.
-    cscope_df.mask(cscope_df > 0.0, 1, inplace=True)
-    iscope_df.mask(iscope_df > 0.0, 1, inplace=True)
 
-    cscope_df.reset_index(inplace=True)
-    iscope_df.reset_index(inplace=True)
+    cscope_df = cscope_df.with_columns(
+        pl.when(pl.exclude("smplID") > 0.0)
+        .then(1)
+        .otherwise(0)
+        .name.keep
+    )
+
+    iscope_df = iscope_df.with_columns(
+        pl.when(pl.exclude("smplID") > 1)
+        .then(1)
+        .otherwise(0)
+        .name.keep
+    )
 
     cscope_series = []
-    # Loop throught sub dataframe of each unique value of metadata input.
-    for metadata_value in cscope_df[metadata_filter_input].unique():
 
-        current_rows = cscope_df.loc[cscope_df[metadata_filter_input] == metadata_value]
+    # Loop throught sub dataframe of each unique value of metadata input.
+
+    for metadata_value in cscope_df.get_column(pl.col(metadata_filter_input)).unique().to_list():
+
+        current_rows = cscope_df.filter(pl.col(metadata_filter_input) == metadata_value)
 
         current_rows.set_index(["smplID", metadata_filter_input], inplace=True)
 
@@ -648,9 +661,13 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
 
     for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
 
+        dataframe = dataframe.to_pandas()
+        dataframe.set_index("smplID", inplace = True)
+        
         if metadata_input is not None and metadata_input != "None":
 
             metadata = data.get_metadata()
+            metadata = metadata.to_pandas()
             metadata = metadata[["smplID",metadata_input]]
             metadata.set_index("smplID",inplace=True)
 
@@ -678,6 +695,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             plots.append(g)
 
     return plots
+
 
 
 # def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):

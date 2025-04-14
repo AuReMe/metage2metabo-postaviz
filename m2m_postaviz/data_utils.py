@@ -98,7 +98,7 @@ def extract_tarfile(tar_file, outdir):
 #     return wrapper
 
 
-def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None"):
+def has_only_unique_value(dataframe: pl.DataFrame, input1, input2: str = "None"):
     """
     Return True if the dataframe's column(s) only has unique value, False otherwise.
 
@@ -111,10 +111,10 @@ def has_only_unique_value(dataframe: pd.DataFrame, input1, input2: str = "None")
     nb_row = len(dataframe)
 
     if input2 == "None":
-        return True if nb_row == len(dataframe[input1].unique()) else False
+        return True if nb_row == len(dataframe.get_column(input1).unique()) else False
 
     else:
-        return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
+        return True if nb_row == len(dataframe.get_column(input1).unique()) and nb_row == len(dataframe.get_column(input2).unique()) else False
 
 
 def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directory: Path) -> pd.DataFrame:
@@ -520,16 +520,15 @@ def build_main_dataframe(save_path: Path, cscope_directory: Path):
 
 
 def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Optional[Path] = None, taxonomic_path: Optional[Path] = None, save_path: Optional[Path] = None, metacyc: Optional[Path] = None):
-    """
-    Main function that build all major dataframes used in shiny. Execpt for the sample's data, all dataframes are saved in parquet format
-    in save_path given in CLI.
+    """    Main function that build all major dataframes from which the plots are generated in Shiny application.
 
     Args:
-        dir_path (str): Directory path with all samples directory produced by Metage2metabo
-        metadata (tsv file): A TSV metadata file.
-
-    Returns:
-        None
+        dir_path (Path): Directory path containing M2M output.
+        metadata_path (Path): Metadata file path.
+        abundance_path (Optional[Path], optional): Abundance file path. Defaults to None.
+        taxonomic_path (Optional[Path], optional): Taxonomic file path. Defaults to None.
+        save_path (Optional[Path], optional): Output path. Defaults to None.
+        metacyc (Optional[Path], optional): Metacyc DB file path. Defaults to None.
     """
     if not is_valid_dir(dir_path):
         print(dir_path, "Sample directory path is not a valid directory")
@@ -553,7 +552,7 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     load_sample_cscope_data(dir_path, cscope_directory, cscope_file_format, save_path)
 
-    number_of_producers_cscope_dataframe(save_path, cscope_directory)
+    producers_dataframe(cscope_directory, save_path, "cscope")
 
     build_main_dataframe(save_path, cscope_directory)
 
@@ -573,8 +572,6 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     bin_dataframe_build(cscope_directory, abundance_path, taxonomic_path, save_path)
 
-    # cpd_cscope_dataframe_build(sample_info, cscope_directory, abundance_path, save_path)
-
     iscope_directory = Path(save_path,"sample_iscope_directory")
 
     if not iscope_directory.is_dir():
@@ -585,17 +582,15 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
         load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format)
 
-    number_of_producers_iscope_dataframe(save_path, iscope_directory)
+    producers_dataframe(iscope_directory, save_path, "iscope")
 
-    # cpd_iscope_dataframe_build(iscope_directory, abundance_path, save_path)
+    iscope_cscope_fill_difference(save_path)
 
     # Metacyc database TREE
 
     if metacyc is not None:
 
         padmet_to_tree(save_path, metacyc)
-
-        # update_cpd_index_with_common_name(save_path, metacyc)
 
 
 def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
@@ -919,17 +914,6 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
         symbol = "***"
 
     return pd.DataFrame([[factor_name, len(value_array), res.statistic, res.pvalue, symbol, method]],columns=["Factor", "Sample size", "Statistic", "Pvalue", "Significance", "Method"])
-
-
-def serie_is_float(ser: pd.Series):
-
-    if ser.dtype.name == "category":
-        return False
-
-    if np.issubdtype(ser.dtype, np.integer) or np.issubdtype(ser.dtype, np.floating):
-        return True
-
-    return False
 
 
 def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
@@ -1336,3 +1320,29 @@ def sum_and_concat_by_chunk(directory_path: Path):
         
     return tmp_dir_path, tmp_dir
 
+
+def producers_dataframe(scope_directory: Path, save_path: Path, scope_type: str):
+
+    tmp_chunks_dir_path, tmp_dir = sum_and_concat_by_chunk(scope_directory)
+
+    concat_chunk(tmp_chunks_dir_path, save_path, scope_type)
+
+    tmp_dir.cleanup()
+
+
+def iscope_cscope_fill_difference(save_path: Path):
+
+    iscope_df = pl.read_parquet(Path(save_path, "producers_iscope_dataframe.parquet.gzip"))
+
+    cscope_df = pl.read_parquet(Path(save_path, "producers_cscope_dataframe.parquet.gzip"))
+
+    ccol = cscope_df.columns
+    icol = iscope_df.columns
+
+    columns_difference = list(set(ccol) - set(icol))
+
+    for col in columns_difference:
+
+        iscope_df = iscope_df.with_columns(pl.lit(0).alias(col))
+
+    iscope_df.write_parquet(Path(save_path, "producers_iscope_dataframe.parquet.gzip"), compression="gzip")
