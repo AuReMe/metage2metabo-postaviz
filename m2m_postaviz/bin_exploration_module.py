@@ -82,7 +82,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
         df = Data.get_metadata()
 
-        choices = df[factor_choice].unique().tolist()
+        choices = df.get_column(factor_choice).unique().to_list()
 
         return ui.TagList(
             ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
@@ -107,7 +107,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
         df = Data.get_taxonomic_dataframe()
 
-        choices = df[rank_choice].unique().tolist()
+        choices = df.get_column(rank_choice).unique().to_list()
 
         return ui.TagList(
             ui.input_selectize("rank_unique_choice", "Select", choices=choices, multiple=False,)

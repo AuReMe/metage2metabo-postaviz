@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 import polars as pl
 
+from pandas.api.types import is_numeric_dtype
 from matplotlib.patches import Patch
 from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
@@ -148,7 +149,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                 df = df[[column_value,x1]]
                 df = df.dropna()
 
-                if du.serie_is_float(df[x1]):
+                if is_numeric_dtype(df[x1]):
 
                     res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
 
@@ -165,9 +166,9 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
                 df = df[[column_value,x1,x2]]
                 df = df.dropna()
 
-                if du.serie_is_float(df[x1]):
+                if is_numeric_dtype(df[x1]):
 
-                    if du.serie_is_float(df[x2]):
+                    if is_numeric_dtype(df[x2]):
 
                         # Double cor
                         res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
@@ -210,11 +211,11 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
         correction_method = "hs"
 
     if x2 == "None":
-
-        df = data.get_metabolite_production_dataframe()[[*y1,x1]]
+        df = data.get_cscope_producers_dataframe().to_pandas()
+        df = df[[*y1,x1]]
         df = df.dropna()
 
-        if du.serie_is_float(df[x1]):
+        if is_numeric_dtype(df[x1]):
 
             correlation_results = []
 
@@ -231,13 +232,14 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
         return res
 
     if x1 != x2:
-
-        df = data.get_metabolite_production_dataframe()[[*y1,x1,x2]]
+        
+        df = data.get_cscope_producers_dataframe().to_pandas()
+        df = df[[*y1,x1,x2]]
         df = df.dropna()
 
-        if du.serie_is_float(df[x1]): # First input is Float type
+        if is_numeric_dtype(df[x1]): # First input is Float type
 
-            if du.serie_is_float(df[x2]): # Second input is Float type
+            if is_numeric_dtype(df[x2]): # Second input is Float type
 
                 correlation_results = []
 
@@ -286,11 +288,11 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
         px.scatter: Plotly scatter figure.
     """
     if abundance:
-        df = data.get_normalised_abundance_dataframe()
+        df = data.get_normalised_abundance_dataframe().to_pandas()
     else:
-        df = data.get_main_dataframe()
+        df = data.get_main_dataframe().to_pandas()
 
-    metadata = data.get_metadata()
+    metadata = data.get_metadata().to_pandas()
 
     if du.is_indexed_by_id(df):
         df.reset_index(inplace=True)
@@ -298,7 +300,7 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     if du.is_indexed_by_id(metadata):
         metadata.reset_index(inplace=True)
 
-    if du.serie_is_float(metadata[column]):
+    if is_numeric_dtype(metadata[column]):
 
         selected_sample = metadata.loc[(metadata[column] >= choices[0]) & (metadata[column] <= choices[1])]["smplID"]
         df = df.loc[df["smplID"].isin(selected_sample)]
@@ -490,31 +492,6 @@ def df_to_plotly(df):
             "y": df.index.tolist()}
 
 
-# def added_value_heatmap(data: DataStorage, cpd_input : list, sample_filtering_enabled, sample_filter_mode, sample_filter_value):
-#     """Get three dataframe from the DataStorage object. cscope producers, icscope_producers and the difference between the two.
-#     The dataframe have been filtered by DataStorage previously by the 4 input given in args. 
-#     Make three plotly Heatmap from those dataframe and return them to be rendered. 
-#     Args:
-#         data (DataStorage): DataStorage object.
-#         cpd_input (list): List of compounds selected by user.
-#         sample_filtering_enabled (bool): Enable the filtering by sample
-#         sample_filter_mode (str): Either Inlcude or Exclude selected by user.
-#         sample_filter_value (list): List of sample selected in filter.
-
-#     Returns:
-#         _type_: _description_
-#     """
-#     cscope_df, iscope_df, added_value_df = data.get_added_value_dataframe(cpd_input, sample_filtering_enabled, sample_filter_mode, sample_filter_value)
-
-#     added_value_fig = go.Figure(data=go.Heatmap(df_to_plotly(added_value_df), coloraxis="coloraxis"))
-
-#     cscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(cscope_df), coloraxis="coloraxis"))
-
-#     iscope_fig = go.Figure(data=go.Heatmap(df_to_plotly(iscope_df), coloraxis="coloraxis"))
-
-#     return cscope_fig, iscope_fig, added_value_fig
-
-
 def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str, sample_filter_button = "All", sample_filter_value = []):
     """Produce two plotly figure barplot from the list of compounds and the column filter given in input.
 
@@ -625,7 +602,6 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     return fig1, fig2
 
 
-
 def col_value_to_percent(col: pd.Series):
 
     sum_val = col.sum()
@@ -692,77 +668,3 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
 
     return plots
 
-
-
-# def metabolites_heatmap(data: DataStorage, user_cpd_list, user_input1, sample_filtering_enabled, sample_filter_button, sample_filter_value, by = None):
-
-#     all_cscope_dataframe = []
-#     all_iscope_dataframe = []
-
-#     for cpd in user_cpd_list:
-
-#         try:
-
-#             tmp_df = data.get_minimal_cpd_dataframe(cpd)
-#             all_cscope_dataframe.append(tmp_df[0])
-#             all_iscope_dataframe.append(tmp_df[1])
-
-#         except Exception:
-
-#             print(f"{cpd} not in iscope dataframe")
-
-#     dfc = pd.concat(all_cscope_dataframe,axis=0)
-#     dfi = pd.concat(all_iscope_dataframe,axis=0)
-
-#     if sample_filtering_enabled and len(sample_filter_value) != 0:
-
-#         if sample_filter_button == "Include":
-
-#             dfc = dfc.loc[dfc["smplID"].isin(sample_filter_value)]
-#             dfi = dfi.loc[dfi["smplID"].isin(sample_filter_value)]
-
-#         elif sample_filter_button == "Exclude":
-
-#             dfc = dfc.loc[~dfc["smplID"].isin(sample_filter_value)]
-#             dfi = dfi.loc[~dfi["smplID"].isin(sample_filter_value)]
-
-#     if by == "taxonomy" and user_input1 != "None":
-
-#         taxonomy_file = data.get_taxonomic_dataframe()
-
-#         mgs_col_taxonomy = taxonomy_file.columns[0]
-
-#         dfc["binID"] = dfc["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
-
-#         dfi["binID"] = dfi["binID"].map(taxonomy_file.set_index(mgs_col_taxonomy)[user_input1])
-
-#     if by == "metadata" and user_input1 != "None":
-
-#         metadata = data.get_metadata()
-
-#         dfc["smplID"] = dfc["smplID"].map(metadata.set_index("smplID")[user_input1])
-
-#         dfi["smplID"] = dfi["smplID"].map(metadata.set_index("smplID")[user_input1])
-
-#     dfc.fillna(0,inplace=True)
-#     # print(dfc)
-
-#     dfc.set_index(["binID","smplID"],inplace=True)
-#     dfc = dfc.groupby(level="binID").sum()
-
-#     dfi.fillna(0,inplace=True)
-#     # print(dfi)
-
-#     dfi.set_index(["binID","smplID"],inplace=True)
-#     dfi = dfi.groupby(level="binID").sum()
-
-
-#     fig = make_subplots(1,2, subplot_titles=["cscope", "iscope"])
-
-#     fig.add_trace(go.Heatmap(df_to_plotly(dfc), coloraxis="coloraxis", ),1,1)
-
-#     fig.add_trace(go.Heatmap(df_to_plotly(dfi), coloraxis="coloraxis", ),1,2)
-
-#     fig.update_layout(coloraxis=dict(colorscale = "ylgnbu"))
-
-#     return fig

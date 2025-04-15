@@ -20,10 +20,6 @@ from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
-import cProfile, pstats, io
-from pstats import SortKey
-
-
 
 def file_exist(filename: str, directory_path: Path) -> bool:
 
@@ -78,24 +74,6 @@ def extract_tarfile(tar_file, outdir):
     # if sys.version_info >= (3, 12):
     # else:
     #     tar.extractall(outdir)
-
-
-# def benchmark_decorator(func):
-#     def wrapper(*args, **kwargs):
-#         results = []
-#         n_repeats = 3
-#         for i in range(n_repeats):
-#             time_start = time.perf_counter()
-#             result = func(*args, **kwargs)
-#             time_end = time.perf_counter()
-#             time_duration = time_end - time_start
-#             results.append(time_duration)
-#             print(f">run {i+1} took {time_duration} seconds")
-#         avg_duration = sum(results) / n_repeats
-#         print(f"Took {avg_duration} seconds on average for {func.__name__} function.")
-#         return result
-
-#     return wrapper
 
 
 def has_only_unique_value(dataframe: pl.DataFrame, input1, input2: str = "None"):
@@ -153,6 +131,10 @@ def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directo
 
     elif len(str_filter.columns) > 1:
         raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
+    
+    elif len(str_filter.columns) == 0:
+        raise RuntimeError("No str column for mgs identification detected in the abundance file.")
+        
 
     # Normalisation
     abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
@@ -302,94 +284,6 @@ def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
         if isinstance(iscope_dataframe,pd.DataFrame):
 
             iscope_dataframe.to_parquet(Path(iscope_directoy, sample+iscope_file_format), compression="gzip")
-
-
-def number_of_producers_cscope_dataframe(save_path: Path, cscope_directory: Path):
-    """Create and save a dataframe which sum all the compounds produced by each genome in sample cscope for each sample.
-
-    Args:
-        sample_data (dict): Sample's cscope.
-        save_path (_type_): Save path given in CLI.
-
-    Raises:
-        Exception: Empty sample directory (-d given in CLI).
-    """
-
-    if file_exist("producers_dataframe_postaviz.tsv", save_path):
-        print("producers dataframe already in save directory.")
-        return
-    else:
-        print("Building producers dataframe...")
-
-    cpu_available = cpu_count() - 1
-
-    if type(cpu_available) is not int or cpu_available < 1:
-        cpu_available = 1
-
-    pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = sample), sample.name) for sample in cscope_directory.iterdir()])
-    pool.close()
-    pool.join()
-
-    res = pd.concat(all_producers,axis=1).T
-    res.fillna(0,inplace=True)
-    res.index.name = "smplID"
-    res.reset_index(inplace=True)
-    res["smplID"] = res["smplID"].apply(lambda x: x.split(".parquet")[0]) ## Should resolve .parquet.gzip simplID unwanted name.
-
-    res.to_csv(Path(save_path,"producers_dataframe_postaviz.tsv"),sep="\t",index=False)
-
-
-def number_of_producers_iscope_dataframe(save_path: Path, iscope_directory: Path):
-
-    if file_exist("producers_iscope_dataframe_postaviz.tsv", save_path):
-        print("producers dataframe already in save directory.")
-        return
-
-    print("Building producers iscope dataframe...")
-
-    cpu_available = cpu_count() - 1
-
-    if type(cpu_available) is not int or cpu_available < 1:
-        cpu_available = 1
-
-    pool = Pool(cpu_available)
-    all_producers = pool.starmap(individual_producers_processing,[(pd.read_parquet(path = sample), sample.name) for sample in iscope_directory.iterdir()])
-    pool.close()
-    pool.join()
-
-    res = pd.concat(all_producers,axis=1).T
-    res.fillna(0,inplace=True)
-    res.index.name = "smplID"
-    res.reset_index(inplace=True)
-    res["smplID"] = res["smplID"].apply(lambda x: x.split(".parquet")[0]) ## Should resolve .parquet.gzip simplID unwanted name.
-    # res = res.merge(metadata,"inner","smplID")
-
-    res.to_csv(Path(save_path,"producers_iscope_dataframe_postaviz.tsv"),sep="\t",index=False)
-
-
-def individual_producers_processing(sample_cscope: pd.DataFrame , sample: str):
-    """sums the numbers of bins producing the metabolites for each metabolites in the sample's scope.
-
-    Args:
-        sample_cscope (pd.DataFrame): Sample scope dataframe
-        sample (str): Sample ID
-
-    Returns:
-        pd.Series: Pandas serie with all metabolites columns sum
-    """
-    if not isinstance(sample_cscope, pd.DataFrame):
-        print("sample dataframe is not a pandas dataframe object.", sample_cscope,"\n individual producers function.")
-        return
-
-    serie_value = []
-    serie_index = []
-
-    for i in range(len(sample_cscope.columns)):
-        serie_index.append(sample_cscope.columns[i])
-        serie_value.append(sample_cscope[sample_cscope.columns[i]].to_numpy().sum())
-
-    return pd.Series(serie_value,index=serie_index,name=sample)
 
 
 def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_format, save_path: Path): # Need rework
