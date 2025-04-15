@@ -526,66 +526,61 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     Returns:
         Tuple: Tuple with cscope plot and iscope plot
     """
-    cscope_df = data.get_cscope_producers_dataframe(["smplID", *cpd_input], with_metadata=True)
-    iscope_df = data.get_iscope_producers_dataframe(["smplID", *cpd_input], with_metadata=True)
+    cscope_df = data.get_cscope_producers_dataframe()
+    iscope_df = data.get_iscope_producers_dataframe()
+
+    cscope_df = cscope_df.to_pandas()
+    iscope_df = iscope_df.to_pandas()
 
     # Check if the iscope dataframe contain all the cpd in cscope dataframe. IF not add them as column filled with 0 value.
-    ccol = cscope_df.columns
-    icol = iscope_df.columns
+    col_diff = cscope_df.columns.difference(iscope_df.columns)
 
-    columns_difference = list(set(ccol) - set(icol))
+    col_diff_dict = dict.fromkeys(col_diff, 0.0)
 
-    for col in columns_difference:
+    temp_df = pd.DataFrame(col_diff_dict, index=iscope_df.index)
 
-        iscope_df = iscope_df.with_columns(pl.lit(0).alias(col))
+    iscope_df = pd.concat([iscope_df, temp_df], axis=1)
 
     # Select only the column of interest.
-    cscope_df = cscope_df.select(pl.col("smplID", *cpd_input, metadata_filter_input)).drop_nulls()
-    iscope_df = iscope_df.select(pl.col("smplID", *cpd_input, metadata_filter_input)).drop_nulls()
+    cscope_df = cscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
+    iscope_df = iscope_df[["smplID", *cpd_input, metadata_filter_input]].dropna()
 
     # Samples filtering
     if sample_filter_button != "All":
 
         if sample_filter_button == "Include":
 
-            cscope_df = cscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
-            iscope_df = iscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
+            cscope_df = cscope_df.loc[cscope_df["smplID"].isin(sample_filter_value)]
+            iscope_df = iscope_df.loc[iscope_df["smplID"].isin(sample_filter_value)]
 
         if sample_filter_button == "Exclude":
 
-            cscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
-            iscope_df = iscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
+            cscope_df = cscope_df.loc[~cscope_df["smplID"].isin(sample_filter_value)]
+            iscope_df = iscope_df.loc[~iscope_df["smplID"].isin(sample_filter_value)]
 
-    # Check for numeric dtype (boolean / int / unsigned / float / complex). DISABLED FOR NOW POLARS
-    # if cscope_df[metadata_filter_input].dtype.kind in "biufc":
-    #     cscope_df[metadata_filter_input] = cscope_df[metadata_filter_input].astype("str")
+    # Check for numeric dtype (boolean / int / unsigned / float / complex).
+    if cscope_df[metadata_filter_input].dtype.kind in "biufc":
+        cscope_df[metadata_filter_input] = cscope_df[metadata_filter_input].astype("str")
 
-    # if iscope_df[metadata_filter_input].dtype.kind in "biufc":
-    #     iscope_df[metadata_filter_input] = iscope_df[metadata_filter_input].astype("str")
+    if iscope_df[metadata_filter_input].dtype.kind in "biufc":
+        iscope_df[metadata_filter_input] = iscope_df[metadata_filter_input].astype("str")
+
+    # Set Id and metadata column as index to get the matrix.
+    cscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
+    iscope_df.set_index(["smplID", metadata_filter_input], inplace=True)
 
     # Replace any value above 0 by 1.
+    cscope_df.mask(cscope_df > 0.0, 1, inplace=True)
+    iscope_df.mask(iscope_df > 0.0, 1, inplace=True)
 
-    cscope_df = cscope_df.with_columns(
-        pl.when(pl.exclude("smplID") > 0.0)
-        .then(1)
-        .otherwise(0)
-        .name.keep
-    )
-
-    iscope_df = iscope_df.with_columns(
-        pl.when(pl.exclude("smplID") > 1)
-        .then(1)
-        .otherwise(0)
-        .name.keep
-    )
+    cscope_df.reset_index(inplace=True)
+    iscope_df.reset_index(inplace=True)
 
     cscope_series = []
-
     # Loop throught sub dataframe of each unique value of metadata input.
+    for metadata_value in cscope_df[metadata_filter_input].unique():
 
-    for metadata_value in cscope_df.get_column(pl.col(metadata_filter_input)).unique().to_list():
-
-        current_rows = cscope_df.filter(pl.col(metadata_filter_input) == metadata_value)
+        current_rows = cscope_df.loc[cscope_df[metadata_filter_input] == metadata_value]
 
         current_rows.set_index(["smplID", metadata_filter_input], inplace=True)
 
@@ -628,6 +623,7 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     fig2 = px.bar(iscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
 
     return fig1, fig2
+
 
 
 def col_value_to_percent(col: pd.Series):
