@@ -45,7 +45,7 @@ metacyc_file = Path(TEST_DATA_CONTAINER, "metacyc28_5.padmet")
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,None)
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,metacyc_file)
 
 
 
