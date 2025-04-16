@@ -1,7 +1,3 @@
-import pandas as pd
-
-from m2m_postaviz import data_utils
-
 
 
 def test_abundance():
