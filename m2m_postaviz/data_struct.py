@@ -156,7 +156,7 @@ class DataStorage:
         return self.open_tsv(key="abundance_file.tsv") if self.HAS_ABUNDANCE_DATA else None
 
 
-    def get_global_production_dataframe(self) -> pd.DataFrame:
+    def get_global_production_dataframe(self) -> pl.DataFrame:
         return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
 
 

@@ -142,7 +142,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
             else:
                 column_value = "Total_production"
 
-            df = data.get_global_production_dataframe()
+            df = data.get_global_production_dataframe().to_pandas()
 
             # At least first axis selected
             if x2 == "None":
@@ -373,7 +373,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
     else:
         column_value = "Total_production"
 
-    df = data.get_global_production_dataframe()
+    df = data.get_global_production_dataframe().to_pandas()
 
     if user_input1 == "None":
 

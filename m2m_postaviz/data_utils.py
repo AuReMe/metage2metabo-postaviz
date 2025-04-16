@@ -76,7 +76,7 @@ def extract_tarfile(tar_file, outdir):
     #     tar.extractall(outdir)
 
 
-def has_only_unique_value(dataframe: pl.DataFrame, input1, input2: str = "None"):
+def has_only_unique_value(dataframe , input1, input2: str = "None"):
     """
     Return True if the dataframe's column(s) only has unique value, False otherwise.
 
@@ -88,11 +88,21 @@ def has_only_unique_value(dataframe: pl.DataFrame, input1, input2: str = "None")
     """
     nb_row = len(dataframe)
 
-    if input2 == "None":
-        return True if nb_row == len(dataframe.get_column(input1).unique()) else False
+    if isinstance(dataframe, pl.DataFrame):
 
-    else:
-        return True if nb_row == len(dataframe.get_column(input1).unique()) and nb_row == len(dataframe.get_column(input2).unique()) else False
+        if input2 == "None":
+            return True if nb_row == len(dataframe.get_column(input1).unique()) else False
+
+        else:
+            return True if nb_row == len(dataframe.get_column(input1).unique()) and nb_row == len(dataframe.get_column(input2).unique()) else False
+
+    if isinstance(dataframe, pd.DataFrame):
+
+        if input2 == "None":
+            return True if nb_row == len(dataframe[input1].unique()) else False
+
+        else:
+            return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
 def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directory: Path) -> pd.DataFrame:
@@ -131,9 +141,6 @@ def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directo
 
     elif len(str_filter.columns) > 1:
         raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
-    
-    elif len(str_filter.columns) == 0:
-        raise RuntimeError("No str column for mgs identification detected in the abundance file.")
         
 
     # Normalisation
