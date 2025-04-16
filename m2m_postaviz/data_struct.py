@@ -266,7 +266,7 @@ class DataStorage:
         return query
 
 
-    def save_dataframe(self, df_to_save:pl.DataFrame, file_name: str, extension: str = ".tsv"):
+    def save_dataframe(self, df_to_save , file_name: str, extension: str = ".tsv"):
         """Save the dataframe in input. Check for already saved file and change the name accordingly.
 
         Args:
@@ -277,17 +277,27 @@ class DataStorage:
         Returns:
             _type_: _description_
         """
-        path_to_save = self.output_path
-        final_file_path = Path(path_to_save, file_name).with_suffix(extension)
+
+        final_file_path = Path(self.output_path, file_name).with_suffix(extension)
+
         if final_file_path.is_file():
             final_file_path = self.check_and_rename(final_file_path)
-        try:
-            df_to_save.write_csv(final_file_path, separator="\t")
-            logs = f"Saved in :\n{final_file_path}"
-        except Exception as e:
-            logs = e
-        return logs
 
+        if isinstance(df_to_save, pl.DataFrame):
+            try:
+                df_to_save.write_csv(final_file_path, separator="\t")
+                logs = f"Saved in :\n{final_file_path}"
+            except Exception as e:
+                logs = e
+            return logs
+
+        if isinstance(df_to_save, pd.DataFrame):
+            try:
+                df_to_save.to_csv(final_file_path, sep="\t")
+                logs = f"Saved in :\n{final_file_path}"
+            except Exception as e:
+                logs = e
+            return logs
 
     def save_seaborn_plot(self, sns_obj, file_name):
 

@@ -301,7 +301,7 @@ def test_statistic_method():
     saved_path = Path(data.output_path, "test_save_producers_stat_test.tsv")
 
     if not saved_path.is_file():
-        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path)
+        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path, type(metabolites_production_test_dataframe))
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
