@@ -79,7 +79,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     df = data.get_bin_dataframe(condition=filter_condition)
     # METADATA filter applied here instead.
 
-    metadata = data.get_metadata()
+    metadata = data.get_metadata().to_pandas()
 
     df = df.merge(metadata, "inner", "smplID")
 
