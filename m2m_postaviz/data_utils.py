@@ -232,21 +232,6 @@ def sbml_to_classic(compounds_list):
     return uncoded
 
 
-def contribution_processing(file_opened: dict):
-    for key in file_opened.keys():  # noqa: PLC0206
-        for second_key in file_opened[key].keys():
-            file_opened[key][second_key] = sbml_to_classic(file_opened[key][second_key])
-    return file_opened
-
-
-def get_contributions(file_name, path):
-    for root, _dirs, files in path.walk():
-        if file_name in files:
-            contributions_file = open_json(Path(root, file_name))
-            contributions_file = contribution_processing(contributions_file)
-            return contributions_file
-
-
 def retrieve_all_cscope(sample, dir_path: Path, cscope_directoy: Path, cscope_file_format):
     """Retrieve iscope, cscope, added_value and contribution_of_microbes files in the path given using os.listdir().
 
@@ -501,33 +486,6 @@ def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
         metadata = open_tsv(metadata_path)
         metadata = metadata.rename(columns={metadata.columns[0]: "smplID"})
         metadata.to_parquet(Path(save_path,"metadata_dataframe_postaviz.parquet.gzip"), index= True if is_indexed_by_id(metadata) else False)
-
-
-def list_to_series(model_list: list, with_quantity: bool = True):
-    """Transform a list a compounds into a serie with the list as Serie.index and value to 1 (or more).
-
-    Args:
-        model_list (list): List of compounds
-        with_quantity (bool, optional): Instead of removing duplicate in list, add 1 to the value for each in list. Defaults to True.
-
-    Returns:
-        pd.Series: Pandas Series
-    """
-    results = {}
-    value = 1
-
-    for model in model_list:
-
-        if model not in results.keys():
-
-            results[model] = value
-        else:
-
-            if with_quantity:
-
-                results[model] += value
-
-    return pd.Series(results)
 
 
 def total_production_by_sample(save_path: Path, abundance_path: Optional[Path] = None):
