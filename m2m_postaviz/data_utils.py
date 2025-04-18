@@ -67,14 +67,10 @@ def is_valid_dir(dirpath: Path):
         return False
 
 
-def extract_tarfile(tar_file, outdir):
+def extract_tarfile(tar_file: Path, outdir):
     file = tarfile.open(tar_file, "r:gz")
-
     file.extractall(outdir, filter="data")
-    # if sys.version_info >= (3, 12):
-    # else:
-    #     tar.extractall(outdir)
-
+    
 
 def has_only_unique_value(dataframe , input1, input2: str = "None"):
     """
@@ -1126,9 +1122,9 @@ def concat_chunk(chunk_dir: Path, save_path: Path, scope_type: str):
     """Concatenation of all sub_dataframes produced.
 
     Args:
-        chunk_dir (Path): _description_
-        save_path (Path): _description_
-        scope_type (str): _description_
+        chunk_dir (Path): Directory path where the chunk are.
+        save_path (Path): Save result path
+        scope_type (str): Cscope or Iscope
     """
     filename = "producers_"+scope_type+"_dataframe.parquet.gzip"
     df = None

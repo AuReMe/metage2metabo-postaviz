@@ -13,16 +13,11 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
     USE_METACYC_PADMET : bool = False
-    # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
     ALL_FILE_NAMES = ("metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
                "taxonomic_dataframe_postaviz.tsv", "producers_cscope_dataframe.parquet.gzip", "producers_iscope_dataframe.parquet.gzip", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
-
-    # BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
-    SRC_DIR = Path(__file__).parent
-    PADMET_DIR = Path(SRC_DIR.parent, "padmet_data")
 
     def __init__(self, save_path: Path):
 

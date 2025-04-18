@@ -49,7 +49,7 @@ def main(args=None):
 
     elif arg_parser.test:
 
-        if not Path(TESTS_DIR, "palleja/").is_dir:
+        if not Path(TESTS_DIR, "palleja").is_dir():
             print("No data_test/ directory found. \nExtract test data tarfile...")
             du.extract_tarfile(data_table_filepath, TESTS_DIR)
 
