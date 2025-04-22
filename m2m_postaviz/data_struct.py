@@ -83,40 +83,19 @@ class DataStorage:
 
 
     def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
-        """Apply read parquet Pandas function on all bin dataframe chunk. columns filter and 
-        conditon are applied.
+        """Find the bin_dataframe file in the save_path of DataStorage object and read it with the condition given in args.
 
         Args:
             columns (str, optional): Columns label. Defaults to None.
             condition (Tuple, optional): Tuple of conditions. Defaults to None.
 
         Returns:
-            pd.DataFrame: The concatenated bin_dataframe.
+            pd.DataFrame: Resulting bin_dataframe.
         """
-        files = []
-        for i in self.output_path.iterdir():
-            if i.is_file() and "bin_dataframe_chunk" in i.name:
-                files.append(i)
 
-        if len(files) == 0:
-            print("No chunk of bin_dataframe has been found in directory.")
-            return None
-
-        all_df = []
-
-        for file in files:
-
-            df = self.read_parquet_with_pandas(file, col=columns, condition=condition)
-
-            if len(df) == 0:
-                continue
-
-            all_df.append(df)
-
-        if len(all_df) == 0:
-            return None
-
-        return pd.concat(all_df)
+        for file in self.output_path.iterdir():
+            if file.is_file() and file.name == "bin_dataframe.parquet.gzip":
+                return self.read_parquet_with_pandas(file, col=columns, condition=condition)
 
 
     def get_iscope_production(self, bin_id) -> list:

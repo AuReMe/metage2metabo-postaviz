@@ -275,8 +275,8 @@ def retrieve_all_iscope(sample, dir_path, iscope_directoy, iscope_file_format):
 
 
 def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_format, save_path: Path): # Need rework
-    """Open all directories given in -d path input. Get all cscopes tsv and load them in memory as pandas
-    dataframe.
+    """Open all directories given in -d path input. Get all cscopes, load and save them a dataframe in parquet.gzip format.
+    No RAM used during process that way.
 
     Args:
         path (str): Path of directory
@@ -288,7 +288,7 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
     if Path(save_path,"sample_info.json").is_file():
         return
     
-    print("Converting cscope dataframe into parquet file...")
+    print("Load/Save cscope data as parquet format...")
 
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
@@ -337,8 +337,15 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
 
 
 def load_sample_iscope_data(dir_path: Path, iscope_directory: Path, iscope_file_format):
+    """Load and save iscope data as dataframe in parquet.gzip format.
 
-    print("Converting iscope dataframe into parquet file...")
+    Args:
+        dir_path (Path): Directory path given in cli (-d)
+        iscope_directory (Path): Path of newly created save directory.
+        iscope_file_format (bool): Format to save.
+    """
+
+    print("Load/Save iscope data as parquet format...")
 
     nb_cpu = cpu_count() - 1
     if type(nb_cpu) is not int or nb_cpu < 1:
@@ -350,8 +357,6 @@ def load_sample_iscope_data(dir_path: Path, iscope_directory: Path, iscope_file_
 
     pool.close()
     pool.join()
-
-    print("Done.")
 
 
 def build_main_dataframe(save_path: Path, cscope_directory: Path):
@@ -402,8 +407,9 @@ def build_main_dataframe(save_path: Path, cscope_directory: Path):
 
 
 def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Optional[Path] = None, taxonomic_path: Optional[Path] = None, save_path: Optional[Path] = None, metacyc: Optional[Path] = None):
-    """    Main function that build all major dataframes from which the plots are generated in Shiny application.
-
+    """Main function.
+    dir_path, metadata_path and save_path are necessary.
+    
     Args:
         dir_path (Path): Directory path containing M2M output.
         metadata_path (Path): Metadata file path.
@@ -468,6 +474,8 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     iscope_cscope_fill_difference(save_path)
 
+    concat_bin_dataframe(save_path)
+
     # Metacyc database TREE
 
     if metacyc is not None:
@@ -475,7 +483,17 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
         padmet_to_tree(save_path, metacyc)
 
 
-def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
+def metadata_processing(metadata_path: Path, save_path: Path):
+    """Simple function to save the metadata as parquet file.
+    allow for dtypes change of the file in application while creating a safe copy of the original file.
+
+    Args:
+        metadata_path (Path): Path to metadata file.
+        save_path (Path): Saving path.
+
+    Returns:
+        None if file already exist in save_path.
+    """
     if file_exist("metadata_dataframe_postaviz.parquet.gzip", save_path):
         return
     else:
@@ -486,7 +504,7 @@ def metadata_processing(metadata_path: Path, save_path: Path) -> pd.DataFrame:
 
 def total_production_by_sample(save_path: Path, abundance_path: Optional[Path] = None):
     """Create and save the total production dataframe. This dataframe contain all samples in row and all compounds in columns.
-    For each samples the compounds produced by each bins is add up to get the estimated total production of compound by samples
+    For each samples the compounds produced by each bins is sum up to get the estimated total production of compound by samples
     and the number of bins who produced those compounds.
 
     If the abundance is provided, each production (1) of bins is multiplied by their abundance in their sample which gives an
@@ -772,7 +790,7 @@ def correlation_test(value_array, factor_array, factor_name, method:str = "pears
 
 
 def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
-    """Open taxonomy file and process it if in txt format.
+    """Open and save taxonomy file.
 
     Args:
         taxonomy_filepath (str): TSV or TXT format
@@ -823,29 +841,9 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
     print("Taxonomic dataframe done and saved.")
 
 
-def iscope_production(dir_path: Path, sample_info_dict: dict):
-
-    indiv_scope_path = "indiv_scopes/rev_iscope.tsv"
-    sample_info_dict["iscope"] = {}
-    # Takes first of like of sample where bin is present then get iscope production via file rev_iscope.tsv
-    for bin in sample_info_dict["bins_sample_list"].keys():
-
-        if bin in sample_info_dict["iscope"]:
-            continue
-
-        sample_used = sample_info_dict["bins_sample_list"][bin][0]
-        file_path = Path(Path(dir_path, sample_used), indiv_scope_path)
-        df = open_tsv(file_path,True,True)
-        bin_row = df.loc[bin]
-
-        sample_info_dict["iscope"][bin] = bin_row.index.tolist()
-
-    return sample_info_dict
-
-
 def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, taxonomy_path: Path = None, savepath: Path = None):
-    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, abundance, count,
-    the metadata and the taxonomic rank associated.
+    """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, the abundance fot he bin in the sample
+    and the count of production with or without abundance.
 
     Args:
         sample_info (dict): _description_
@@ -1201,3 +1199,22 @@ def iscope_cscope_fill_difference(save_path: Path):
         iscope_df = iscope_df.with_columns(pl.lit(0).alias(col))
 
     iscope_df.write_parquet(Path(save_path, "producers_iscope_dataframe.parquet.gzip"), compression="gzip")
+
+
+def concat_bin_dataframe(save_path: Path):
+
+    df = None
+
+    for file in save_path.iterdir():
+        if file.stem.startswith("bin_dataframe_chunk"):
+
+            if df is None:
+                df = pl.read_parquet(file)
+                file.unlink()
+            else:
+                tmp_df = pl.read_parquet(file)
+                df = pl.concat([df, tmp_df], how="diagonal")
+                file.unlink()
+
+    print("Size of the full bin_dataframe: ",df.estimated_size("gb")," Gb")
+    df.write_parquet(Path(save_path, "bin_dataframe.parquet.gzip"), compression="gzip")
