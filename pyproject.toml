@@ -21,6 +21,7 @@ dependencies = [
   'pyarrow',
   'seaborn',
   'polars',
+  'polars-lts-cpu',
 ]
 
 [project.scripts]

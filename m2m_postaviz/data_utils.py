@@ -729,7 +729,7 @@ def get_significance_symbol(pval: float) -> str:
 
 
 def build_pcoa_dataframe(save_path: Path) -> pd.DataFrame:
-    """Comptute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
+    """Compute Principal Coordinate Analysis from the main_dataframe given in input. Merge with metadata from the smplID column or index.
 
     Args:
         main_dataframe (pd.DataFrame): Dataframe from which the pcoa will be made.
