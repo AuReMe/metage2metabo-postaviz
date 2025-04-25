@@ -7,7 +7,6 @@ from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
 
-import m2m_postaviz.data_utils as du
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
 

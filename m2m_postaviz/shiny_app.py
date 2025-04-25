@@ -39,6 +39,12 @@ def run_shiny(data: DataStorage):
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
+    cpds_reached = ui.card(
+        ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
+        ui.card(output_widget("cpd_reach_plot"), full_screen=True)
+    )
+
+
     total_production_plot = ui.card(
         ui.card_header("Total production of all compound, weighted with the abundance if provided."),
         ui.layout_sidebar(
@@ -107,13 +113,10 @@ def run_shiny(data: DataStorage):
 
                 fill=False,
                 ),
+                cpds_reached,
                 total_production_plot,
                 pcoa_module_ui("module_pcoa", data)
                 ),
-
-            # ui.nav_panel("PCOA",
-                
-            # ),
 
             ui.nav_panel("Taxonomy-based exploration",
                 bin_exp_ui("module_bin_exp", data)
@@ -137,6 +140,11 @@ def run_shiny(data: DataStorage):
         bin_exp_server("module_bin_exp", data)
 
         pcoa_module_server("module_pcoa", data)
+
+
+        @render_widget
+        def cpd_reach_plot():
+            return sm.cpd_reached_plot(data, input.cpd_reach_input())
 
         @render.text
         def unique_total_bin_count():

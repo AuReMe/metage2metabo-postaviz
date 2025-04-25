@@ -18,6 +18,51 @@ from skbio.stats.ordination import pcoa
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
+def cpd_reached_plot(data: DataStorage, metadata_input: str):
+    """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
+    The plot can be grouped by the metadata.
+    Args:
+        data (DataStorage): DataStorage object.
+        metadata_input (str): Metadata column label.
+
+    Returns:
+        plotly.express.boxplot: Plotly boxplot
+    """
+    total_cpd = len(data.get_compound_list())
+
+    # Comm_reach
+    df = data.get_cscope_producers_dataframe(with_metadata=False)
+    df = df.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
+    df = df.unpivot(index=["smplID"],value_name="Comm_reached")
+    df = df.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
+    df = df.select("smplID", "Comm_reached")
+    df = df.group_by("smplID").agg(pl.mean("Comm_reached").cast(pl.Int32))
+    
+    df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
+    df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
+
+    # Ind_reach
+    dfi = data.get_iscope_producers_dataframe(with_metadata=False)
+    dfi = dfi.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
+    dfi = dfi.unpivot(index=["smplID"],value_name="Ind_reached")
+    dfi = dfi.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
+    dfi = dfi.select("smplID", "Ind_reached")
+    dfi = dfi.group_by("smplID").agg(pl.mean("Ind_reached").cast(pl.Int32))
+
+    df = df.join(dfi, on="smplID")
+
+    if metadata_input == "None" or metadata_input == "smplID":
+
+        df = df.unpivot(index=["smplID"])
+        return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
+
+    else:
+
+        metadata = data.get_metadata().select("smplID",metadata_input)
+        df = df.join(metadata, on ="smplID")
+        df = df.unpivot(index=["smplID",metadata_input])
+        return px.box(df, x=metadata_input,y="value",color="variable")
+
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
     """Takes inputs from shiny application to return 3 ploty objects:
