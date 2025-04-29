@@ -10,7 +10,6 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-import polars as pl
 from pathlib import Path
 from padmet.classes import PadmetRef
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
@@ -20,6 +19,19 @@ from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
+try:
+  import polars as pl
+
+except Exception as e:
+  print(e)
+  print("CALLING subprocess to uninstall polars and polars-lts-cpu. Then reinstall polars-lts-cpu.")
+  
+  import subprocess
+  import sys
+
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars"])
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])
+  subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])
 
 def file_exist(filename: str, directory_path: Path) -> bool:
 
