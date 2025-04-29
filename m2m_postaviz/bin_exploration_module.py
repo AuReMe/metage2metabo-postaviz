@@ -42,9 +42,9 @@ def bin_exp_ui(Data: DataStorage):
                     gap=35,
                     bg="lightgrey"
                 ),
-                ui.card(output_widget("bin_unique_count_histplot"),full_screen=True),
-                ui.card(output_widget("bin_boxplot_count"),full_screen=True),
-                ui.card(output_widget("bin_abundance_plot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes."),output_widget("bin_unique_count_histplot"),full_screen=True),
+                # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
+                ui.card(ui.card_header("Respective abundance of taxa/metagenomes in their sample."),output_widget("bin_abundance_plot"),full_screen=True),
             )
         ),full_screen=True)
 

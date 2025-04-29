@@ -22,6 +22,20 @@ import m2m_postaviz.shiny_app as sh
 from pathlib import Path
 from m2m_postaviz.data_struct import DataStorage
 
+try:
+  import polars as pl
+
+except Exception as e:
+  print(e)
+  print("CALLING subprocess to uninstall polars and polars-lts-cpu. Then reinstall polars-lts-cpu.")
+  
+  import subprocess
+  import sys
+
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars"])
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])
+  subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])
+
 parser = argparse.ArgumentParser()
 parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
