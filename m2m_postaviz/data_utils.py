@@ -115,12 +115,13 @@ def has_only_unique_value(dataframe , input1, input2: str = "None"):
             return True if nb_row == len(dataframe[input1].unique()) and nb_row == len(dataframe[input2].unique()) else False
 
 
-def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directory: Path) -> pd.DataFrame:
+def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
     """Generate a second main_dataframe with the production based on weight from the abundance matrix.
 
     Args:
-        abundance_matrix (pd.DataFrame): abundance matrix given in input.
-        sample_cscope (dict): Dictionnary of sample's cscopes.
+        abundance_matrix (Path): Pathlib Path of the abundance file.
+        sample_cscope (Path): Pathlib Path of the cscope directory.
+        save_path (Path): Pathlib Path of the output directory.
 
     Raises:
         RuntimeError: If more than one column of type other than INT.
@@ -133,57 +134,46 @@ def relative_abundance_calc(abundance_path: str, save_path: Path, cscope_directo
         print("normalised_abundance_dataframe already exist in save directory.")
         return
 
-    print("Building main dataframe weighted with abundance...")
+    abundance_df = pd.read_csv(abundance_path, sep="\t").reset_index(names="pd_index")
+    abundance_df = pl.DataFrame(abundance_df)
 
-    abundance_matrix = open_tsv(abundance_path)
+    if abundance_df.get_column("pd_index").dtype == pl.Int64:
+        abundance_df = abundance_df.drop("pd_index")
 
-    smpl_norm_abundance = []
-    smpl_norm_index = []
+    non_numeric_col = abundance_df.select(pl.col(pl.String)).columns
 
-    # Checking if all column are INT type, if one is not its used as index, if more than 1 raise RuntimeERROR.
-    str_filter = abundance_matrix.select_dtypes(include=["string","object","category"])
+    if len(non_numeric_col) == 1:
+        abundance_df = abundance_df.with_columns(pl.col(non_numeric_col[0]).alias("smplID")).drop(non_numeric_col[0])
+    else:
+        raise RuntimeError(f"The numbers of non numeric columns ({len(non_numeric_col)}) isn't equal to one.\n Only one STR column must be present in the abundance dataframe to be used as index")
 
-    if len(str_filter.columns) == 1:
-        index_column = str_filter.columns.values[0]
-        print(index_column, "column used as index")
-        abundance_matrix.set_index(index_column,drop=True,inplace=True)
-        abundance_matrix.index.name = "binID"
-
-    elif len(str_filter.columns) > 1:
-        raise RuntimeError("More than one non-numeric columns in abundance dataframe.")
-        
-
-    # Normalisation
-    abundance_matrix_normalised = abundance_matrix.apply(lambda x: x / x.sum(), axis=0)
-
-    # For all sample's cscopes, multiply each row (bin's production) by the normalised abundance matrix.
-    for sample_filename in cscope_directory.iterdir():
-
-        sample_id = sample_filename.name.split(".parquet")[0]
-
-        sample_matrix = pd.read_parquet(Path(cscope_directory, sample_filename))
-
-        if not is_indexed_by_id(sample_matrix):
-            sample_matrix.set_index("smplID", inplace=True)
-
-        sample_matrix = sample_matrix.apply(lambda row: row * abundance_matrix_normalised.at[row.name, sample_id], axis=1)  # noqa: B023
-        sample_matrix = sample_matrix.apply(lambda col: col.to_numpy().sum(), axis=0)
-        sample_matrix.name = sample_id
-
-        smpl_norm_abundance.append(sample_matrix)
-        smpl_norm_index.append(str(sample_id))
-
-    main_dataframe_abundance_weigthed = pd.concat(smpl_norm_abundance,axis=1)
-    main_dataframe_abundance_weigthed.fillna(0, inplace=True)
-    main_dataframe_abundance_weigthed = main_dataframe_abundance_weigthed.T
-    main_dataframe_abundance_weigthed.index.name = "smplID"
-
-    main_dataframe_abundance_weigthed.to_csv(Path(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+    abundance_matrix = abundance_df.to_pandas().set_index("smplID")
     abundance_matrix.to_csv(Path(save_path,"abundance_file.tsv"),sep="\t")
 
+    abundance_df = abundance_df.with_columns((pl.col(col)/pl.col(col).sum()).round(7) for col in abundance_df.select(pl.exclude("smplID")).columns)
+
+    abundance_matrix_normalised = abundance_df.to_pandas().set_index("smplID")
     abundance_matrix_normalised.to_csv(Path(save_path,"abundance_file_normalised.tsv"),sep="\t")
 
-    print("Abundance dataframes done and saved.")
+    res = []
+
+    for sample_path in cscope_dir.iterdir():
+
+        sample_id = sample_path.name.split(".parquet")[0]
+        sample_data = pl.read_parquet(sample_path)
+        tmp_abundance_df = abundance_df.select(["smplID",sample_id])
+
+        sample_df = sample_data.transpose(include_header=True, header_name="Compounds", column_names="smplID")
+        sample_df = sample_df.with_columns(pl.col(col).mul(tmp_abundance_df.filter(pl.col("smplID") == col).get_column(sample_id).item()).name.keep() for col in sample_df.select(pl.exclude("Compounds")).columns)
+        sample_df = sample_df.transpose(include_header=True, header_name="smplID", column_names="Compounds")
+        sample_df = sample_df.sum().with_columns(pl.col("smplID").fill_null(sample_id))
+        res.append(sample_df)
+
+    final_df = pl.concat(res, how='diagonal').fill_null(0)
+    final_df = final_df.to_pandas()
+    final_df.set_index("smplID", inplace=True)
+    final_df.to_csv(Path(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
+    print("Abundance done.")
 
 
 def open_added_value(file_name, path: Path):
@@ -462,7 +452,7 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     if abundance_path is not None:
 
-        relative_abundance_calc(abundance_path, save_path, cscope_directory)
+        relative_abundance(abundance_path, save_path, cscope_directory)
 
     if taxonomic_path is not None:
 
