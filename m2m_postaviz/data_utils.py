@@ -33,6 +33,8 @@ except Exception as e:
   subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])
   subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])
 
+  import polars as pl
+
 def file_exist(filename: str, directory_path: Path) -> bool:
 
     for file in directory_path.iterdir():
