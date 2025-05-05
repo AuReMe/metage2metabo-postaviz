@@ -20,9 +20,11 @@ dependencies = [
   'scikit-bio',
   'pyarrow',
   'seaborn',
-  'polars',
-  'polars-lts-cpu',
 ]
+
+[project.optional-dependencies]
+cpu = ["polars"]
+lts-cpu = ["polars-lts-cpu"]
 
 [project.scripts]
 m2m_postaviz = "m2m_postaviz.cli:main"

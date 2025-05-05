@@ -5,10 +5,7 @@ from shiny import reactive
 from shiny import render
 from shiny import run_app
 from shiny import ui
-from shinywidgets import output_widget
-from shinywidgets import render_widget
 
-import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.bin_exploration_module import bin_exp_server
 from m2m_postaviz.bin_exploration_module import bin_exp_ui
 from m2m_postaviz.cpd_exploration_module import cpd_tab_server
@@ -81,85 +78,6 @@ def run_shiny(data: DataStorage):
         bin_exp_server("module_bin_exp", data)
 
         overview_module_server("module_pcoa", data)
-
-
-        @render_widget
-        def cpd_reach_plot():
-            return sm.cpd_reached_plot(data, input.cpd_reach_input())
-
-        @render.text
-        def unique_total_bin_count():
-            return data.get_total_unique_bins_count()
-
-        @render.text
-        def total_samples_count():
-            return str(data.get_main_dataframe().shape[0])
-
-        @render.text
-        def total_unique_cpd():
-            return str(data.get_main_dataframe().shape[1])
-
-        @render.data_frame
-        def production_test_dataframe():
-
-            return sm.global_production_statistical_dataframe(data, input.prod_inputx1(),
-                                                              input.prod_inputx2(),
-                                                              input.multiple_correction_global_plot(),
-                                                              input.multiple_test_method_global(),
-                                                              input.prod_norm())
-
-        @render.text
-        @reactive.event(input.export_global_production_test_button)
-        def export_global_production_test_dataframe():
-
-            if bool(all_dataframe):
-                if all_dataframe["global_production_test_dataframe"] is not None:
-                   log = data.save_dataframe(all_dataframe["global_production_test_dataframe"], "global_production_test_dataframe")
-                else:
-                    log = "Unable to find any dataframe to save."
-
-            return log
-
-        @render.text
-        @reactive.event(input.export_metabolites_test_button)
-        def export_metabolites_test_dataframe_txt():
-
-            if bool(all_dataframe):
-                if all_dataframe["metabolites_production_test_dataframe"] is not None:
-                   log = data.save_dataframe(all_dataframe["metabolites_production_test_dataframe"], "metabolites_production_test_dataframe")
-                else:
-                    log = "Unable to find any dataframe to save."
-
-            return log
-
-        @render.text
-        @reactive.event(input.export_metabolites_plot_button)
-        def export_metabolites_plot_dataframe_txt():
-
-            if bool(all_dataframe):
-                if all_dataframe["metabolites_production_plot_dataframe"] is not None:
-                   log = data.save_dataframe(all_dataframe["metabolites_production_plot_dataframe"], "metabolites_production_plot_dataframe")
-                else:
-                    log = "Unable to find any dataframe to save."
-
-            return log
-
-        @render.text
-        @reactive.event(input.export_global_production_plot_dataframe_button)
-        def export_global_production_plot_dataframe_txt():
-
-            if bool(all_dataframe):
-                if all_dataframe["global_production_plot_dataframe"] is not None:
-                    log = data.save_dataframe(all_dataframe["global_production_plot_dataframe"], "producer_plot_dataframe")
-                else:
-                    log = "Unable to find any dataframe to save."
-
-            return log
-
-        @render_widget
-        def total_production_plot():
-
-            return sm.render_reactive_total_production_plot(data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
         @render.data_frame
         def metadata_table():
