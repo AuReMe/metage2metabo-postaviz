@@ -12,10 +12,49 @@ from m2m_postaviz.data_struct import DataStorage
 
 
 @module.ui
-def pcoa_module_ui(Data: DataStorage):
+def overview_module_ui(Data: DataStorage):
+
+    # all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
+
+    factor_list = Data.get_factors()
+    factor_list.insert(0, "None")
 
     metadata_label = Data.get_factors()
     metadata_label.remove("smplID")
+
+    cpds_reached = ui.card(
+        ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
+        ui.card(output_widget("cpd_reach_plot"), full_screen=True)
+    )
+
+    total_production_plot = ui.card(
+    ui.card_header("Total production of all compound, weighted with the abundance if provided."),
+    ui.layout_sidebar(
+        ui.sidebar(
+            ui.input_select("prod_inputx1", "Label for X axis", factor_list),
+            ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
+
+            ui.input_checkbox("prod_norm", "Abundance data"),
+            ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
+            ui.panel_conditional("input.multiple_correction_global_plot",ui.input_select("multiple_test_method_global","Method",
+                                                                                                    ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
+                                                                                                    selected="bonferroni",)),
+
+            ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
+            ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
+            ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
+            ui.output_text_verbatim("export_global_production_test_dataframe", True),
+            width=350,
+            gap=30,
+        ),
+
+        ui.card(ui.p(output_widget("total_production_plot")),full_screen=True),
+
+        ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
+
+    ),
+    full_screen=True
+    )
 
     pcoa_card = ui.card(ui.card_header("Principal Coordinates Analysis made with all samples. Change color input to see different clusters."),
         ui.layout_sidebar(
@@ -54,11 +93,93 @@ def pcoa_module_ui(Data: DataStorage):
         full_screen=True,
         min_height="600px"
     )
+    global_overview = ui.card(
+        ui.layout_column_wrap(
 
-    return pcoa_card, custom_pcoa_card
+            ui.value_box(
+                "Numbers of unique metabolic network:",
+                ui.output_text("unique_total_bin_count"),
+                theme="bg-gradient-indigo-purple",
+            ),
+
+            ui.value_box(
+                "Numbers of samples:",
+                ui.output_text("total_samples_count"),
+                theme="cyan",
+            ),
+
+            ui.value_box(
+                "Numbers of unique compounds produced:",
+                ui.output_text("total_unique_cpd"),
+                theme="bg-gradient-blue-purple",
+            ),
+
+            fill=False,
+            ),
+            cpds_reached,
+            total_production_plot,
+    )
+        
+    return global_overview, pcoa_card, custom_pcoa_card
 
 @module.server
-def pcoa_module_server(input, output, session, Data: DataStorage):
+def overview_module_server(input, output, session, Data: DataStorage):
+
+
+    # @render.text
+    # @reactive.event(input.export_global_production_test_button)
+    # def export_global_production_test_dataframe():
+
+    #     if bool(all_dataframe):
+    #         if all_dataframe["global_production_test_dataframe"] is not None:
+    #             log = data.save_dataframe(all_dataframe["global_production_test_dataframe"], "global_production_test_dataframe")
+    #         else:
+    #             log = "Unable to find any dataframe to save."
+
+    #     return log
+
+    # @render.text
+    # @reactive.event(input.export_global_production_plot_dataframe_button)
+    # def export_global_production_plot_dataframe_txt():
+
+    #     if bool(all_dataframe):
+    #         if all_dataframe["global_production_plot_dataframe"] is not None:
+    #             log = data.save_dataframe(all_dataframe["global_production_plot_dataframe"], "producer_plot_dataframe")
+    #         else:
+    #             log = "Unable to find any dataframe to save."
+
+    #     return log
+
+    @render_widget
+    def total_production_plot():
+
+        return sm.render_reactive_total_production_plot(Data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
+
+
+    @render.data_frame
+    def production_test_dataframe():
+
+        return sm.global_production_statistical_dataframe(Data, input.prod_inputx1(),
+                                                            input.prod_inputx2(),
+                                                            input.multiple_correction_global_plot(),
+                                                            input.multiple_test_method_global(),
+                                                            input.prod_norm())
+
+    @render_widget
+    def cpd_reach_plot():
+        return sm.cpd_reached_plot(Data, input.cpd_reach_input())
+
+    @render.text
+    def unique_total_bin_count():
+        return Data.get_total_unique_bins_count()
+
+    @render.text
+    def total_samples_count():
+        return str(Data.get_main_dataframe().shape[0])
+
+    @render.text
+    def total_unique_cpd():
+        return str(Data.get_main_dataframe().shape[1])
 
     @render.text
     def display_warning_pcoa():
@@ -148,3 +269,4 @@ def pcoa_module_server(input, output, session, Data: DataStorage):
 
             return ui.TagList(
                         ui.input_slider("pcoa_slider", "Set min/max filter:", min=values.min(), max=values.max(), value=[values.min(),values.max()]),)
+

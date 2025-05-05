@@ -14,8 +14,8 @@ from m2m_postaviz.bin_exploration_module import bin_exp_ui
 from m2m_postaviz.cpd_exploration_module import cpd_tab_server
 from m2m_postaviz.cpd_exploration_module import cpd_tab_ui
 from m2m_postaviz.data_struct import DataStorage
-from m2m_postaviz.pcoa_module import pcoa_module_server
-from m2m_postaviz.pcoa_module import pcoa_module_ui
+from m2m_postaviz.overview_module import overview_module_server
+from m2m_postaviz.overview_module import overview_module_ui
 
 
 def run_shiny(data: DataStorage):
@@ -39,41 +39,6 @@ def run_shiny(data: DataStorage):
 
     ### ALL CARD OBJECT TO BE ARRANGED ###
 
-    cpds_reached = ui.card(
-        ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
-        ui.card(output_widget("cpd_reach_plot"), full_screen=True)
-    )
-
-
-    total_production_plot = ui.card(
-        ui.card_header("Total production of all compound, weighted with the abundance if provided."),
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_select("prod_inputx1", "Label for X axis", factor_list),
-                ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
-
-                ui.input_checkbox("prod_norm", "Abundance data"),
-                ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
-                ui.panel_conditional("input.multiple_correction_global_plot",ui.input_select("multiple_test_method_global","Method",
-                                                                                                     ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
-                                                                                                     selected="bonferroni",)),
-
-                ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
-                ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
-                ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
-                ui.output_text_verbatim("export_global_production_test_dataframe", True),
-                width=350,
-                gap=30,
-            ),
-
-            ui.card(ui.p(output_widget("total_production_plot")),full_screen=True),
-
-            ui.card(ui.output_data_frame("production_test_dataframe"),full_screen=True)
-
-        ),
-        full_screen=True
-        )
-
     metadata_table = ui.card(
         ui.layout_sidebar(
             ui.sidebar(
@@ -91,32 +56,8 @@ def run_shiny(data: DataStorage):
     app_ui = ui.page_fillable(
         ui.navset_tab(
             ui.nav_panel("Overview",
-                ui.layout_column_wrap(
-
-                    ui.value_box(
-                        "Numbers of unique metabolic network:",
-                        ui.output_text("unique_total_bin_count"),
-                        theme="bg-gradient-indigo-purple",
-                    ),
-
-                    ui.value_box(
-                        "Numbers of samples:",
-                        ui.output_text("total_samples_count"),
-                        theme="cyan",
-                    ),
-
-                    ui.value_box(
-                        "Numbers of unique compounds produced:",
-                        ui.output_text("total_unique_cpd"),
-                        theme="bg-gradient-blue-purple",
-                    ),
-
-                fill=False,
-                ),
-                cpds_reached,
-                total_production_plot,
-                pcoa_module_ui("module_pcoa", data)
-                ),
+                overview_module_ui("module_pcoa", data)
+            ),
 
             ui.nav_panel("Taxonomy-based exploration",
                 bin_exp_ui("module_bin_exp", data)
@@ -139,7 +80,7 @@ def run_shiny(data: DataStorage):
 
         bin_exp_server("module_bin_exp", data)
 
-        pcoa_module_server("module_pcoa", data)
+        overview_module_server("module_pcoa", data)
 
 
         @render_widget
