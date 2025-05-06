@@ -19,13 +19,6 @@ def run_shiny(data: DataStorage):
 
     warnings.filterwarnings("ignore", category=FutureWarning, module="plotly.express")
 
-    factor_list = data.get_factors()
-    factor_list.insert(0, "None")
-
-    factor_list_no_smpl = data.get_factors()
-    factor_list_no_smpl.remove("smplID")
-    factor_list_no_smpl.insert(0, "None")
-
     metadata_label = data.get_factors(with_dtype=True)
 
     if data.HAS_TAXONOMIC_DATA:
