@@ -61,7 +61,14 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         metadata = data.get_metadata().select("smplID",metadata_input)
         df = df.join(metadata, on ="smplID")
         df = df.unpivot(index=["smplID",metadata_input])
-        return px.box(df, x=metadata_input,y="value",color="variable")
+
+        if df.get_column(metadata_input).dtype.is_numeric():
+            df = df.sort(metadata_input)
+
+        fig = px.box(df, x=metadata_input,y="value",color="variable")
+        fig.update_xaxes(type='category')
+
+        return fig 
 
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
@@ -422,14 +429,15 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
 
     if user_input1 == "None":
 
-        # all_dataframe["global_production_plot_dataframe"] = df
         return px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
 
     elif user_input2 == "None" or user_input1 == user_input2:
 
+        if is_numeric_dtype(df[user_input1]):
+            df.sort_values(user_input1, inplace=True)
+
         df = df[[column_value,user_input1]]
         df = df.dropna()
-        # all_dataframe["global_production_plot_dataframe"] = df
 
         if du.has_only_unique_value(df, user_input1):
 
@@ -438,16 +446,23 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         else:
 
             fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Numbers of unique compounds produced by samples filtered by {user_input1}")
+            fig.update_xaxes(type='category')
             return fig
 
     else:
 
+        if is_numeric_dtype(df[user_input1]):
+            df.sort_values(user_input1, inplace=True)
+
         df = df[[column_value,user_input1,user_input2]]
         df = df.dropna()
-        # all_dataframe["global_production_plot_dataframe"] = df
         has_unique_value = du.has_only_unique_value(df, user_input1, user_input2)
-
-        return px.bar(df,x=user_input1,y=column_value,color=user_input2) if has_unique_value else px.box(df,x=user_input1,y=column_value,color=user_input2)
+        if has_unique_value:
+            fig = px.bar(df,x=user_input1,y=column_value,color=user_input2)
+        else:
+            fig = px.box(df,x=user_input1,y=column_value,color=user_input2)
+            fig.update_xaxes(type='category')
+        return fig
 
 
 def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):
@@ -483,7 +498,6 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             has_unique_value = du.has_only_unique_value(df, color_input)
 
             if has_unique_value:
-
                 fig = px.bar(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
             else:
                 fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
@@ -495,6 +509,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         df = producer_data.select([*compounds_input,user_input1])
         df = df.drop_nulls()
 
+        if is_numeric_dtype(df[user_input1]):
+            df.sort_values(user_input1, inplace=True)
+
         has_unique_value = du.has_only_unique_value(df, user_input1)
 
         if df.get_column(user_input1).dtype.is_numeric():
@@ -504,30 +521,30 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
         if has_unique_value:
-
             fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
         else:
             fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
-
+            fig.update_xaxes(type='category')
         return fig
 
     df = producer_data.select([*compounds_input,user_input1,color_input])
     df = df.drop_nulls()
 
+    if is_numeric_dtype(df[user_input1]):
+        df.sort_values(user_input1, inplace=True)
+    
     has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
 
     if df.get_column(user_input1).dtype.is_numeric():
-
         df = df.sort(user_input1)
-
         df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
     if has_unique_value:
-
         fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+        fig.update_xaxes(type='category')
     else:
         fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
-
+        fig.update_xaxes(type='category')
     return fig
 
 

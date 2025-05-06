@@ -1111,6 +1111,7 @@ def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
 
     return cpd_index[cpd_list_index]
 
+
 def get_cpd_index(cpd_index: pd.Series, cpd_list_label):
 
     return cpd_index.index[cpd_index.isin(cpd_list_label)].tolist()
