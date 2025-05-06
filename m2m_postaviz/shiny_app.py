@@ -32,10 +32,6 @@ def run_shiny(data: DataStorage):
         taxonomic_rank = data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
 
-    all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
-
-    ### ALL CARD OBJECT TO BE ARRANGED ###
-
     metadata_table = ui.card(
         ui.layout_sidebar(
             ui.sidebar(

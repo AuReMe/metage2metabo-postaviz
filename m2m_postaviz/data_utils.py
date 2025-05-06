@@ -36,13 +36,9 @@ except Exception as e:
   import polars as pl
 
 def file_exist(filename: str, directory_path: Path) -> bool:
-
     for file in directory_path.iterdir():
-
         if filename == file.name:
-
             return True
-        
     return False
 
 
@@ -133,28 +129,28 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
     if file_exist("normalised_abundance_dataframe_postaviz.tsv", save_path) and file_exist("abundance_file.tsv", save_path):
         print("normalised_abundance_dataframe already exist in save directory.")
         return
-
+    # Read csv with pandas to avoid Polars schema lenght limit. Reset index and transform to polars.
     abundance_df = pd.read_csv(abundance_path, sep="\t").reset_index(names="pd_index")
     abundance_df = pl.DataFrame(abundance_df)
-
+    # Check to see if reset index produced a default Int64 index. If yes remove it.
     if abundance_df.get_column("pd_index").dtype == pl.Int64:
         abundance_df = abundance_df.drop("pd_index")
-
+    # The list of columns dtype String MAYBE NON NUMERIC ?
     non_numeric_col = abundance_df.select(pl.col(pl.String)).columns
-
+    # Only one column should be Str dtype. (indentifier column)
     if len(non_numeric_col) == 1:
         abundance_df = abundance_df.with_columns(pl.col(non_numeric_col[0]).alias("smplID")).drop(non_numeric_col[0])
     else:
-        raise RuntimeError(f"The numbers of non numeric columns ({len(non_numeric_col)}) isn't equal to one.\n Only one STR column must be present in the abundance dataframe to be used as index")
-
+        raise RuntimeError(f"The numbers of non numeric columns ({len(non_numeric_col)}) isn't equal to one.\n Only one STR column must be present in the abundance dataframe to be used as identifier index.")
+    # Abundance_file.tsv needed in another function. Save with pandas index.
     abundance_matrix = abundance_df.to_pandas().set_index("smplID")
     abundance_matrix.to_csv(Path(save_path,"abundance_file.tsv"),sep="\t")
-
+    # Loop replacing Pandas apply and to normalise dataframe.
     abundance_df = abundance_df.with_columns((pl.col(col)/pl.col(col).sum()).round(7) for col in abundance_df.select(pl.exclude("smplID")).columns)
-
+    # Abundance_file_normalised needed in another function. Save it with pandas.
     abundance_matrix_normalised = abundance_df.to_pandas().set_index("smplID")
     abundance_matrix_normalised.to_csv(Path(save_path,"abundance_file_normalised.tsv"),sep="\t")
-
+    # List filled with one rows dataframe from each samples.
     res = []
 
     for sample_path in cscope_dir.iterdir():
@@ -162,7 +158,7 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
         sample_id = sample_path.name.split(".parquet")[0]
         sample_data = pl.read_parquet(sample_path)
         tmp_abundance_df = abundance_df.select(["smplID",sample_id])
-
+        # Polars seems to work best on column due to pyarrow.
         sample_df = sample_data.transpose(include_header=True, header_name="Compounds", column_names="smplID")
         sample_df = sample_df.with_columns(pl.col(col).mul(tmp_abundance_df.filter(pl.col("smplID") == col).get_column(sample_id).item()).name.keep() for col in sample_df.select(pl.exclude("Compounds")).columns)
         sample_df = sample_df.transpose(include_header=True, header_name="smplID", column_names="Compounds")
