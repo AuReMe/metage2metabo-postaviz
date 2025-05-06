@@ -5,7 +5,7 @@ from m2m_postaviz.lineage import Lineage
 import time
 import pandas as pd
 import seaborn as sns
-
+import polars as pl
 
 class DataStorage:
 
@@ -13,16 +13,11 @@ class DataStorage:
     HAS_TAXONOMIC_DATA : bool = False
     HAS_ABUNDANCE_DATA : bool = False
     USE_METACYC_PADMET : bool = False
-    # SAMPLES_DIRNAME = "all_samples_dataframe_postaviz"
     JSON_FILENAME = "sample_info.json"
     ABUNDANCE_FILE = "abundance_file.tsv"
     ALL_FILE_NAMES = ("metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv", "normalised_abundance_dataframe_postaviz.tsv",
-               "taxonomic_dataframe_postaviz.tsv", "producers_dataframe_postaviz.tsv", "producers_iscope_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+               "taxonomic_dataframe_postaviz.tsv", "producers_cscope_dataframe.parquet.gzip", "producers_iscope_dataframe.parquet.gzip", "total_production_dataframe_postaviz.tsv",
                 "pcoa_dataframe_postaviz.tsv", "abundance_file.tsv", "sample_info.json", "padmet_compounds_category_tree.json")
-
-    # BIN_DATAFRAME_PARQUET_FILE = "bin_dataframe.parquet.gzip"
-    SRC_DIR = Path(__file__).parent
-    PADMET_DIR = Path(SRC_DIR.parent, "padmet_data")
 
     def __init__(self, save_path: Path):
 
@@ -58,7 +53,7 @@ class DataStorage:
 
         for root, _dirname, filename in self.output_path.walk():
             if key in filename:
-                return pd.read_csv(Path(root,key),sep="\t")
+                return pl.read_csv(Path(root,key),separator="\t")
 
 
     def read_parquet_with_pandas(self, path: Path, col: Optional[list] = None, condition: Optional[list] = None) -> pd.DataFrame:
@@ -88,84 +83,19 @@ class DataStorage:
 
 
     def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
-        """Apply read parquet Pandas function on all bin dataframe chunk. columns filter and 
-        conditon are applied.
+        """Find the bin_dataframe file in the save_path of DataStorage object and read it with the condition given in args.
 
         Args:
             columns (str, optional): Columns label. Defaults to None.
             condition (Tuple, optional): Tuple of conditions. Defaults to None.
 
         Returns:
-            pd.DataFrame: The concatenated bin_dataframe.
+            pd.DataFrame: Resulting bin_dataframe.
         """
-        files = []
-        for i in self.output_path.iterdir():
-            if i.is_file() and "bin_dataframe_chunk" in i.name:
-                files.append(i)
 
-        if len(files) == 0:
-            print("No chunk of bin_dataframe has been found in directory.")
-            return None
-
-        all_df = []
-
-        for file in files:
-
-            df = self.read_parquet_with_pandas(Path(self.output_path, file), col=columns, condition=condition)
-
-            if len(df) == 0:
-                continue
-
-            all_df.append(df)
-
-        if len(all_df) == 0:
-            return None
-
-        return pd.concat(all_df)
-
-
-    # def get_minimal_cpd_dataframe(self, compound) -> pd.DataFrame:
-
-    #     cpd_conditon = [(compound, "=", 1.0)]
-    #     col = ["binID", "smplID", compound]
-
-    #     files = []
-    #     for i in os.listdir(self.output_path):
-    #         if os.path.isfile(os.path.join(self.output_path,i)) and "cpd_" in i:
-    #             files.append(i)
-
-    #     if len(files) == 0:
-    #         print("No chunk of cpd_dataframe has been found in directory.")
-    #         return None
-
-    #     cscope_dataframe = []
-    #     iscope_dataframe = []
-
-    #     # Get separate dataframe for each cpd.
-
-    #     for file in files:
-
-    #         df = self.read_parquet_with_pandas(os.path.join(self.output_path, file), col=col, condition=cpd_conditon)
-
-    #         if len(df) == 0:
-    #             continue
-
-    #         if "cpd_cscope" in file:
-
-    #             cscope_dataframe.append(df)
-
-    #         if "cpd_iscope" in file:
-
-    #             iscope_dataframe.append(df)
-
-    #     if len(cscope_dataframe) == 0:
-    #         return None
-
-    #     dfc = pd.concat(cscope_dataframe).reset_index()
-
-    #     dfi = pd.concat(iscope_dataframe).reset_index()
-
-    #     return dfc, dfi
+        for file in self.output_path.iterdir():
+            if file.is_file() and file.name == "bin_dataframe.parquet.gzip":
+                return self.read_parquet_with_pandas(file, col=columns, condition=condition)
 
 
     def get_iscope_production(self, bin_id) -> list:
@@ -200,46 +130,46 @@ class DataStorage:
         return self.open_tsv(key="abundance_file.tsv") if self.HAS_ABUNDANCE_DATA else None
 
 
-    def get_global_production_dataframe(self) -> pd.DataFrame:
+    def get_global_production_dataframe(self) -> pl.DataFrame:
         return self.open_tsv(key="total_production_dataframe_postaviz.tsv")
 
 
-    def get_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
+    def get_cscope_producers_dataframe(self, col = None, with_metadata = True) -> pl.DataFrame:
 
-        df = self.open_tsv(key="producers_dataframe_postaviz.tsv")
-
-        if with_metadata:
-
-            metadata = self.get_metadata()
-            df = df.merge(metadata,"inner","smplID")
-
-        return df
-
-
-    def get_iscope_metabolite_production_dataframe(self, with_metadata = True) -> pd.DataFrame:
-
-        df = self.open_tsv(key="producers_iscope_dataframe_postaviz.tsv")
+        df = pl.read_parquet(Path(self.output_path, "producers_cscope_dataframe.parquet.gzip"), columns=col)
 
         if with_metadata:
 
             metadata = self.get_metadata()
-            df = df.merge(metadata,"inner","smplID")
+            df = df.join(metadata,"smplID",how="left")
 
         return df
 
 
-    def get_main_dataframe(self) -> pd.DataFrame:
+    def get_iscope_producers_dataframe(self, col = None, with_metadata = True) -> pl.DataFrame:
+
+        df = pl.read_parquet(Path(self.output_path, "producers_iscope_dataframe.parquet.gzip"), columns=col)
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.join(metadata,"smplID",how="left")
+
+        return df
+
+
+    def get_main_dataframe(self) -> pl.DataFrame:
         return self.open_tsv(key="main_dataframe_postaviz.tsv")
 
 
-    def get_metadata(self) -> pd.DataFrame:
+    def get_metadata(self) -> pl.DataFrame:
 
         metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
-        return pd.read_parquet(metadata_path)
+        return pl.read_parquet(metadata_path)
 
 
-    def get_pcoa_dataframe(self) -> pd.DataFrame:
+    def get_pcoa_dataframe(self) -> pl.DataFrame:
         return self.open_tsv(key="pcoa_dataframe_postaviz.tsv")
 
 
@@ -247,30 +177,31 @@ class DataStorage:
         return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
 
-    def set_metadata(self, new_metadata: pd.DataFrame):
+    def set_metadata(self, new_metadata: pl.DataFrame):
 
         metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
-        new_metadata.to_parquet(metadata_path, compression="gzip")
+        new_metadata.write_parquet(metadata_path, compression="gzip")
 
-    def get_taxonomic_dataframe(self) -> pd.DataFrame:
+
+    def get_taxonomic_dataframe(self) -> pl.DataFrame:
         if not self.HAS_TAXONOMIC_DATA:
             return None
         else:
             return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
 
-    def get_normalised_abundance_dataframe(self) -> pd.DataFrame:
+    def get_normalised_abundance_dataframe(self) -> pl.DataFrame:
         return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
 
 
-    def is_indexed(self, df: pd.DataFrame) -> bool:
-        return True if df.index.name == "smplID" else False
+    # def is_indexed(self, df: pd.DataFrame) -> bool:
+    #     return True if df.index.name == "smplID" else False
 
 
     def get_factors(self, remove_smpl_col = False, insert_none = False, with_dtype = False) -> list:
 
-        result = self.get_metadata().columns.tolist()
+        result = self.get_metadata().columns
 
         if remove_smpl_col:
 
@@ -284,7 +215,7 @@ class DataStorage:
 
             metadata = self.get_metadata()
             new_name = []
-            for col in metadata.columns.tolist():
+            for col in metadata.columns:
 
                 new_name.append(str(col) + "/" + str(metadata[col].dtype))
 
@@ -294,11 +225,11 @@ class DataStorage:
 
 
     def get_sample_list(self) -> list:
-        return self.get_main_dataframe()["smplID"].tolist()
+        return self.get_main_dataframe()["smplID"].to_list()
 
 
     def get_compound_list(self, without_compartment: Optional[bool] = False):
-        query = self.get_main_dataframe().columns.tolist()
+        query = self.get_main_dataframe().columns
         if "smplID" in query:
             query.remove("smplID")
         if without_compartment:
@@ -309,7 +240,7 @@ class DataStorage:
         return query
 
 
-    def save_dataframe(self, df_to_save:pd.DataFrame, file_name: str, extension: str = ".tsv"):
+    def save_dataframe(self, df_to_save , file_name: str, extension: str = ".tsv"):
         """Save the dataframe in input. Check for already saved file and change the name accordingly.
 
         Args:
@@ -320,17 +251,27 @@ class DataStorage:
         Returns:
             _type_: _description_
         """
-        path_to_save = self.output_path
-        final_file_path = Path(path_to_save, file_name).with_suffix(extension)
+
+        final_file_path = Path(self.output_path, file_name).with_suffix(extension)
+
         if final_file_path.is_file():
             final_file_path = self.check_and_rename(final_file_path)
-        try:
-            df_to_save.to_csv(final_file_path, sep="\t")
-            logs = f"Saved in :\n{final_file_path}"
-        except Exception as e:
-            logs = e
-        return logs
 
+        if isinstance(df_to_save, pl.DataFrame):
+            try:
+                df_to_save.write_csv(final_file_path, separator="\t")
+                logs = f"Saved in :\n{final_file_path}"
+            except Exception as e:
+                logs = e
+            return logs
+
+        if isinstance(df_to_save, pd.DataFrame):
+            try:
+                df_to_save.to_csv(final_file_path, sep="\t")
+                logs = f"Saved in :\n{final_file_path}"
+            except Exception as e:
+                logs = e
+            return logs
 
     def save_seaborn_plot(self, sns_obj, file_name):
 
@@ -358,7 +299,7 @@ class DataStorage:
 
     def get_taxonomy_rank(self) -> list:
 
-        taxonomy_col = pd.read_csv(Path(self.output_path, "taxonomic_dataframe_postaviz.tsv"),sep="\t").columns.tolist()
+        taxonomy_col = pl.read_csv(Path(self.output_path, "taxonomic_dataframe_postaviz.tsv"),separator="\t").columns
 
         if taxonomy_col is None:
             return ["Taxonomy not provided"]
@@ -377,15 +318,15 @@ class DataStorage:
         """
         taxonomic_df = self.get_taxonomic_dataframe()
 
-        first_col_value = taxonomic_df.columns.values[0]
+        mgs_column = taxonomic_df.columns[0]
 
-        taxo_df_indexed = taxonomic_df.set_index(first_col_value)
+        # taxo_df_indexed = taxonomic_df.set_index(first_col_value)
 
         res = []
 
         for bin in bin_list:
 
-            taxonomy = taxo_df_indexed.loc[taxo_df_indexed.index == bin].values[0].tolist()
+            taxonomy = list(taxonomic_df.row(by_predicate=(pl.col(mgs_column) == bin)))
 
             for i, value in enumerate(taxonomy):
 
@@ -413,9 +354,11 @@ class DataStorage:
         """
         taxonomy = self.get_taxonomic_dataframe()
 
-        mgs_col_label = taxonomy.columns.values[0]
+        mgs_col_label = taxonomy.columns[0]
 
-        return taxonomy.loc[taxonomy[rank] == choice][mgs_col_label].tolist()
+        taxonomy = taxonomy.filter(pl.col(rank) == choice)
+
+        return taxonomy.get_column(mgs_col_label).to_list()
 
 
     def load_files(self, load_path: Path):
@@ -451,7 +394,7 @@ class DataStorage:
                     all_files[df_files] = False
 
         required_files = ["metadata_dataframe_postaviz.parquet.gzip", "main_dataframe_postaviz.tsv",
-                        "producers_dataframe_postaviz.tsv", "total_production_dataframe_postaviz.tsv",
+                        "producers_cscope_dataframe.parquet.gzip", "producers_iscope_dataframe.parquet.gzip", "total_production_dataframe_postaviz.tsv",
                         "pcoa_dataframe_postaviz.tsv", "sample_info.json"]
 
         # Check if necessary files are not True
@@ -460,7 +403,7 @@ class DataStorage:
                 continue
             else:
                 print(file)
-                raise RuntimeError(f"Required {file} is missing when directly loading from directory.")
+                raise RuntimeError(f"Required file {file} is missing when directly loading from directory.")
 
         return all_files
 
@@ -476,42 +419,47 @@ class DataStorage:
         Returns:
             pd.DataFrame: Tuple of three (producers) dataframes
         """
-        cscope_df = self.get_metabolite_production_dataframe(False).sort_values("smplID")
+        cscope_df = self.get_cscope_producers_dataframe(with_metadata=False).sort("smplID")
 
-        iscope_df = self.get_iscope_metabolite_production_dataframe(False).sort_values("smplID")
+        iscope_df = self.get_iscope_producers_dataframe(with_metadata=False).sort("smplID")
 
-        col_diff = cscope_df.columns.difference(iscope_df.columns)
+        # ccol = cscope_df.columns
+        # icol = iscope_df.columns
 
-        col_diff_dict = dict.fromkeys(col_diff, 0.0)
+        # columns_difference = list(set(ccol) - set(icol))
 
-        temp_df = pd.DataFrame(col_diff_dict, index=iscope_df.index)
+        # for col in columns_difference:
 
-        iscope_df = pd.concat([iscope_df, temp_df], axis=1)
+        #     iscope_df = iscope_df.with_columns(pl.lit(0).alias(col)) NOT NEEDED ANYMORE
 
-        if not sample_filter_mode == "All":
+        if sample_filter_mode != "All":
 
             if sample_filter_mode == "Include":
 
-                cscope_df = cscope_df.loc[cscope_df.smplID.isin(sample_filter_value)]
-                iscope_df = iscope_df.loc[iscope_df.smplID.isin(sample_filter_value)]
+                cscope_df = cscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
+                iscope_df = iscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
 
             if sample_filter_mode == "Exclude":
 
-                cscope_df = cscope_df.loc[~cscope_df.smplID.isin(sample_filter_value)]
-                iscope_df = iscope_df.loc[~iscope_df.smplID.isin(sample_filter_value)]
+                cscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
+                iscope_df = iscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
 
-        cscope_df.set_index("smplID",inplace=True)
-        iscope_df.set_index("smplID",inplace=True)
-
-        cscope_df.sort_index(axis=1,inplace=True)
-        iscope_df.sort_index(axis=1,inplace=True)
+        cscope_df = cscope_df.sort("smplID")
+        iscope_df = iscope_df.sort("smplID")
 
         if cpd_input is not None:
 
-            cscope_df = cscope_df[[*cpd_input]]
-            iscope_df = iscope_df[[*cpd_input]]
+            cscope_df = cscope_df.select(["smplID", *cpd_input])
+            iscope_df = iscope_df.select(["smplID", *cpd_input])
 
-        return cscope_df, iscope_df, cscope_df - iscope_df
+        smplid_column = cscope_df["smplID"]
+
+        added_value_dataframe = cscope_df.select(pl.exclude("smplID")) - iscope_df.select(pl.exclude("smplID"))
+
+        added_value_dataframe = added_value_dataframe.with_columns(smplid_column)
+
+        return cscope_df, iscope_df, added_value_dataframe
+
 
 
     def get_cpd_category_tree(self) -> dict:

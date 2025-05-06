@@ -19,8 +19,12 @@ dependencies = [
   'shinywidgets',
   'scikit-bio',
   'pyarrow',
-  'seaborn'
+  'seaborn',
 ]
+
+[project.optional-dependencies]
+cpu = ["polars"]
+lts-cpu = ["polars-lts-cpu"]
 
 [project.scripts]
 m2m_postaviz = "m2m_postaviz.cli:main"
@@ -78,7 +82,7 @@ line-length = 140
 target-version = ["py38"]
 
 [tool.setuptools]
-packages = ['m2m_postaviz']
+packages = ['m2m_postaviz', 'm2m_postaviz.postaviz_test_data']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
-package-data = {'m2m_postaviz' = ['postaviz_test_data/table_test_postaviz.tar.gz', 'postaviz_test_data/taxonomic_database.tsv']}
+package-data = {'m2m_postaviz' = ['postaviz_test_data/table_test_postaviz.tar.gz']}
 

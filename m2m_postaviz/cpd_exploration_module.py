@@ -4,6 +4,7 @@ from shiny import render
 from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
+import polars as pl
 
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
@@ -296,7 +297,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             metadata_input1 = input.sample_filter_metadata1()
 
             try:
-                metadata = Data.get_metadata()[metadata_input1].unique().tolist()
+                metadata = Data.get_metadata().get_column(metadata_input1).unique().to_list()
             except Exception as e:
                 ui.notification_show(
                 f"Sample filter metadata error, {e}",
@@ -313,6 +314,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             sample_metadata_filter2 = input.sample_filter_metadata2()
             metadata = Data.get_metadata()
 
-            metadata = metadata.loc[metadata[sample_metadata_filter1].isin(sample_metadata_filter2)]["smplID"].tolist()
+            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+            metadata = metadata.get_column("smplID").to_list()
 
             return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)

@@ -42,9 +42,9 @@ def bin_exp_ui(Data: DataStorage):
                     gap=35,
                     bg="lightgrey"
                 ),
-                ui.card(output_widget("bin_unique_count_histplot"),full_screen=True),
-                ui.card(output_widget("bin_boxplot_count"),full_screen=True),
-                ui.card(output_widget("bin_abundance_plot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes."),output_widget("bin_unique_count_histplot"),full_screen=True),
+                # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
+                ui.card(ui.card_header("Respective abundance of taxa/metagenomes in their sample."),output_widget("bin_abundance_plot"),full_screen=True),
             )
         ),full_screen=True)
 
@@ -82,7 +82,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
         df = Data.get_metadata()
 
-        choices = df[factor_choice].unique().tolist()
+        choices = df.get_column(factor_choice).unique().to_list()
 
         return ui.TagList(
             ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
@@ -107,7 +107,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
         df = Data.get_taxonomic_dataframe()
 
-        choices = df[rank_choice].unique().tolist()
+        choices = df.get_column(rank_choice).unique().to_list()
 
         return ui.TagList(
             ui.input_selectize("rank_unique_choice", "Select", choices=choices, multiple=False,)

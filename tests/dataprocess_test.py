@@ -45,7 +45,7 @@ metacyc_file = Path(TEST_DATA_CONTAINER, "metacyc28_5.padmet")
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
 
-    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,None)
+    du.build_dataframes(TEST_DATA_CONTAINER,metadata_file,abundance_file,taxonomy_file,TMP_DIR,metacyc_file)
 
 
 
@@ -55,13 +55,13 @@ def test_data_processing():
 
     # sample_info = du.load_sample_cscope_data(TEST_DATA_CONTAINER, CSCOPE_DIR, ".parquet.gz")
 
-    metadata = data.get_metadata()
+    metadata = data.get_metadata().to_pandas()
 
     main_dataframe = data.get_main_dataframe()
 
-    metabolite_production_dataframe = data.get_metabolite_production_dataframe()
+    metabolite_production_dataframe = data.get_cscope_producers_dataframe()
 
-    global_production_dataframe = data.get_global_production_dataframe()
+    global_production_dataframe = data.get_global_production_dataframe().to_pandas()
 
     # Global_production_dataframe are not supposed to contain NaN values in their processed columns.
     assert any(global_production_dataframe["Total_abundance_weighted"].notna()),"Nan value in global_production dataframe[Total_abundance_w]"
@@ -301,7 +301,7 @@ def test_statistic_method():
     saved_path = Path(data.output_path, "test_save_producers_stat_test.tsv")
 
     if not saved_path.is_file():
-        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path)
+        raise AssertionError("Save dataframe function -- File do not exist in: %s" % saved_path, type(metabolites_production_test_dataframe))
     # assert isinstance(total_production_test_dataframe, pd.DataFrame) or total_production_test_dataframe == None, "Total production dataframe statistical test is not None or a pandas dataframe."
 
     # assert isinstance(metabolites_production_test_dataframe, pd.DataFrame) or metabolites_production_test_dataframe == None, "Metabolites production dataframe statistical test is not None or a pandas dataframe."
@@ -341,6 +341,7 @@ def test_recursive_tree_padmet():
         list_of_category = data.get_metacyc_category_list()
 
         assert list_of_category, "List of category is empty."
+
 
 def test_compounds_exploration_module():
 
