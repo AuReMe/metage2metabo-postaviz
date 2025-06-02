@@ -191,8 +191,16 @@ class DataStorage:
             return self.open_tsv(key="taxonomic_dataframe_postaviz.tsv")
 
 
-    def get_normalised_abundance_dataframe(self) -> pl.DataFrame:
-        return self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
+    def get_normalised_abundance_dataframe(self, with_metadata = False) -> pl.DataFrame:
+        df = self.open_tsv(key="normalised_abundance_dataframe_postaviz.tsv")
+
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.join(metadata,"smplID",how="left")
+
+        return df
+
 
 
     # def is_indexed(self, df: pd.DataFrame) -> bool:

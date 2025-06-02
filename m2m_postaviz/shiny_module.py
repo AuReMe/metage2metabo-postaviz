@@ -470,7 +470,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     if len(compounds_input) == 0:
         return
 
-    producer_data = data.get_cscope_producers_dataframe()
+    if with_abundance == True:
+        producer_data = data.get_normalised_abundance_dataframe(with_metadata=True)
+    else:
+        producer_data = data.get_cscope_producers_dataframe()
     # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
 
     if sample_filter_button != "All" and len(sample_filter_value) != 0:

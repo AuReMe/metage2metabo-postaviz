@@ -23,13 +23,13 @@ def bin_exp_ui(Data: DataStorage):
                 ui.layout_sidebar(
                     ui.sidebar(
 
-                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False, width="400px"),
+                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False),
                         ui.output_ui("rank_unique_choice"),
 
-                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False, width="400px"),
+                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False),
                         ui.output_ui("bin_factor_unique"),
 
-                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False, width="400px"),
+                        ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False),
 
                         ui.input_checkbox("with_bin_abundance", "Weigh the producibility value by the relative abundance of the producer instead of using {0,1} values."),
 
