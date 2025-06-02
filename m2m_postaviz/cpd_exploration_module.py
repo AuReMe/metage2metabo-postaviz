@@ -31,7 +31,7 @@ def cpd_tab_ui(Data: DataStorage):
         ui.layout_sidebar(
             ui.sidebar(
 
-                ui.input_select("first_category_input","Select any compounds category from Metacyc_database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category),
+                ui.input_selectize("first_category_input","Select any compounds category from Metacyc_database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category, multiple=False),
                 ui.input_selectize("category_choice_input", "Select a sub category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
 
                 ui.card(" ",
@@ -56,10 +56,7 @@ def cpd_tab_ui(Data: DataStorage):
                     ui.input_checkbox("row_cluster", "Add rows clustering on Heatmap."),
                     ui.input_checkbox("col_cluster", "Add columns clustering on Heatmap."),
                 ),
-
-                ui.input_task_button("run_plot_generation","Generate plots"),
-
-                ##### stat ui
+                ui.input_checkbox("render_cpd_abundance", "Use the abundance dataframe to weight the production of bins by their respective abundance in their sample."),
 
                 ui.input_checkbox("exp_cpd_generate_stat_dataframe", "Generate statistical test dataframe."),
 
@@ -69,6 +66,8 @@ def cpd_tab_ui(Data: DataStorage):
                     ui.panel_conditional("input.multiple_correction",
                                             ui.input_select("multiple_correction_method","Method",Data.get_list_of_tests(),selected=Data.get_list_of_tests()[0],)),
                     ),
+
+                ui.input_task_button("run_plot_generation","Generate plots"),
 
             width=400,
             gap=35,
@@ -181,7 +180,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
         @ui.bind_task_button(button_id="run_plot_generation")
         @reactive.extended_task
-        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster):
+        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
 
             cpd_filtered_list = []
             for cpd in Data.get_compound_list():
@@ -191,7 +190,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             if len(selected_compounds) == 0:
                 return
 
-            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value) ###
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
 
             if user_input1 != "None":
 
@@ -222,7 +221,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                                 input.color_filter_input(),
                                 input.sample_filter_choice_input(), input.sample_filter_selection_input(),
                                 input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
-                                input.multiple_correction_method(), input.row_cluster(), input.col_cluster())
+                                input.multiple_correction_method(), input.row_cluster(), input.col_cluster(), input.render_cpd_abundance())
 
 
         @reactive.effect
