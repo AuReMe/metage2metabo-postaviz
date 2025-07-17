@@ -9,6 +9,7 @@ tags:
   - Visualisation
 authors:
   - name: Léonard Brindel
+    orcid: 0009-0001-8878-9928
     affiliation: 1
   - name: Clémence Frioux
     orcid: 0000-0003-2114-0697
