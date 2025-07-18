@@ -32,7 +32,7 @@ class DataStorage:
 
         self.USE_METACYC_PADMET = loaded_files["padmet_compounds_category_tree.json"]
 
-        self.current_plot = {}
+        self.current_working_dataframe = {}
 
         if save_path is not None:
 
@@ -40,6 +40,21 @@ class DataStorage:
 
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
+
+    def keep_working_dataframe(self, tab_id, dataframe):
+
+        self.current_working_dataframe[tab_id] = dataframe
+
+
+    def get_working_dataframe(self, tab_id):
+
+        try:
+            current_dataframe = self.current_working_dataframe[tab_id]
+        except KeyError:
+            print("No current dataframe for the total production plot, It may happen when no plot have been made during the session.")
+            return
+
+        return current_dataframe
 
     def open_tsv(self, key: str):
         """Return the dataframe corresponding to the key given as input.

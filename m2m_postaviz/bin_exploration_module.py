@@ -1,15 +1,17 @@
-from shiny import module, ui
-from shinywidgets import output_widget
-from shinywidgets import render_widget
-from m2m_postaviz.data_struct import DataStorage
+from shiny import module
 from shiny import reactive
 from shiny import render
+from shiny import ui
+from shinywidgets import output_widget
+from shinywidgets import render_widget
+
 import m2m_postaviz.shiny_module as sm
+from m2m_postaviz.data_struct import DataStorage
 
 
 @module.ui
 def bin_exp_ui(Data: DataStorage):
-    
+
     factor_list = Data.get_factors()
     factor_list.insert(0, "None")
 
@@ -61,7 +63,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     @render.text
     def no_taxonomy_provided():
-        return f"No taxonomy file has been provided. Bins exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. Metagenomes column must be the first column."
+        return "No taxonomy file has been provided. Bins exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. Metagenomes column must be the first column."
 
     list_of_bins = Data.get_bins_list()
 

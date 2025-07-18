@@ -54,8 +54,9 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     if metadata_input == "None" or metadata_input == "smplID":
 
         df = df.unpivot(index=["smplID"])
-        return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
-
+        # return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
+        return
+    
     else:
 
         metadata = data.get_metadata().select("smplID",metadata_input)
@@ -419,6 +420,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
 
     Returns:
         px.box: Plotly express object.
+        pd.Dataframe: dataframe used for the plot.
     """
     if with_abundance and data.HAS_ABUNDANCE_DATA:
         column_value = "Total_abundance_weighted"
@@ -428,8 +430,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
     df = data.get_global_production_dataframe().to_pandas()
 
     if user_input1 == "None":
-
-        return px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
+        fig = px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
+        return fig, df
 
     elif user_input2 == "None" or user_input1 == user_input2:
 
@@ -446,8 +448,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         else:
 
             fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Numbers of unique compounds produced by samples filtered by {user_input1}")
-            fig.update_xaxes(type='category')
-            return fig
+            fig.update_xaxes(type="category")
+            return fig, df
 
     else:
 
@@ -461,8 +463,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
             fig = px.bar(df,x=user_input1,y=column_value,color=user_input2)
         else:
             fig = px.box(df,x=user_input1,y=column_value,color=user_input2)
-            fig.update_xaxes(type='category')
-        return fig
+            fig.update_xaxes(type="category")
+        return fig, df
 
 
 def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):

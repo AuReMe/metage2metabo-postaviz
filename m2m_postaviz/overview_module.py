@@ -119,51 +119,61 @@ def overview_module_ui(Data: DataStorage):
             cpds_reached,
             total_production_plot,
     )
-        
+
     return global_overview, pcoa_card, custom_pcoa_card
 
 @module.server
 def overview_module_server(input, output, session, Data: DataStorage):
 
 
-    # @render.text
-    # @reactive.event(input.export_global_production_test_button)
-    # def export_global_production_test_dataframe():
+    @render.text
+    @reactive.event(input.export_global_production_test_button)
+    def export_global_production_test_dataframe():
 
-    #     if bool(all_dataframe):
-    #         if all_dataframe["global_production_test_dataframe"] is not None:
-    #             log = data.save_dataframe(all_dataframe["global_production_test_dataframe"], "global_production_test_dataframe")
-    #         else:
-    #             log = "Unable to find any dataframe to save."
+        dataframe_to_save = Data.get_working_dataframe("total_production_test_dataframe")
+        if dataframe_to_save is None:
 
-    #     return log
+            log = "Unable to find any dataframe to save."
 
-    # @render.text
-    # @reactive.event(input.export_global_production_plot_dataframe_button)
-    # def export_global_production_plot_dataframe_txt():
+        log = Data.save_dataframe(dataframe_to_save, "producer_test_dataframe")
 
-    #     if bool(all_dataframe):
-    #         if all_dataframe["global_production_plot_dataframe"] is not None:
-    #             log = data.save_dataframe(all_dataframe["global_production_plot_dataframe"], "producer_plot_dataframe")
-    #         else:
-    #             log = "Unable to find any dataframe to save."
+        return log
 
-    #     return log
+    @render.text
+    @reactive.event(input.export_global_production_plot_dataframe_button)
+    def export_global_production_plot_dataframe_txt():
+
+        dataframe_to_save = Data.get_working_dataframe("total_production_plot_dataframe")
+        if dataframe_to_save is None:
+
+            log = "Unable to find any dataframe to save."
+
+        log = Data.save_dataframe(dataframe_to_save, "producer_plot_dataframe")
+
+        return log
 
     @render_widget
     def total_production_plot():
 
-        return sm.render_reactive_total_production_plot(Data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
+        fig, df = sm.render_reactive_total_production_plot(Data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
+
+        Data.keep_working_dataframe("total_production_plot_dataframe", df)
+
+        return fig
 
 
     @render.data_frame
     def production_test_dataframe():
 
-        return sm.global_production_statistical_dataframe(Data, input.prod_inputx1(),
+        test_dataframe = sm.global_production_statistical_dataframe(Data, input.prod_inputx1(),
                                                             input.prod_inputx2(),
                                                             input.multiple_correction_global_plot(),
                                                             input.multiple_test_method_global(),
                                                             input.prod_norm())
+
+        Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
+
+        return test_dataframe
 
     @render_widget
     def cpd_reach_plot():

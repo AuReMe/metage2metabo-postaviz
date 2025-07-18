@@ -1,16 +1,15 @@
 import json
 import sys
 import tarfile
-import time
 import tempfile
-
+import time
 from multiprocessing import Pool
 from multiprocessing import cpu_count
+from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import pandas as pd
-from pathlib import Path
 from padmet.classes import PadmetRef
 from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
@@ -25,7 +24,7 @@ try:
 except Exception as e:
   print(e)
   print("CALLING subprocess to uninstall polars and polars-lts-cpu. Then reinstall polars-lts-cpu.")
-  
+
   import subprocess
   import sys
 
@@ -80,7 +79,7 @@ def is_valid_dir(dirpath: Path):
 def extract_tarfile(tar_file: Path, outdir):
     file = tarfile.open(tar_file, "r:gz")
     file.extractall(outdir, filter="data")
-    
+
 
 def has_only_unique_value(dataframe , input1, input2: str = "None"):
     """
@@ -120,7 +119,7 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
         save_path (Path): Pathlib Path of the output directory.
 
     Raises:
-        RuntimeError: If more than one column of type other than INT.
+        RuntimeError: If more than one column of type other than numeric.
 
     Returns:
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
@@ -165,7 +164,7 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
         sample_df = sample_df.sum().with_columns(pl.col("smplID").fill_null(sample_id))
         res.append(sample_df)
 
-    final_df = pl.concat(res, how='diagonal').fill_null(0)
+    final_df = pl.concat(res, how="diagonal").fill_null(0)
     final_df = final_df.to_pandas()
     final_df.set_index("smplID", inplace=True)
     final_df.to_csv(Path(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
@@ -249,7 +248,7 @@ def retrieve_all_cscope(sample, dir_path: Path, cscope_directoy: Path, cscope_fi
         return bin_list, sample
 
     else:
-        
+
         return None, sample
 
 
@@ -287,7 +286,7 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
 
     if Path(save_path,"sample_info.json").is_file():
         return
-    
+
     print("Load/Save cscope data as parquet format...")
 
     nb_cpu = cpu_count() - 1
@@ -305,7 +304,7 @@ def load_sample_cscope_data(dir_path: Path, cscope_directory: Path, cscope_file_
     sample_info["bins_list"] = []
     sample_info["bins_count"] = {}
     sample_info["bins_sample_list"] = {}
-    
+
     for all_bins_in_sample, sample in results_list:
 
         if type(all_bins_in_sample) != list:  # noqa: E721
@@ -409,7 +408,7 @@ def build_main_dataframe(save_path: Path, cscope_directory: Path):
 def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Optional[Path] = None, taxonomic_path: Optional[Path] = None, save_path: Optional[Path] = None, metacyc: Optional[Path] = None):
     """Main function.
     dir_path, metadata_path and save_path are necessary.
-    
+
     Args:
         dir_path (Path): Directory path containing M2M output.
         metadata_path (Path): Metadata file path.
@@ -841,7 +840,7 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
     print("Taxonomic dataframe done and saved.")
 
 
-def bin_dataframe_build(cscope_directory: Path, abundance_path: Path = None, taxonomy_path: Path = None, savepath: Path = None):
+def bin_dataframe_build(cscope_directory: Path, abundance_path: Optional[Path] = None, taxonomy_path: Optional[Path] = None, savepath: Optional[Path] = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, the abundance fot he bin in the sample
     and the count of production with or without abundance.
 
@@ -1136,7 +1135,7 @@ def concat_chunk(chunk_dir: Path, save_path: Path, scope_type: str):
 
     df = df.fill_null(0)
     df.write_parquet(Path(save_path,filename), compression="gzip")
-    
+
 
 def sum_and_concat_by_chunk(directory_path: Path):
     """Produce dataframe from chunk of 250 samples, BETTER memory usage small performance price.
