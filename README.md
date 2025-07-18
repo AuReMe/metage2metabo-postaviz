@@ -91,9 +91,9 @@ Shiny will launch automatically afterward.
 
 Once on the homepage you're free to explore the test data.
 
-Metacyc database is not include in test option.
+Note that Metacyc database information related to the ontology of metbolites and pathways is not included in test option.
 
-The differents tabulation will be explain below.
+Tab contents are described below.
 
 ##  Documentation
 
@@ -194,7 +194,7 @@ We detail below the input data:
   ```
 
 - 🚀 Precomputed data for M2M-PostAViz
-  - #TODO This data can be stored when running the tool with the `-o` flag. It will be saved in the directory of your choice and can be loaded for future runs of M2M-PostAViz.
+  - This data can be stored when running the tool with the `-o` flag. It will be saved in the directory of your choice and can be loaded for future runs of M2M-PostAViz.
 
   ```{sh}
     # Run the tool once on the data and provide a path for saving the tables
@@ -243,11 +243,52 @@ You can interrupt the process if you want and run postaviz with -l load option.
 
 Which will directly launch shiny and skip dataprocessing. -->
 
-> **💡 Note:** The preprocessed dataset is stored in a directory in the form of dataframes and xxxxxx Parquet format. This format enables an efficient storage and data access by the application
+> **💡 Note:** The preprocessed dataset is stored in a directory in the form of dataframes and files in Parquet format. This format enables an efficient storage and data access by the application
 > 
 > Below is the structure of the preprocessed directory.
 >
-> #TODO add a tree of the preprocessed dir
+ 
+```
+├── saved_data_postaviz
+   ├── abundance_file_normalised.tsv
+   ├── abundance_file.tsv
+   ├── bin_dataframe_chunk_1.parquet.gzip
+   ├── bin_dataframe_chunk_2.parquet.gzip
+   ├── bin_dataframe_chunk_3.parquet.gzip
+   ├── bin_dataframe_chunk_4.parquet.gzip
+   ├── cpd_cscope_dataframe_chunk_1.parquet.gzip
+   ├── cpd_cscope_dataframe_chunk_2.parquet.gzip
+   ├── cpd_cscope_dataframe_chunk_3.parquet.gzip
+   ├── cpd_cscope_dataframe_chunk_4.parquet.gzip
+   ├── cpd_iscope_dataframe_chunk_1.parquet.gzip
+   ├── cpd_iscope_dataframe_chunk_2.parquet.gzip
+   ├── cpd_iscope_dataframe_chunk_3.parquet.gzip
+   ├── cpd_iscope_dataframe_chunk_4.parquet.gzip
+   ├── main_dataframe_postaviz.tsv
+   ├── metadata_dataframe_postaviz.tsv
+   ├── normalised_abundance_dataframe_postaviz.tsv
+   ├── padmet_compounds_category_tree.json
+   ├── pcoa_dataframe_postaviz.tsv
+   ├── producers_dataframe_postaviz.tsv
+   ├── producers_iscope_dataframe_postaviz.tsv
+   ├── sample_cscope_directory
+   │   ├── Sample1.parquet.gzip
+   │   ├── Sample2.parquet.gzip
+   │   ├── Sample3.parquet.gzip
+   │   ├── Sample4.parquet.gzip
+   │   ├── ...
+   │   └── Sample1000.parquet.gzip
+   ├── sample_info.json
+   ├── sample_iscope_directory
+   │   ├── Sample1.parquet.gzip
+   │   ├── Sample2.parquet.gzip
+   │   ├── Sample3.parquet.gzip
+   │   ├── Sample4.parquet.gzip
+   │   ├── ...
+   │   └── Sample1000.parquet.gzip
+   ├── taxonomic_dataframe_postaviz.tsv
+   └── total_production_dataframe_postaviz.tsv
+```
 
 ## Application presentation
 
@@ -257,84 +298,77 @@ Users can modify the visualisations and the statistical analyses by selecting an
 
 We detail below the contents of each tab and the analyses it enables to perform. 
 
-### Metadata tab
+### Overview tab
 
-Tabulation to observe the metadata given in CLI.
+This tab summarises the dataset and permits a first exploration of it. 
+A first summary presents the number of metabolic networks (microorganism metabolic networks) considered, the number of samples and the number of unique metabolites reached in the samples.
 
-From this tab the metadata's column dtype can be changed.
+The tab displays several plots:
 
-This can be helpfull when you are not certain of your metadata types in CLI.
+- Number of unique metabolites reached in each community / sample. Metabolites can be either reached by individual community members, reached through interactions by the community, or unreached in a given sample. This plot can be refined by grouping the data using metadata variables. 
+- Total number of compounds reached in samples, that can be also refined by metadata, and can take into account the relative abundance of each microorganism producer to weigh predictions. Statistical results comparing metadata groups are provided as a table. Multiple test correction can be applied to the statistical tests. Note that statistical tests depend on the type of the variables. You can change those types in the Metadata tab if needed. 
+- Principal Coordinate Analysis (PCoA) of compound production in samples. Visualisation can be filtered using metadata, or the whole PCoA can be performed again using metadata groups.
 
-Sometime Plotly and seaborn do not treat numeric / not numeric columns the same when building plot's axes.
+All data frames used for plot creation, as well as statistical tests and visualisations can be exported by users. 
 
-### PCOA tabulation
+### Taxonomy-based exploration tab
 
-- Base PCOA shows the Principal coordinates analysis done with all samples and saves as pcoa_dataframe_postaviz.tsv into the save directory.
+This tab is dedicated to the exploration of metabolic networks corresponding to the genomes (bins) included in the samples. The tab proposes analyses performed at the scale of individual scopes (compounds produced by individual populations, no need of microbial interactions) and community scopes (compounds that need interactions to become producible).
+Users can check the produced compounds for multiple taxonomic levels, according to the taxonomic metadata that is provided as input. In particular, it is possible to consider taxonomic groups, in which case, all metabolic networks corresponding to this group will be taken into account. 
 
-You can use the input color to observe the PCOA in all its shapes. But the PCOA is not recalculated, this is just for global observation.
+If taxonomy data (`-t` option) is not provided, this tab will be disabled.
 
-- Customisable PCOA allow to calculate directly the PCOA from the samples filtered by the metadata input. The color can be used to regroup samples by their metadata values.
+Customisation of the plot:
 
-### Bins exploration tabulation
+- Choice of the taxonomic ranks: all, taxonomic groups (e.g. phylum), or individual genomes.
 
+- Selection within the rank, e.g. one phylum of interest if phylum was selected above. The number of metabolic networks (bins) corresponding to the selection is displayed at the bottom of the box.
 
-Tab dedicated to the observation of the bins contained into each sample's cscope of Metage2metabo.
-Some pattern in compounds production can be found by the taxonomic belonging of the bins.
-If the taxonomy (-t option) is not provided, this tabulation will be disabled.
+- "Filter" enables selecting samples based on a variable of interest from metadata. "Select" restricts the analysis on the samples matching the metadata variable values that are selected.
+ 
+- "Color" permits grouping the samples on a metadata variable.
 
-Input:
+If checking the box "weigh the producibility value with relative abundance", the normalised abundance data frame will be used for computation instead of the main dataframe. This means that producibility values of compounds by microorganisms will no longer be 0 or 1 but values corresponding to the relative abundance of the microbe. For instance, 0.3 for a producer that represents 30% of the community's relative abundance.
 
-- Allow to choose between the taxonomic ranks, the individual metagenomes "mgs" or all bins with "all"
+Two plots are generated for the community scope analysis, and two plots for the individual scope analysis (#TODO). 
 
-- The second input automatically update from the selection above. It allow the selection of the specific group of bins in taxonomic rank selected.
+- The first one depicts as a barplot the number of unique metabolites produced by the selected taxa in the selected samples
 
-- The third input allow a filtering to the samples level, all samples (and associated bins !) will be removed from the plots if excluded by this input.
+- The second plot depicts the relative abundance of the selected taxa in each sample. 
 
-- Updated from the third input like the second input, allow a more precise selection ????
+- Plot 3 is a boxplot of the unique metabolites production of each selected bins in their samples. #TODO
 
-- Color grouping option for all plots.
-
-- Use abundance, this options will use the "normalised abundance dataframe" instead of the "main dataframe". Instead of using 0,1 value for production, the abundance dataframe is multi with the abundace of each bins in their respective sample.
-
-Plots :
-
-- Plot 1 the sum of unique metabolites produced by the selected bins in each samples.
-
-- Plot 2 is a boxplot of the unique metabolites production of each selected bins in their samples.
-
-- Plot 3 show the abundance for each selected bins in their respective sample.
 
 > **⚠️ Warning:**
->The "all" option on all sample (No metadata filter applied) can be long to produce the plots. Also heavy plots will impact the performance of the application. 
+>The "all" option on all sample (No metadata filter applied) can lead to long computational times when working with large datasets. Performances of the application may be impacted.
+
+> **💡 Note:** A text output under the "Go" button shows how many bins are selected to anticipate large calculations. Also, if only one bin (mgs) is selected, the number of samples the bin is present in will be indicated.
 
 
-> **💡 Note:** A small text output under the Processing button show how many bins are selected to avoid large calculation. Also if only one bin (mgs) is selected, it will display how many samples have this specific bin.
-e.
+<!-- #### Method
 
-#### Method
+The bins exploration present some challenges, it need to retain the production by the bins inside each sample.
 
-The bins exploration present some challenges, it need to retain the production by the bins inside of each samples.
+The individual production of each bins depends on the bins present (community interaction highlighted by **Meta2metabo**) which also differ from the treatment/condition of the sample.
 
-The individual production of each bins depend of the bins present (community interaction highlighted by **Meta2metabo**) which also differ from the treatment/condition of the sample.
+All of this information can scale poorly if a lot of samples are present in input which is the point of the application: being able to observe from lots of angles large chunks of data.
 
-All of this information can scale poorly if a lot of sample are present in input which is the point of the application: being able observe from lots of angles large chunks of data.
-
-In order to keep all this valuable data we choosed to use the hard drive and load/manipulate large dataframe by subset using Parquet format. That way RAM memory is not overload, and we can pick what we need from the hard drive, using query similar to a SQL database.
+In order to keep all this valuable data we choosed to use the hard drive and load/manipulate large dataframe by subset using Parquet format. That way RAM memory is not overload, and we can pick what we need from the hard drive, using query similar to a SQL database. -->
 
 
-### Compounds exploration tab
+### Metabolite-based exploration tab
 
-Input :
+Plot settings depend on whether Metacyc data is provided as input to the application or not.
 
-IF METACYC ENABLED
+If Metacyc data is enabled, each compound is associated to an ontology of compound families, enabling to explore compound producibility at the level of these familes. 
 
-- Compounds input divided into three sub input:
-    - List of metacyc category ordered from the top to the bottom of the tree.
-    - Any category selected above will update this input to a list of all sub-category.
-    - Automatically filled with the compounds corresponding to the category / sub category selected in the input above.
-    Allow the selection of compounds directly if none of the first input are used or if **--no-metacyc** option is used in CLI.
+Users may select groups of compounds based on the list of Metacyc categories ordered from the top to the bottom of the tree.
+Any category selected will update the following selection menu to a list of all sub-categories that can in turn be selected.
+The following field is automatically updated with compounds matching the (sub)-categories. 
 
-The plots generated will only take the compounds selected as input.
+Without Metacyc input data, users may directly select their compounds of interest in this third field.
+
+The plots generated will only consider the compounds selected as input.
 
 - Metadata filter and color
 
@@ -375,7 +409,7 @@ Plot
 
     Sample filtering is not applied here.
 
-#### Method
+<!-- #### Method
 
 To produce the plots, m2m-postaviz use several dataframes made in processing part.
 
@@ -384,8 +418,16 @@ Both are produced by the sum of each rows (bins) in each sample's cscope/iscope 
 
 That way we have the number of metagenomes producing the compound (columns) for each rows (samples).
 
-The difference between these dataframe (production in community and individual) gives us the added_value dataframe
+The difference between these dataframe (production in community and individual) gives us the added_value dataframe -->
 
+### Metadata management tab
+
+This tab summarises the metadata that was provided as input to the tool.
+
+As main information, it provides the type of each variable as taken into account in M2M-PostAViz.
+This type can be changed with the left menu.
+
+Sometime Plotly and seaborn do not treat numeric / non-numeric columns similarly when building plot's axes.
 
 
 
