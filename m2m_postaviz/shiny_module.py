@@ -124,10 +124,10 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     if len(filtered_list_of_bin) == 0:
         print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
         return
-    
+
     filter_condition=[("binID", "in", filtered_list_of_bin)]
     # if factor != "None" and len(factor_choice) > 0:
-    #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. SUBJECT TO CHANGE.
+    #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. MAY CHANGE.
 
     df = data.get_bin_dataframe(condition=filter_condition)
     # METADATA filter applied here instead.
@@ -136,10 +136,17 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     df = df.merge(metadata, "inner", "smplID")
 
+    if is_numeric_dtype(df[factor]):
+
+        factor_choice = list(map(float, factor_choice))
+
+    print(factor)
+    print(factor_choice)
+    print(type(factor_choice))
     if factor_choice != "None" and len(factor_choice) > 0:
 
         df = df.loc[df[factor].isin(factor_choice)]
-
+        print(df)
     unique_sample_in_df = df["smplID"].unique()
 
     new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
