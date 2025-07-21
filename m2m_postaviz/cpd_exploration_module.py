@@ -106,7 +106,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.effect
         @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
         def _save_cscope_heatmap():
-            obj_to_save = Data.current_plot.get("cscope_heatmap")
+            obj_to_save = Data.get_working_dataframe("cscope_heatmap")
             if obj_to_save is None:
                 return
             else:
@@ -115,7 +115,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.effect
         @reactive.event(input.save_iscope_heatmap, ignore_none=True, ignore_init=True)
         def _save_iscope_heatmap():
-            obj_to_save = Data.current_plot.get("iscope_heatmap")
+            obj_to_save = Data.get_working_dataframe("iscope_heatmap")
             if obj_to_save is None:
                 return
             else:
@@ -124,7 +124,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @reactive.effect
         @reactive.event(input.save_advalue_heatmap, ignore_none=True, ignore_init=True)
         def _save_advalue_heatmap():
-            obj_to_save = Data.current_plot.get("advalue_heatmap")
+            obj_to_save = Data.get_working_dataframe("advalue_heatmap")
             if obj_to_save is None:
                 return
             else:
@@ -138,19 +138,19 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         @render.plot
         def heatmap_cscope():
             plot_object = cpd_plot_generation.result()[3][0]
-            Data.current_plot["cscope_heatmap"] = plot_object
+            Data.keep_working_dataframe("cscope_heatmap", plot_object)
             return plot_object
 
         @render.plot
         def heatmap_iscope():
             plot_object = cpd_plot_generation.result()[3][1]
-            Data.current_plot["iscope_heatmap"] = plot_object
+            Data.keep_working_dataframe("iscope_heatmap", plot_object)
             return plot_object
 
         @render.plot
         def heatmap_added_value():
             plot_object = cpd_plot_generation.result()[3][2]
-            Data.current_plot["advalue_heatmap"] = plot_object
+            Data.keep_working_dataframe("advalue_heatmap", plot_object)
             return plot_object
 
         @render.data_frame
