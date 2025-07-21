@@ -233,9 +233,9 @@ def test_shiny_module():
 
     # Test for total production reactive plot.
 
-    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
-    reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
-    reactive_total_production_plot_2 = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
+    reactive_total_production_plot, df = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
+    reactive_total_production_plot_abundance, df = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot_2, df = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
 
     assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 
