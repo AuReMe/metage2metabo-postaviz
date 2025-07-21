@@ -44,7 +44,8 @@ def bin_exp_ui(Data: DataStorage):
                     gap=35,
                     bg="lightgrey"
                 ),
-                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes."),output_widget("bin_unique_count_histplot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes in community."),output_widget("bin_unique_count_cscope_histplot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes as individual."),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
                 # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
                 ui.card(ui.card_header("Respective abundance of taxa/metagenomes in their sample."),output_widget("bin_abundance_plot"),full_screen=True),
             )
@@ -164,10 +165,14 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         return run_exploration.result()[1]
 
     @render_widget
-    def bin_unique_count_histplot():
-        return run_exploration.result()[0]
+    def bin_unique_count_cscope_histplot():
+        return run_exploration.result()[0][0]
 
-    @ui.bind_task_button(button_id="run_custom_pcoa")
+    @render_widget
+    def bin_unique_count_iscope_histplot():
+        return run_exploration.result()[0][1]
+
+    # @ui.bind_task_button(button_id="run_custom_pcoa") # ?????
     @reactive.extended_task
     async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
 

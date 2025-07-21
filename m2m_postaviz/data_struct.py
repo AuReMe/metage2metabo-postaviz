@@ -97,7 +97,7 @@ class DataStorage:
         return df
 
 
-    def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+    def get_bin_dataframe(self, columns = None, condition = None, scope_mode = "scope") -> pd.DataFrame:
         """Find the bin_dataframe file in the save_path of DataStorage object and read it with the condition given in args.
 
         Args:
@@ -109,7 +109,7 @@ class DataStorage:
         """
 
         for file in self.output_path.iterdir():
-            if file.is_file() and file.name == "bin_dataframe.parquet.gzip":
+            if file.is_file() and file.name == f"bin_dataframe_{scope_mode}.parquet.gzip":
                 return self.read_parquet_with_pandas(file, col=columns, condition=condition)
 
 

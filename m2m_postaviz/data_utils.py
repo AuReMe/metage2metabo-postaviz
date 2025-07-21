@@ -457,8 +457,6 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     build_pcoa_dataframe(save_path)
 
-    bin_dataframe_build(cscope_directory, abundance_path, taxonomic_path, save_path)
-
     iscope_directory = Path(save_path,"sample_iscope_directory")
 
     if not iscope_directory.is_dir():
@@ -473,7 +471,13 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
     iscope_cscope_fill_difference(save_path)
 
-    concat_bin_dataframe(save_path)
+    bin_dataframe_build(cscope_directory, "cscope", abundance_path, taxonomic_path, save_path)
+
+    concat_bin_dataframe(save_path, "cscope")
+
+    bin_dataframe_build(iscope_directory, "iscope", abundance_path, taxonomic_path, save_path)
+
+    concat_bin_dataframe(save_path, "iscope")
 
     # Metacyc database TREE
 
@@ -840,7 +844,7 @@ def taxonomy_processing(taxonomy_filepath: Path, save_path: Path):
     print("Taxonomic dataframe done and saved.")
 
 
-def bin_dataframe_build(cscope_directory: Path, abundance_path: Optional[Path] = None, taxonomy_path: Optional[Path] = None, savepath: Optional[Path] = None):
+def bin_dataframe_build(scope_directory: Path, scope_mode: str = "cscope", abundance_path: Optional[Path] = None, taxonomy_path: Optional[Path] = None, savepath: Optional[Path] = None):
     """Build a large dataframe with all the bins of the different samples as index, the dataframe contain the list of production, the abundance fot he bin in the sample
     and the count of production with or without abundance.
 
@@ -881,7 +885,7 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Optional[Path] =
 
         mgs_col_taxonomy = taxonomy_file.columns[0]
 
-    sample_unique_list = list(cscope_directory.iterdir())
+    sample_unique_list = list(scope_directory.iterdir())
 
     ##### Create Generator to process data by chunks.
     print("Making chunk of sample list...")
@@ -904,14 +908,14 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Optional[Path] =
 
             try:
 
-                df = pd.read_parquet(Path(cscope_directory, sample))
+                df = pd.read_parquet(Path(scope_directory, sample))
                 df.insert(0 , "smplID", sample_id)
                 df.index.name = "binID"
                 list_of_dataframe.append(df)
 
             except Exception as e:
 
-                logs.append(f"No dataframe named {sample} in cscope_directory.\n{e}")
+                logs.append(f"No dataframe named {sample} in scope_directory.\n{e}")
 
         results = pd.concat(list_of_dataframe)
         results.fillna(0,inplace=True)
@@ -948,7 +952,7 @@ def bin_dataframe_build(cscope_directory: Path, abundance_path: Optional[Path] =
 
         ##### Save current chunks into parquet file
 
-        filename = "bin_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
+        filename = "bin_dataframe_chunk_"+str(chunk_index)+"-"+str(scope_mode)+".parquet.gzip"
         filepath = Path(savepath,filename)
 
         if len(final_result) == 0:
@@ -1201,12 +1205,12 @@ def iscope_cscope_fill_difference(save_path: Path):
     iscope_df.write_parquet(Path(save_path, "producers_iscope_dataframe.parquet.gzip"), compression="gzip")
 
 
-def concat_bin_dataframe(save_path: Path):
+def concat_bin_dataframe(save_path: Path, scope_mode: str = "cscope"):
 
     df = None
 
     for file in save_path.iterdir():
-        if file.stem.startswith("bin_dataframe_chunk"):
+        if file.stem.startswith("bin_dataframe_chunk") and file.stem.split("-")[1].split(".")[0] == scope_mode: # Check if file is a bin_dataframe_chunk AND check the scope of this file.
 
             if df is None:
                 df = pl.read_parquet(file)
@@ -1217,4 +1221,4 @@ def concat_bin_dataframe(save_path: Path):
                 file.unlink()
 
     print("Size of the full bin_dataframe: ",df.estimated_size("gb")," Gb")
-    df.write_parquet(Path(save_path, "bin_dataframe.parquet.gzip"), compression="gzip")
+    df.write_parquet(Path(save_path, f"bin_dataframe_{scope_mode}.parquet.gzip"), compression="gzip")

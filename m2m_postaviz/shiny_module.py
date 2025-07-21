@@ -56,7 +56,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         df = df.unpivot(index=["smplID"])
         # return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
         return
-    
+
     else:
 
         metadata = data.get_metadata().select("smplID",metadata_input)
@@ -67,9 +67,9 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
             df = df.sort(metadata_input)
 
         fig = px.box(df, x=metadata_input,y="value",color="variable")
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type="category")
 
-        return fig 
+        return fig
 
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
@@ -129,47 +129,51 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     # if factor != "None" and len(factor_choice) > 0:
     #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. MAY CHANGE.
 
-    df = data.get_bin_dataframe(condition=filter_condition)
-    # METADATA filter applied here instead.
+    figures1 = []
 
-    metadata = data.get_metadata().to_pandas()
+    for mode in ["cscope", "iscope"]:
 
-    df = df.merge(metadata, "inner", "smplID")
+        df = data.get_bin_dataframe(condition=filter_condition, scope_mode=mode)
+        # METADATA filter applied here instead.
 
-    if is_numeric_dtype(df[factor]):
+        metadata = data.get_metadata().to_pandas()
 
-        factor_choice = list(map(float, factor_choice))
+        df = df.merge(metadata, "inner", "smplID")
 
-    print(factor)
-    print(factor_choice)
-    print(type(factor_choice))
-    if factor_choice != "None" and len(factor_choice) > 0:
+        if is_numeric_dtype(df[factor]):
 
-        df = df.loc[df[factor].isin(factor_choice)]
-        print(df)
-    unique_sample_in_df = df["smplID"].unique()
+            factor_choice = list(map(float, factor_choice))
 
-    new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
+        if factor_choice != "None" and len(factor_choice) > 0:
 
-    for sample in unique_sample_in_df:
+            df = df.loc[df[factor].isin(factor_choice)]
 
-        tmp_df = df.loc[df["smplID"] == sample][["binID","smplID","Production"]]
-        all_production = tmp_df["Production"].values
+        unique_sample_in_df = df["smplID"].unique()
 
-        tmp_production = []
+        new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
 
-        for prod_list in all_production:
+        for sample in unique_sample_in_df:
 
-            tmp_production += list(prod_list)
+            tmp_df = df.loc[df["smplID"] == sample][["binID","smplID","Production"]]
+            all_production = tmp_df["Production"].values
 
-        unique_production_count = len(set(tmp_production))
-        new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
+            tmp_production = []
 
-    df = df.merge(new_serie_production, how="inner", on="smplID")
+            for prod_list in all_production:
 
-    df.sort_index(inplace=True)
+                tmp_production += list(prod_list)
 
-    fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
+            unique_production_count = len(set(tmp_production))
+            new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
+
+        df = df.merge(new_serie_production, how="inner", on="smplID")
+
+        df.sort_index(inplace=True)
+
+        figures1.append(px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count",
+                                    color="smplID" if color =="None" else color,
+                                    hover_data="binID",
+                                    text_auto="Count_with_abundance" if with_abundance else "unique_production_count"))
 
     # If only one bin selected do not make boxplot.
 
@@ -181,7 +185,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
 
-    return fig1, fig2, df, time.time() - start_timer, fig3
+    return figures1, fig2, df, time.time() - start_timer, fig3
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
