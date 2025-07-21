@@ -129,7 +129,7 @@ def test_query_parquet():
 
     assert df.empty == False, "bin_dataframe is empty."
 
-    assert all(df['c'].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
+    assert all(df["c"].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
 
 
 def test_shiny_module():

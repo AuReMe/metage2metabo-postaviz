@@ -1,11 +1,12 @@
-from pathlib import Path
 from json import load
+from pathlib import Path
 from typing import Optional
-from m2m_postaviz.lineage import Lineage
-import time
+
 import pandas as pd
-import seaborn as sns
 import polars as pl
+
+from m2m_postaviz.lineage import Lineage
+
 
 class DataStorage:
 
@@ -302,7 +303,7 @@ class DataStorage:
             new_file_name = self.check_and_rename(Path(self.output_path, file_name))
             print(new_file_name)
             sns_obj.savefig(new_file_name)
-            
+
         else:
             sns_obj.savefig(Path(self.output_path, file_name))
 
@@ -431,7 +432,7 @@ class DataStorage:
         return all_files
 
 
-    def get_added_value_dataframe(self, cpd_input = None, sample_filter_mode = "", sample_filter_value = []):
+    def get_added_value_dataframe(self, cpd_input = None, sample_filter_mode = "", sample_filter_value = None):
         """Return Cscope producers dataframe, Iscope producers dataframe and the difference of these two dataframes.
 
         Args:
@@ -455,7 +456,7 @@ class DataStorage:
 
         #     iscope_df = iscope_df.with_columns(pl.lit(0).alias(col)) NOT NEEDED ANYMORE
 
-        if sample_filter_mode != "All":
+        if sample_filter_mode != "All" and sample_filter_value is not None:
 
             if sample_filter_mode == "Include":
 
@@ -500,11 +501,11 @@ class DataStorage:
 
         lin=Lineage()
         lin.construct_dict(tree,0)
-        list_final=list()
-        for k,v in lin.level_dict.items():
+        list_final= []
+        for _k,v in lin.level_dict.items():
             list_final.extend(v)
 
-        list_final.insert(0,list(tree.keys())[0])
+        list_final.insert(0,list(tree.keys())[0])  # noqa: RUF015
 
         return list_final
 
@@ -610,7 +611,7 @@ class DataStorage:
 
         # shiny_dict_level = {}
         # for key, value in level_dict.items():
-        
+
         #     tmp_dict = {}
 
         #     for val in value:
@@ -628,7 +629,7 @@ class DataStorage:
         #     shiny_dict_level[new_key] = tmp_dict
         # print(f"Took {time.time() - start} sec. --Metacyc_category_list Getter.")
         return final_res
-        
+
 
     def get_outsider_cpd(self):
         """Return the compounds found in data but doesnt fit in OTHERS category
@@ -643,7 +644,7 @@ class DataStorage:
         diff = [cpd for cpd in cpd_in_data if cpd not in cpd_in_db]
 
         return diff, str("Others " + str(len(diff)) + "/" + str(len(cpd_in_db)))
-    
+
 
     def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
 

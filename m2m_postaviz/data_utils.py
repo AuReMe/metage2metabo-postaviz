@@ -28,9 +28,9 @@ except Exception as e:
   import subprocess
   import sys
 
-  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars"])
-  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])
-  subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars"])  # noqa: S603
+  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])  # noqa: S603
+  subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])  # noqa: S603
 
   import polars as pl
 
@@ -1104,7 +1104,7 @@ def build_compounds_index(save_path: Path):
     cpd_list = main_dataframe.columns.tolist()
     if "smplID" in cpd_list:
         cpd_list.remove("smplID")
-    cpd_index = pd.Series(cpd_list, range(0, len(cpd_list)))
+    cpd_index = pd.Series(cpd_list, range(len(cpd_list)))
     saving_path = Path(save_path, "compounds_index.tsv")
 
     cpd_index.to_csv(saving_path, sep="\t", index=False)
@@ -1171,10 +1171,10 @@ def sum_and_concat_by_chunk(directory_path: Path):
         final_dataframe = pl.concat(res, how="diagonal")
         final_dataframe = final_dataframe.drop("smplID").insert_column(0, final_dataframe.get_column("smplID")) # Not necessary at all but i'm used to smplID col index with pandas.
         final_dataframe = final_dataframe.fill_null(0)
-        
+
         filename = "producers_dataframe_chunk_"+str(chunk_index)+".parquet.gzip"
         final_dataframe.write_parquet(Path(tmp_dir_path,filename), compression = "gzip")
-        
+
     return tmp_dir_path, tmp_dir
 
 

@@ -1,22 +1,24 @@
 import time
 
+import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib
-import polars as pl
 
-from pandas.api.types import is_numeric_dtype
+# import plotly.graph_objects as go
+import polars as pl
+import seaborn as sns
 from matplotlib.patches import Patch
-from plotly.subplots import make_subplots
+from pandas.api.types import is_numeric_dtype
+
+# from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
+
 
 def cpd_reached_plot(data: DataStorage, metadata_input: str):
     """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
@@ -37,7 +39,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     df = df.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
     df = df.select("smplID", "Comm_reached")
     df = df.group_by("smplID").agg(pl.mean("Comm_reached").cast(pl.Int32))
-    
+
     df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
     df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
 
@@ -296,7 +298,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
         return res
 
     if x1 != x2:
-        
+
         df = data.get_cscope_producers_dataframe().to_pandas()
         df = df[[*y1,x1,x2]]
         df = df.dropna()
@@ -338,7 +340,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
 
 def make_pcoa(data: DataStorage, column, choices, abundance, color):
-    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize 
+    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize
     by filtering on specific column, using the abundance data and color the resulting plot.
 
     Args:
@@ -483,7 +485,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     if len(compounds_input) == 0:
         return
 
-    if with_abundance == True:
+    if with_abundance:
         producer_data = data.get_normalised_abundance_dataframe(with_metadata=True)
     else:
         producer_data = data.get_cscope_producers_dataframe()
@@ -540,7 +542,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
         else:
             fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
-            fig.update_xaxes(type='category')
+            fig.update_xaxes(type="category")
         return fig
 
     df = producer_data.select([*compounds_input,user_input1,color_input])
@@ -548,7 +550,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if is_numeric_dtype(df[user_input1]):
         df.sort_values(user_input1, inplace=True)
-    
+
     has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
 
     if df.get_column(user_input1).dtype.is_numeric():
@@ -557,10 +559,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if has_unique_value:
         fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type="category")
     else:
         fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type="category")
     return fig
 
 
@@ -706,14 +708,14 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
     Returns:
         list: List of three clustermap matrix object.
     """
-    matplotlib.use('pdf')
+    matplotlib.use("pdf")
     plots = []
 
     for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
 
         dataframe = dataframe.to_pandas()
         dataframe.set_index("smplID", inplace = True)
-        
+
         if metadata_input is not None and metadata_input != "None":
 
             metadata = data.get_metadata()
@@ -734,7 +736,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             g = sns.clustermap(dataframe, row_colors=row_colors, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
             handles = [Patch(facecolor=lut[name]) for name in lut]
             plt.legend(handles, lut, title=metadata_input,
-            bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc='upper right')
+            bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc="upper right")
 
             plots.append(g)
 

@@ -65,7 +65,7 @@ def overview_module_ui(Data: DataStorage):
                 width=300,
                 gap=30,
                 bg="lightgrey",
-                
+
             ),
         output_widget("pcoa_plot")
         ),

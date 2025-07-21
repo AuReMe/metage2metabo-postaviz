@@ -1,10 +1,10 @@
+import polars as pl
 from shiny import module
 from shiny import reactive
 from shiny import render
 from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
-import polars as pl
 
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
@@ -50,7 +50,7 @@ def cpd_tab_ui(Data: DataStorage):
                     ui.input_selectize("sample_filter_metadata2"," ",choices=[],multiple=True),
                     ui.input_selectize("sample_filter_selection_input", "Selection of samples to filter.", choices=Data.get_sample_list(), multiple=True, remove_button=True),
                     ui.card_footer(ui.input_action_button("reset_sample_filter_button", "Reset",width="50%")),
-                    
+
                     max_height="400px"),
                 ui.row(
                     ui.input_checkbox("row_cluster", "Add rows clustering on Heatmap."),
@@ -161,7 +161,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         def sample_percentage_production_cscope():
             try:
                 plot = cpd_plot_generation.result()[1][0]
-            except TypeError as e:
+            except TypeError:
                 ui.notification_show(
                 "Sample Percentage production plot needs a metadata filter input.",
                 type="warning",
@@ -303,9 +303,9 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                 type="warning",
                 duration=6,)
                 return
-            
+
             return ui.update_selectize("sample_filter_metadata2", choices=metadata)
-        
+
         @reactive.effect
         def _update_sample_filter_selection_input():
 
