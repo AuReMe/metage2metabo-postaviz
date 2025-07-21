@@ -97,7 +97,7 @@ class DataStorage:
         return df
 
 
-    def get_bin_dataframe(self, columns = None, condition = None, scope_mode = "scope") -> pd.DataFrame:
+    def get_bin_dataframe(self, columns = None, condition = None, scope_mode = "cscope") -> pd.DataFrame:
         """Find the bin_dataframe file in the save_path of DataStorage object and read it with the condition given in args.
 
         Args:
