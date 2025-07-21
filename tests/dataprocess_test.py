@@ -187,13 +187,13 @@ def test_shiny_module():
 
     # Object is empty check.
 
-    assert production_histplot.data != tuple(), "Production histogram is empty."
+    assert production_histplot[0].data != tuple(), "Production histogram is empty."
 
     assert production_boxplot.data != tuple(), "Production boxplot is empty."
 
     assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
-    assert production_histplot2.data != tuple(), "Production histogram is empty."
+    assert production_histplot2[0].data != tuple(), "Production histogram is empty."
 
     assert production_boxplot2.data != tuple(), "Production boxplot is empty."
 
