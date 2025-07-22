@@ -193,11 +193,17 @@ class DataStorage:
         return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
 
-    def set_metadata(self, new_metadata: pl.DataFrame):
+    def set_metadata(self, new_metadata):
 
         metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
-        new_metadata.write_parquet(metadata_path, compression="gzip")
+        if isinstance(new_metadata, pl.DataFrame):
+
+            new_metadata.write_parquet(metadata_path, compression="gzip")
+
+        if isinstance(new_metadata, pd.DataFrame):
+
+            new_metadata.to_parquet(metadata_path, compression="gzip")
 
 
     def get_taxonomic_dataframe(self) -> pl.DataFrame:

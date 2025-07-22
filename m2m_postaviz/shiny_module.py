@@ -142,11 +142,11 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
         df = df.merge(metadata, "inner", "smplID")
 
-        if is_numeric_dtype(df[factor]):
-
-            factor_choice = list(map(float, factor_choice))
-
         if factor_choice != "None" and len(factor_choice) > 0:
+
+            if is_numeric_dtype(df[factor]):
+
+                factor_choice = list(map(float, factor_choice))
 
             df = df.loc[df[factor].isin(factor_choice)]
 
