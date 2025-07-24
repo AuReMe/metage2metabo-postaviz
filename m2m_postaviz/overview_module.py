@@ -22,6 +22,8 @@ def overview_module_ui(Data: DataStorage):
     metadata_label = Data.get_factors()
     metadata_label.remove("smplID")
 
+    welcome_card = ui.output_text_verbatim("Starting_message")
+
     cpds_reached = ui.card(
         ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
         ui.card(output_widget("cpd_reach_plot"), full_screen=True)
@@ -120,11 +122,15 @@ def overview_module_ui(Data: DataStorage):
             total_production_plot,
     )
 
-    return global_overview, pcoa_card, custom_pcoa_card
+    return welcome_card, global_overview, pcoa_card, custom_pcoa_card
 
 @module.server
 def overview_module_server(input, output, session, Data: DataStorage):
 
+    @render.text
+    def Starting_message():
+        msg = "blablabla"
+        return msg
 
     @render.text
     @reactive.event(input.export_global_production_test_button)
@@ -160,7 +166,6 @@ def overview_module_server(input, output, session, Data: DataStorage):
         Data.keep_working_dataframe("total_production_plot_dataframe", df)
 
         return fig
-
 
     @render.data_frame
     def production_test_dataframe():

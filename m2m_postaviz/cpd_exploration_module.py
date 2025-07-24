@@ -75,9 +75,9 @@ def cpd_tab_ui(Data: DataStorage):
         ),
 
         ui.navset_card_tab(
-            ui.nav_panel("Cscope", ui.card(ui.output_plot("heatmap_cscope"), ui.card_footer(ui.input_action_button("save_cscope_heatmap", "save plot.")), full_screen=True)),
-            ui.nav_panel("Iscope", ui.card(ui.output_plot("heatmap_iscope"), ui.card_footer(ui.input_action_button("save_iscope_heatmap", "save plot.")), full_screen=True)),
-            ui.nav_panel("Added value", ui.card(ui.output_plot("heatmap_added_value"), ui.card_footer(ui.input_action_button("save_advalue_heatmap", "save plot.")), full_screen=True)),
+            ui.nav_panel("Cscope", ui.card(ui.output_plot("heatmap_cscope"), ui.card_footer(ui.input_action_button("save_cscope_heatmap", "save plot."), ui.output_text_verbatim("log_cscope_save")), full_screen=True)),
+            ui.nav_panel("Iscope", ui.card(ui.output_plot("heatmap_iscope"), ui.card_footer(ui.input_action_button("save_iscope_heatmap", "save plot."), ui.output_text_verbatim("log_iscope_save")), full_screen=True)),
+            ui.nav_panel("Added value", ui.card(ui.output_plot("heatmap_added_value"), ui.card_footer(ui.input_action_button("save_advalue_heatmap", "save plot."), ui.output_text_verbatim("log_advalue_save")), full_screen=True)),
             title= "Heatmap of the number of bins producers of the compounds for each samples (or selected samples). Metadata filtering and hierarchical clustering on both samples and compounds is available."),
 
         ui.navset_card_tab(
@@ -103,32 +103,35 @@ def cpd_tab_ui(Data: DataStorage):
 @module.server
 def cpd_tab_server(input, output, session, Data: DataStorage):
 
-        @reactive.effect
+        @render.text
         @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
-        def _save_cscope_heatmap():
+        def log_cscope_save():
             obj_to_save = Data.get_working_dataframe("cscope_heatmap")
             if obj_to_save is None:
-                return
+                return "Obj to save is None."
             else:
-                Data.save_seaborn_plot(obj_to_save, "cscope_heatmap.pdf")
+                log_msg = Data.save_seaborn_plot(obj_to_save, "cscope_heatmap.pdf")
+                return log_msg
 
-        @reactive.effect
+        @render.text
         @reactive.event(input.save_iscope_heatmap, ignore_none=True, ignore_init=True)
-        def _save_iscope_heatmap():
+        def log_iscope_save():
             obj_to_save = Data.get_working_dataframe("iscope_heatmap")
             if obj_to_save is None:
-                return
+                return "Obj to save is None."
             else:
-                Data.save_seaborn_plot(obj_to_save, "iscope_heatmap.pdf")
+                log_msg = Data.save_seaborn_plot(obj_to_save, "iscope_heatmap.pdf")
+                return log_msg
 
-        @reactive.effect
+        @render.text
         @reactive.event(input.save_advalue_heatmap, ignore_none=True, ignore_init=True)
-        def _save_advalue_heatmap():
+        def log_advalue_save():
             obj_to_save = Data.get_working_dataframe("advalue_heatmap")
             if obj_to_save is None:
                 return
             else:
-                Data.save_seaborn_plot(obj_to_save, "advalue_heatmap.pdf")
+                log_msg = Data.save_seaborn_plot(obj_to_save, "advalue_heatmap.pdf")
+                return log_msg
 
         @reactive.effect
         @reactive.event(input.reset_sample_filter_button, ignore_none=True)

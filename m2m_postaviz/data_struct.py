@@ -307,11 +307,12 @@ class DataStorage:
 
         if Path(self.output_path, file_name).is_file():
             new_file_name = self.check_and_rename(Path(self.output_path, file_name))
-            print(new_file_name)
             sns_obj.savefig(new_file_name)
+            return f"Filed saved in: {Path(self.output_path, new_file_name)}"
 
         else:
             sns_obj.savefig(Path(self.output_path, file_name))
+            return f"Filed saved in: {Path(self.output_path, file_name)}"
 
 
     def check_and_rename(self, file_path: Path, add: int = 0) -> Path:

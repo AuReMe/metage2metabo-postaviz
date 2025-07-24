@@ -126,7 +126,7 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
     """
 
     if file_exist("normalised_abundance_dataframe_postaviz.tsv", save_path) and file_exist("abundance_file.tsv", save_path):
-        print("normalised_abundance_dataframe already exist in save directory.")
+        print("Abundance dataframe already exist in save directory.")
         return
     # Read csv with pandas to avoid Polars schema lenght limit. Reset index and transform to polars.
     abundance_df = pd.read_csv(abundance_path, sep="\t").reset_index(names="pd_index")
@@ -140,7 +140,7 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
     if len(non_numeric_col) == 1:
         abundance_df = abundance_df.with_columns(pl.col(non_numeric_col[0]).alias("smplID")).drop(non_numeric_col[0])
     else:
-        raise RuntimeError(f"The numbers of non numeric columns ({len(non_numeric_col)}) isn't equal to one.\n Only one STR column must be present in the abundance dataframe to be used as identifier index.")
+        raise RuntimeError(f"The numbers of non numeric columns ({len(non_numeric_col)}) isn't equal to one.\n Only one STR (non-numeric at least) column must be present in the abundance dataframe to be used as identifier index.")
     # Abundance_file.tsv needed in another function. Save with pandas index.
     abundance_matrix = abundance_df.to_pandas().set_index("smplID")
     abundance_matrix.to_csv(Path(save_path,"abundance_file.tsv"),sep="\t")
@@ -169,19 +169,6 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path):
     final_df.set_index("smplID", inplace=True)
     final_df.to_csv(Path(save_path,"normalised_abundance_dataframe_postaviz.tsv"),sep="\t")
     print("Abundance done.")
-
-
-def open_added_value(file_name, path: Path):
-    for root, _dirs, files in path.walk():
-        if file_name in files:
-            added_file = sbml_to_classic(open_json(Path(root, file_name))["addedvalue"])
-            return added_file
-
-
-def open_json(file_path):
-    with open(file_path) as file:
-        file_data = json.load(file)
-    return file_data
 
 
 def open_tsv(file_name: str, convert_cpd_id: bool = False, rename_columns: bool = False, first_col: str = "smplID"):

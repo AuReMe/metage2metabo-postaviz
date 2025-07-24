@@ -68,7 +68,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         if df.get_column(metadata_input).dtype.is_numeric():
             df = df.sort(metadata_input)
 
-        fig = px.box(df, x=metadata_input,y="value",color="variable")
+        fig = px.box(df, x="variable",y="value",color=metadata_input)
         fig.update_xaxes(type="category")
 
         return fig
