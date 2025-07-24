@@ -172,7 +172,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
     def bin_unique_count_iscope_histplot():
         return run_exploration.result()[0][1]
 
-    # @ui.bind_task_button(button_id="run_custom_pcoa") # ?????
+    # @ui.bind_task_button(button_id="run_custom_pcoa")
     @reactive.extended_task
     async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
 

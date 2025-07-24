@@ -353,11 +353,18 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     Returns:
         px.scatter: Plotly scatter figure.
     """
+
+    print(f"Abundance: {abundance}")
+    print("Main with abundance: ")
+    print(data.get_normalised_abundance_dataframe())
+    print("Main no abundance: ")
+    print(data.get_main_dataframe())
     if abundance:
         df = data.get_normalised_abundance_dataframe().to_pandas()
     else:
         df = data.get_main_dataframe().to_pandas()
 
+    print(f"Dataframe used: {df}")
     metadata = data.get_metadata().to_pandas()
 
     if du.is_indexed_by_id(df):
