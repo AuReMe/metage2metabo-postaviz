@@ -355,10 +355,7 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     """
 
     print(f"Abundance: {abundance}")
-    print("Main with abundance: ")
-    print(data.get_normalised_abundance_dataframe())
-    print("Main no abundance: ")
-    print(data.get_main_dataframe())
+
     if abundance:
         df = data.get_normalised_abundance_dataframe().to_pandas()
     else:
@@ -422,9 +419,10 @@ def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_meth
 
     df_pcoa = coordinate[["PC1","PC2"]]
     df_pcoa["smplID"] = main_dataframe.index.to_numpy()
-
+    print(df_pcoa)
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
+    print(df_pcoa)
 
     return df_pcoa
 
