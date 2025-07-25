@@ -22,7 +22,7 @@ def overview_module_ui(Data: DataStorage):
     metadata_label = Data.get_factors()
     metadata_label.remove("smplID")
 
-    welcome_card = ui.output_text_verbatim("Starting_message")
+    welcome_card = ui.output_text("Starting_message")
 
     cpds_reached = ui.card(
         ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
