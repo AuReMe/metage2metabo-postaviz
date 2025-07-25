@@ -19,6 +19,8 @@ def bin_exp_ui(Data: DataStorage):
         taxonomic_rank = Data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
 
+        welcome_card = ui.card(ui.output_text("Starting_message"))
+
         bins_exploration_card = ui.card(
             ui.card_header("Bins exploration"),
             ui.card_body(
@@ -55,12 +57,16 @@ def bin_exp_ui(Data: DataStorage):
 
         bins_exploration_card = ui.output_text_verbatim("no_taxonomy_provided")
 
-    return bins_exploration_card
+    return welcome_card, bins_exploration_card
 
 
 @module.server
 def bin_exp_server(input, output, session, Data: DataStorage):
 
+    @render.text
+    def Starting_message():
+        msg = "blablabla"
+        return msg
 
     @render.text
     def no_taxonomy_provided():

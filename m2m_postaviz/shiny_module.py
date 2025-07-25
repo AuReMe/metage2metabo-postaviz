@@ -52,7 +52,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     dfi = dfi.group_by("smplID").agg(pl.mean("Ind_reached").cast(pl.Int32))
 
     df = df.join(dfi, on="smplID")
-
+    print(df)
     if metadata_input == "None" or metadata_input == "smplID":
 
         df = df.unpivot(index=["smplID"])
@@ -67,7 +67,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
 
         if df.get_column(metadata_input).dtype.is_numeric():
             df = df.sort(metadata_input)
-
+        print(df)
         fig = px.box(df, x="variable",y="value",color=metadata_input)
         fig.update_xaxes(type="category")
 

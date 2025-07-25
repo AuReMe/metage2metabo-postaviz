@@ -25,6 +25,8 @@ def cpd_tab_ui(Data: DataStorage):
 
         cpd_exploration_all_category = ["None"]
 
+    welcome_card = ui.card(ui.output_text("Starting_message"))
+
     compounds_exploration_card = ui.card(
     ui.card_header("Metabolites exploration."),
     ui.card_body(
@@ -97,226 +99,231 @@ def cpd_tab_ui(Data: DataStorage):
 
     full_screen=True,)
 
-    return compounds_exploration_card
+    return welcome_card, compounds_exploration_card
 
 
 @module.server
 def cpd_tab_server(input, output, session, Data: DataStorage):
 
-        @render.text
-        @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
-        def log_cscope_save():
-            obj_to_save = Data.get_working_dataframe("cscope_heatmap")
-            if obj_to_save is None:
-                return "Obj to save is None."
-            else:
-                log_msg = Data.save_seaborn_plot(obj_to_save, "cscope_heatmap.pdf")
-                return log_msg
+    @render.text
+    def Starting_message():
+        msg = "blablabla"
+        return msg
 
-        @render.text
-        @reactive.event(input.save_iscope_heatmap, ignore_none=True, ignore_init=True)
-        def log_iscope_save():
-            obj_to_save = Data.get_working_dataframe("iscope_heatmap")
-            if obj_to_save is None:
-                return "Obj to save is None."
-            else:
-                log_msg = Data.save_seaborn_plot(obj_to_save, "iscope_heatmap.pdf")
-                return log_msg
+    @render.text
+    @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
+    def log_cscope_save():
+        obj_to_save = Data.get_working_dataframe("cscope_heatmap")
+        if obj_to_save is None:
+            return "Obj to save is None."
+        else:
+            log_msg = Data.save_seaborn_plot(obj_to_save, "cscope_heatmap.pdf")
+            return log_msg
 
-        @render.text
-        @reactive.event(input.save_advalue_heatmap, ignore_none=True, ignore_init=True)
-        def log_advalue_save():
-            obj_to_save = Data.get_working_dataframe("advalue_heatmap")
-            if obj_to_save is None:
-                return
-            else:
-                log_msg = Data.save_seaborn_plot(obj_to_save, "advalue_heatmap.pdf")
-                return log_msg
+    @render.text
+    @reactive.event(input.save_iscope_heatmap, ignore_none=True, ignore_init=True)
+    def log_iscope_save():
+        obj_to_save = Data.get_working_dataframe("iscope_heatmap")
+        if obj_to_save is None:
+            return "Obj to save is None."
+        else:
+            log_msg = Data.save_seaborn_plot(obj_to_save, "iscope_heatmap.pdf")
+            return log_msg
 
-        @reactive.effect
-        @reactive.event(input.reset_sample_filter_button, ignore_none=True)
-        def _reset_sample_filter_choice():
-            return ui.update_selectize("sample_filter_selection_input", choices=Data.get_sample_list(), selected=None)
+    @render.text
+    @reactive.event(input.save_advalue_heatmap, ignore_none=True, ignore_init=True)
+    def log_advalue_save():
+        obj_to_save = Data.get_working_dataframe("advalue_heatmap")
+        if obj_to_save is None:
+            return
+        else:
+            log_msg = Data.save_seaborn_plot(obj_to_save, "advalue_heatmap.pdf")
+            return log_msg
 
-        @render.plot
-        def heatmap_cscope():
-            plot_object = cpd_plot_generation.result()[3][0]
-            Data.keep_working_dataframe("cscope_heatmap", plot_object)
-            return plot_object
+    @reactive.effect
+    @reactive.event(input.reset_sample_filter_button, ignore_none=True)
+    def _reset_sample_filter_choice():
+        return ui.update_selectize("sample_filter_selection_input", choices=Data.get_sample_list(), selected=None)
 
-        @render.plot
-        def heatmap_iscope():
-            plot_object = cpd_plot_generation.result()[3][1]
-            Data.keep_working_dataframe("iscope_heatmap", plot_object)
-            return plot_object
+    @render.plot
+    def heatmap_cscope():
+        plot_object = cpd_plot_generation.result()[3][0]
+        Data.keep_working_dataframe("cscope_heatmap", plot_object)
+        return plot_object
 
-        @render.plot
-        def heatmap_added_value():
-            plot_object = cpd_plot_generation.result()[3][2]
-            Data.keep_working_dataframe("advalue_heatmap", plot_object)
-            return plot_object
+    @render.plot
+    def heatmap_iscope():
+        plot_object = cpd_plot_generation.result()[3][1]
+        Data.keep_working_dataframe("iscope_heatmap", plot_object)
+        return plot_object
 
-        @render.data_frame
-        def cpd_exp_stat_dataframe():
-            return cpd_plot_generation.result()[2]
+    @render.plot
+    def heatmap_added_value():
+        plot_object = cpd_plot_generation.result()[3][2]
+        Data.keep_working_dataframe("advalue_heatmap", plot_object)
+        return plot_object
 
-        @render_widget
-        def sample_percentage_production_cscope():
+    @render.data_frame
+    def cpd_exp_stat_dataframe():
+        return cpd_plot_generation.result()[2]
+
+    @render_widget
+    def sample_percentage_production_cscope():
+        try:
+            plot = cpd_plot_generation.result()[1][0]
+        except TypeError:
+            ui.notification_show(
+            "Sample Percentage production plot needs a metadata filter input.",
+            type="warning",
+            duration=6,)
+            plot = None
+
+        return plot
+
+    @render_widget
+    def sample_percentage_production_iscope():
+        return cpd_plot_generation.result()[1][1]
+
+    @render_widget
+    def cpd_exp_producers_plot():
+        return cpd_plot_generation.result()[0]
+
+    @ui.bind_task_button(button_id="run_plot_generation")
+    @reactive.extended_task
+    async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
+
+        cpd_filtered_list = []
+        for cpd in Data.get_compound_list():
+            if cpd[:-3] in selected_compounds:
+                cpd_filtered_list.append(cpd)
+
+        if len(selected_compounds) == 0:
+            return
+
+        nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
+
+        if user_input1 != "None":
+
+            percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
+
+        else:
+            percent_barplot = None
+
+        if with_statistic:
+
             try:
-                plot = cpd_plot_generation.result()[1][0]
-            except TypeError:
-                ui.notification_show(
-                "Sample Percentage production plot needs a metadata filter input.",
-                type="warning",
-                duration=6,)
-                plot = None
-
-            return plot
-
-        @render_widget
-        def sample_percentage_production_iscope():
-            return cpd_plot_generation.result()[1][1]
-
-        @render_widget
-        def cpd_exp_producers_plot():
-            return cpd_plot_generation.result()[0]
-
-        @ui.bind_task_button(button_id="run_plot_generation")
-        @reactive.extended_task
-        async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
-
-            cpd_filtered_list = []
-            for cpd in Data.get_compound_list():
-                if cpd[:-3] in selected_compounds:
-                    cpd_filtered_list.append(cpd)
-
-            if len(selected_compounds) == 0:
-                return
-
-            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
-
-            if user_input1 != "None":
-
-                percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
-
-            else:
-                percent_barplot = None
-
-            if with_statistic:
-
-                try:
-                    stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
-                except:  # noqa: E722
-                    stat_dataframe = None
-            else:
-
+                stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
+            except:  # noqa: E722
                 stat_dataframe = None
+        else:
 
-            cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value) ###
+            stat_dataframe = None
 
-            return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
+        cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value) ###
 
-
-        @reactive.effect
-        @reactive.event(input.run_plot_generation, ignore_none=True)
-        def handle_click_cpd_exploration():
-            cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(),
-                                input.color_filter_input(),
-                                input.sample_filter_choice_input(), input.sample_filter_selection_input(),
-                                input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
-                                input.multiple_correction_method(), input.row_cluster(), input.col_cluster(), input.render_cpd_abundance())
+        return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
 
 
-        @reactive.effect
-        def _update_sub_category_choices():
+    @reactive.effect
+    @reactive.event(input.run_plot_generation, ignore_none=True)
+    def handle_click_cpd_exploration():
+        cpd_plot_generation(input.compounds_choice_input(), input.metadata_filter_input(),
+                            input.color_filter_input(),
+                            input.sample_filter_choice_input(), input.sample_filter_selection_input(),
+                            input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
+                            input.multiple_correction_method(), input.row_cluster(), input.col_cluster(), input.render_cpd_abundance())
 
-            if not Data.USE_METACYC_PADMET:
 
-                return
+    @reactive.effect
+    def _update_sub_category_choices():
 
-            metacyc_category_first_input = input.first_category_input().split(" ")[0]
+        if not Data.USE_METACYC_PADMET:
 
-            if metacyc_category_first_input == "Others":
+            return
 
-                return ui.update_selectize("category_choice_input", choices=["Others"])
+        metacyc_category_first_input = input.first_category_input().split(" ")[0]
 
-            if metacyc_category_first_input == "None" or metacyc_category_first_input == "":
+        if metacyc_category_first_input == "Others":
 
-                return ui.update_selectize("category_choice_input", choices=[])
+            return ui.update_selectize("category_choice_input", choices=["Others"])
 
-            category_node = []
+        if metacyc_category_first_input == "None" or metacyc_category_first_input == "":
 
-            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
+            return ui.update_selectize("category_choice_input", choices=[])
 
-            category_node = category_node[0]
+        category_node = []
 
-            new_sub_category_list = Data.get_metacyc_category_list(category_node)
+        Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
 
-            new_sub_category_list.insert(0, input.first_category_input())
+        category_node = category_node[0]
 
-            return ui.update_selectize("category_choice_input", choices=new_sub_category_list)
+        new_sub_category_list = Data.get_metacyc_category_list(category_node)
 
-        @reactive.effect
-        def _update_compounds_choices():
+        new_sub_category_list.insert(0, input.first_category_input())
 
-            if not Data.USE_METACYC_PADMET:
+        return ui.update_selectize("category_choice_input", choices=new_sub_category_list)
 
-                return
+    @reactive.effect
+    def _update_compounds_choices():
 
-            category_level = input.category_choice_input().split(" ")[0]
+        if not Data.USE_METACYC_PADMET:
 
-            if category_level == "":
+            return
 
-                return ui.update_selectize("compounds_choice_input", choices=[])
+        category_level = input.category_choice_input().split(" ")[0]
 
-            if category_level == "None":
+        if category_level == "":
 
-                return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
+            return ui.update_selectize("compounds_choice_input", choices=[])
 
-            if category_level == "Others":
+        if category_level == "None":
 
-                return ui.update_selectize("compounds_choice_input", choices=Data.get_outsider_cpd()[0])
+            return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
 
-            category_node = []
+        if category_level == "Others":
 
-            Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
+            return ui.update_selectize("compounds_choice_input", choices=Data.get_outsider_cpd()[0])
 
-            category_node = category_node[0]
+        category_node = []
 
-            cpds_found = []
+        Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
 
-            Data.get_compounds_from_category(category_node, cpds_found)
+        category_node = category_node[0]
 
-            cpd_list = Data.get_compound_list(True)
+        cpds_found = []
 
-            final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
+        Data.get_compounds_from_category(category_node, cpds_found)
 
-            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
+        cpd_list = Data.get_compound_list(True)
 
-        @reactive.effect
-        def _update_metadata_sample_filter():
+        final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
 
-            metadata_input1 = input.sample_filter_metadata1()
+        return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
-            try:
-                metadata = Data.get_metadata().get_column(metadata_input1).unique().to_list()
-            except Exception as e:
-                ui.notification_show(
-                f"Sample filter metadata error, {e}",
-                type="warning",
-                duration=6,)
-                return
+    @reactive.effect
+    def _update_metadata_sample_filter():
 
-            return ui.update_selectize("sample_filter_metadata2", choices=metadata)
+        metadata_input1 = input.sample_filter_metadata1()
 
-        @reactive.effect
-        def _update_sample_filter_selection_input():
+        try:
+            metadata = Data.get_metadata().get_column(metadata_input1).unique().to_list()
+        except Exception as e:
+            ui.notification_show(
+            f"Sample filter metadata error, {e}",
+            type="warning",
+            duration=6,)
+            return
 
-            sample_metadata_filter1 = input.sample_filter_metadata1()
-            sample_metadata_filter2 = input.sample_filter_metadata2()
-            metadata = Data.get_metadata()
+        return ui.update_selectize("sample_filter_metadata2", choices=metadata)
 
-            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
-            metadata = metadata.get_column("smplID").to_list()
+    @reactive.effect
+    def _update_sample_filter_selection_input():
 
-            return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)
+        sample_metadata_filter1 = input.sample_filter_metadata1()
+        sample_metadata_filter2 = input.sample_filter_metadata2()
+        metadata = Data.get_metadata()
+
+        metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+        metadata = metadata.get_column("smplID").to_list()
+
+        return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)
