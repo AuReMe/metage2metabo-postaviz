@@ -40,8 +40,8 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     df = df.select("smplID", "Comm_reached")
     df = df.group_by("smplID").agg(pl.mean("Comm_reached").cast(pl.Int32))
 
-    df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
-    df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
+    # df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
+    # df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
 
     # Ind_reach
     dfi = data.get_iscope_producers_dataframe(with_metadata=False)
@@ -190,76 +190,85 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     return figures1, fig2, df, time.time() - start_timer, fig3
 
 
+def cpd_reach_statistical_dataframe(data: DataStorage, column_of_interest, array_comm_reached, array_ind_reached, multiple_test_correction, correction_method):
+
+    if multiple_test_correction:
+        multipletests_method = correction_method
+    else:
+        multipletests_method = "hs"
+
+    return
+
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
 
-            x1, x2 = user_input1, user_input2
+    x1, x2 = user_input1, user_input2
 
-            # No input selected
-            if x1 == "None":
-                return
+    # No input selected
+    if x1 == "None":
+        return
 
-            if multiple_test_correction:
-                multipletests_method = correction_method
+    if multiple_test_correction:
+        multipletests_method = correction_method
+    else:
+        multipletests_method = "hs"
+
+    if with_abundance and data.HAS_ABUNDANCE_DATA:
+        column_value = "Total_abundance_weighted"
+    else:
+        column_value = "Total_production"
+
+    df = data.get_global_production_dataframe().to_pandas()
+
+    # At least first axis selected
+    if x2 == "None":
+        df = df[[column_value,x1]]
+        df = df.dropna()
+
+        if is_numeric_dtype(df[x1]):
+
+            res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+
+            return res
+
+        res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
+        # all_dataframe["global_production_test_dataframe"] = res
+
+        return res
+
+    # Both axis have been selected and are not equal.
+    if x1 != x2:
+
+        df = df[[column_value,x1,x2]]
+        df = df.dropna()
+
+        if is_numeric_dtype(df[x1]):
+
+            if is_numeric_dtype(df[x2]):
+
+                # Double cor
+                res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+                res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
+                return pd.concat([res1,res2])
+
             else:
-                multipletests_method = "hs"
 
-            if with_abundance and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
+                # cor filtered by second categorical factor .loc
+                all_results = []
+                for unique_x2_value in df[x2].unique():
 
-            df = data.get_global_production_dataframe().to_pandas()
+                    value_array = df.loc[df[x2] == unique_x2_value][column_value]
+                    factor_array = df.loc[df[x2] == unique_x2_value][x1]
 
-            # At least first axis selected
-            if x2 == "None":
-                df = df[[column_value,x1]]
-                df = df.dropna()
+                    all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
 
-                if is_numeric_dtype(df[x1]):
+                return pd.concat(all_results)
 
-                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+        res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
+        # all_dataframe["global_production_test_dataframe"] = res
 
-                    return res
+        return res
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
-                # all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-
-            # Both axis have been selected and are not equal.
-            if x1 != x2:
-
-                df = df[[column_value,x1,x2]]
-                df = df.dropna()
-
-                if is_numeric_dtype(df[x1]):
-
-                    if is_numeric_dtype(df[x2]):
-
-                        # Double cor
-                        res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-                        res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
-                        return pd.concat([res1,res2])
-
-                    else:
-
-                        # cor filtered by second categorical factor .loc
-                        all_results = []
-                        for unique_x2_value in df[x2].unique():
-
-                            value_array = df.loc[df[x2] == unique_x2_value][column_value]
-                            factor_array = df.loc[df[x2] == unique_x2_value][x1]
-
-                            all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
-
-                        return pd.concat(all_results)
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
-                # all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-
-            return
+    return
 
 
 def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance = None):

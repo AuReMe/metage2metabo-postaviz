@@ -29,7 +29,7 @@ def overview_module_ui(Data: DataStorage):
                 ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")),
                     "blablabla tooltips !"),),               # TOOLTIP HERE !!
 
-                
+
         ui.layout_sidebar(
             ui.sidebar(
                 
@@ -195,6 +195,18 @@ def overview_module_server(input, output, session, Data: DataStorage):
         Data.keep_working_dataframe("total_production_plot_dataframe", df)
 
         return fig
+
+    @render.data_frame
+    def cpd_reach_test_dataframe():
+
+        test_dataframe = sm.cpd_reach_statistical_dataframe(Data, input.cpd_reach_input(),
+                                                            input.multiple_correction_reach_plot(),
+                                                            input.multiple_test_method_reach()
+                                                            )
+
+        # Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
+
+        return test_dataframe
 
     @render.data_frame
     def production_test_dataframe():
