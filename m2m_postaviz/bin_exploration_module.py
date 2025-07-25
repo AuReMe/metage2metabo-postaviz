@@ -4,6 +4,7 @@ from shiny import render
 from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
+from faicons import icon_svg as icon
 
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
@@ -22,7 +23,9 @@ def bin_exp_ui(Data: DataStorage):
         welcome_card = ui.card(ui.output_text("Starting_message"))
 
         bins_exploration_card = ui.card(
-            ui.card_header("Bins exploration"),
+            ui.card_header("Bins exploration",
+                ui.tooltip(
+                    ui.input_action_button("_bin_tab", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
             ui.card_body(
                 ui.layout_sidebar(
                     ui.sidebar(

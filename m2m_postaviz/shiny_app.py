@@ -21,6 +21,8 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_factors(with_dtype=True)
 
+    welcome_card = ui.card(ui.output_text("Starting_message"))
+
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
@@ -54,6 +56,7 @@ def run_shiny(data: DataStorage):
             ),
 
             ui.nav_panel("Metadata management",
+                welcome_card,
                 metadata_table
                 ),
 
@@ -67,6 +70,11 @@ def run_shiny(data: DataStorage):
         bin_exp_server("module_bin_exp", data)
 
         overview_module_server("module_pcoa", data)
+
+        @render.text
+        def Starting_message():
+            msg = "blablabla"
+            return msg
 
         @render.data_frame
         def metadata_table():

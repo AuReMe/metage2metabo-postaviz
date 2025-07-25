@@ -24,21 +24,34 @@ def overview_module_ui(Data: DataStorage):
     welcome_card = ui.card(ui.output_text("Starting_message"))
 
     cpds_reached = ui.card(
-        ui.card_header(
-            "Numbers of compounds reached.",
-            
-            ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list),
+        ui.card_header("Numbers of compounds reached.",
             ui.tooltip(
-                ui.input_action_button("info_reach_plot", "Info", icon=icon("play")),
+                ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")),
+                    "blablabla tooltips !"),),               # TOOLTIP HERE !!
 
-                "blablabla tooltips !")),               # TOOLTIP HERE !!
+                
+        ui.layout_sidebar(
+            ui.sidebar(
+                
+                ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list),
+                ui.input_checkbox("multiple_correction_reach_plot", "Multiple test correction"),
+                ui.panel_conditional("input.multiple_correction_reach_plot",
+                    ui.input_select("multiple_test_method_reach","Method",
+                        ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
+                        selected="bonferroni",)),
+                width=300,
+                bg="lightgrey"
+                ),
 
-
-        ui.card(output_widget("cpd_reach_plot"), full_screen=True)
+            ui.card(output_widget("cpd_reach_plot"), full_screen=True),
+            ui.card(ui.output_data_frame("cpd_reach_test_dataframe"),full_screen=True)
+        )
     )
 
     total_production_plot = ui.card(
-    ui.card_header("Total production of all compound, weighted with the abundance if provided."),
+    ui.card_header("Total production of all compound, weighted with the abundance if provided.",
+                   ui.tooltip(
+                        ui.input_action_button("info_tot_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
     ui.layout_sidebar(
         ui.sidebar(
             ui.input_select("prod_inputx1", "Label for X axis", factor_list),
@@ -54,8 +67,9 @@ def overview_module_ui(Data: DataStorage):
             ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
             ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
             ui.output_text_verbatim("export_global_production_test_dataframe", True),
-            width=350,
+            width=300,
             gap=30,
+            bg="lightgrey"
         ),
 
         ui.card(ui.p(output_widget("total_production_plot")),full_screen=True),
@@ -66,43 +80,50 @@ def overview_module_ui(Data: DataStorage):
     full_screen=True
     )
 
-    pcoa_card = ui.card(ui.card_header("Principal Coordinates Analysis made with all samples. Change color input to see different clusters."),
-        ui.layout_sidebar(
-            ui.sidebar(
-                ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
-                ui.output_ui("pcoa_ui"),
-                ui.help_text(ui.output_text("display_warning_pcoa")),
-                width=300,
-                gap=30,
-                bg="lightgrey",
+    pcoa_card = ui.card(
+                    ui.card_header("Principal Coordinates Analysis made with all samples. Change color input to see different clusters.",
+                        ui.tooltip(
+                            ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")), #FC BLABLA HERE !!
+                    ui.layout_sidebar(
+                        ui.sidebar(
+                            ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
+                            ui.output_ui("pcoa_ui"),
+                            ui.help_text(ui.output_text("display_warning_pcoa")),
+                            width=300,
+                            gap=30,
+                            bg="lightgrey",
 
-            ),
-        output_widget("pcoa_plot")
-        ),
-        full_screen=True,
-        min_height="600px"
-        )
+                        ),
+                    output_widget("pcoa_plot")
+                    ),
+                    full_screen=True,
+                    min_height="600px"
+                    )
 
 
-    custom_pcoa_card = ui.card(ui.card_header("Customize the Principal Coordinates Analysis by filtering samples with their metadata value."),
-        ui.layout_sidebar(
-            ui.sidebar(
+    custom_pcoa_card = ui.card(
+                            ui.card_header("Customize the Principal Coordinates Analysis by filtering samples with their metadata value.",
+                                ui.tooltip(
+                                    ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
+                            ui.layout_sidebar(
+                                ui.sidebar(
 
-                ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
-                ui.output_ui("pcoa_custom_choice"),
-                ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
-                ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
+                                    ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
+                                    ui.output_ui("pcoa_custom_choice"),
+                                    ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
+                                    ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
 
-                ui.input_task_button("run_custom_pcoa","Go"),
-                width=300,
-                gap=35,
-                bg="lightgrey"
-            ),
-        output_widget("pcoa_custom_plot"),
-        ),
-        full_screen=True,
-        min_height="600px"
-    )
+                                    ui.input_task_button("run_custom_pcoa","Go"),
+                                    width=300,
+                                    gap=35,
+                                    bg="lightgrey"
+                                ),
+                            output_widget("pcoa_custom_plot"),
+                            ),
+                            full_screen=True,
+                            min_height="600px"
+                        )
+
     global_overview = ui.card(
         ui.layout_column_wrap(
 
