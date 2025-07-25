@@ -656,3 +656,10 @@ class DataStorage:
     def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
 
         return cpd_index[cpd_list_index]
+
+
+    def tooltip_icon(self):
+
+        icon = Path(Path(__file__).parent, "information.png")
+        return str(icon)
+

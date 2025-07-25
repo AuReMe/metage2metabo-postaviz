@@ -6,6 +6,7 @@ from shiny import render
 from shiny import ui
 from shinywidgets import output_widget
 from shinywidgets import render_widget
+from faicons import icon_svg as icon
 
 import m2m_postaviz.shiny_module as sm
 from m2m_postaviz.data_struct import DataStorage
@@ -13,8 +14,6 @@ from m2m_postaviz.data_struct import DataStorage
 
 @module.ui
 def overview_module_ui(Data: DataStorage):
-
-    # all_dataframe = {"global_production_test_dataframe": None, "global_production_plot_dataframe": None, "metabolites_production_test_dataframe": None, "metabolites_production_plot_dataframe": None}
 
     factor_list = Data.get_factors()
     factor_list.insert(0, "None")
@@ -25,7 +24,16 @@ def overview_module_ui(Data: DataStorage):
     welcome_card = ui.card(ui.output_text("Starting_message"))
 
     cpds_reached = ui.card(
-        ui.card_header("Numbers of compounds reached.", ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list)),
+        ui.card_header(
+            "Numbers of compounds reached.",
+            
+            ui.input_select("cpd_reach_input", "metadata selection", choices=factor_list),
+            ui.tooltip(
+                ui.input_action_button("info_reach_plot", "Info", icon=icon("play")),
+
+                "blablabla tooltips !")),               # TOOLTIP HERE !!
+
+
         ui.card(output_widget("cpd_reach_plot"), full_screen=True)
     )
 
