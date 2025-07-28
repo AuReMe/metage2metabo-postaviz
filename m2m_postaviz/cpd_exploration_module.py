@@ -26,31 +26,31 @@ def cpd_tab_ui(Data: DataStorage):
 
         cpd_exploration_all_category = ["None"]
 
-    welcome_card = ui.card(ui.output_text("Starting_message"))
+    welcome_card = ui.card(ui.output_ui("Starting_message"))
 
     compounds_exploration_card = ui.card(
     ui.card_header("Metabolites exploration.",
         ui.tooltip(
-            ui.input_action_button("_cpd_tab", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
+            ui.input_action_button("_cpd_tab", " ", icon=icon("circle-question")), "If you provided Metacyc database information as input, you can select metabolite families to be explored. If not, select one or several metabolites to check their producibility. A metadata variable can be used to group samples samples, and another one can be used to additionally color the barplot. You can also filter samples (include, exclude) based on a metadata variable.")),  
     ui.card_body(
         ui.layout_sidebar(
             ui.sidebar(
 
-                ui.input_selectize("first_category_input","Select any compounds category from Metacyc_database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category, multiple=False),
-                ui.input_selectize("category_choice_input", "Select a sub category", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
+                ui.input_selectize("first_category_input","Select any compound category from the Metacyc database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category, multiple=False),
+                ui.input_selectize("category_choice_input", "Select a sub category of the Metacyc database", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
 
                 ui.card(" ",
                     ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
                     max_height="400px",
                     min_height="250px",
                     ),
-                ui.input_select("metadata_filter_input", "Filter by metadata:", Data.get_factors(remove_smpl_col=True, insert_none=True)),
+                ui.input_select("metadata_filter_input", "Group by metadata", Data.get_factors(remove_smpl_col=True, insert_none=True)),
 
-                ui.input_selectize("color_filter_input", "Add color by metadata: ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
+                ui.input_selectize("color_filter_input", "Second grouping for the barplot ", Data.get_factors(remove_smpl_col=False, insert_none=True), multiple=False, width="400px"),
 
                 ui.card(" ",
-                    ui.card_header("Sample Filtering (Optionnal)"),
-                    ui.input_radio_buttons("sample_filter_choice_input", "Include or exclude samples from the plots.", ["All", "Include", "Exclude"]),
+                    ui.card_header("Sample Filtering (Optional)"),
+                    ui.input_radio_buttons("sample_filter_choice_input", "Include or exclude samples from the analysis.", ["All", "Include", "Exclude"]),
                     ui.input_select("sample_filter_metadata1"," ",choices=Data.get_factors(True)),
                     ui.input_selectize("sample_filter_metadata2"," ",choices=[],multiple=True),
                     ui.input_selectize("sample_filter_selection_input", "Selection of samples to filter.", choices=Data.get_sample_list(), multiple=True, remove_button=True),
@@ -80,17 +80,17 @@ def cpd_tab_ui(Data: DataStorage):
         ),
 
         ui.navset_card_tab(
-            ui.nav_panel("Cscope", ui.card(ui.output_plot("heatmap_cscope"), ui.card_footer(ui.input_action_button("save_cscope_heatmap", "save plot."), ui.output_text_verbatim("log_cscope_save")), full_screen=True)),
-            ui.nav_panel("Iscope", ui.card(ui.output_plot("heatmap_iscope"), ui.card_footer(ui.input_action_button("save_iscope_heatmap", "save plot."), ui.output_text_verbatim("log_iscope_save")), full_screen=True)),
-            ui.nav_panel("Added value", ui.card(ui.output_plot("heatmap_added_value"), ui.card_footer(ui.input_action_button("save_advalue_heatmap", "save plot."), ui.output_text_verbatim("log_advalue_save")), full_screen=True)),
-            title= "Heatmap of the number of bins producers of the compounds for each samples (or selected samples). Metadata filtering and hierarchical clustering on both samples and compounds is available."),
+            ui.nav_panel("Community metabolic potential", ui.card(ui.output_plot("heatmap_cscope"), ui.card_footer(ui.input_action_button("save_cscope_heatmap", "save plot."), ui.output_text_verbatim("log_cscope_save")), full_screen=True)),
+            ui.nav_panel("Individual metabolic potential", ui.card(ui.output_plot("heatmap_iscope"), ui.card_footer(ui.input_action_button("save_iscope_heatmap", "save plot."), ui.output_text_verbatim("log_iscope_save")), full_screen=True)),
+            ui.nav_panel("Metabolite producible through cooperation only", ui.card(ui.output_plot("heatmap_added_value"), ui.card_footer(ui.input_action_button("save_advalue_heatmap", "save plot."), ui.output_text_verbatim("log_advalue_save")), full_screen=True)),
+            title= "Heatmap depicting the number of metabolic networks able to produce the selected metabolites in samples"),
 
         ui.navset_card_tab(
-            ui.nav_panel("Cscope", ui.card(output_widget("sample_percentage_production_cscope"), full_screen=True)),
-            ui.nav_panel("Iscope", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
-            title= "Barplot showing the percentage of sample producing the compounds (at least one genomes producers). Both in Cscope and Iscope."),
+            ui.nav_panel("Community metabolic potential", ui.card(output_widget("sample_percentage_production_cscope"), full_screen=True)),
+            ui.nav_panel("Individual metabolic potential", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
+            title= "Barplot showing the percentage of samples having at least one metabolic network able to produce the metabolites, either individually or considering interactions across populations."),
 
-        ui.card(ui.card_header("Boxplot of the numbers of genomes producers (Y-axis) for all compounds selected in input (X-axis). Can be filtered by metadata and grouped by color input."),
+        ui.card(ui.card_header("Boxplot showing the number of metabolic network producers for selected metabolites"),
             output_widget("cpd_exp_producers_plot"),full_screen=True),
 
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
@@ -108,10 +108,30 @@ def cpd_tab_ui(Data: DataStorage):
 @module.server
 def cpd_tab_server(input, output, session, Data: DataStorage):
 
-    @render.text
+    @render.ui
     def Starting_message():
-        msg = "blablabla"
-        return msg
+        msg = (
+            '<div style="white-space: normal;">'
+            "This is the <i><b>Metabolite-based exploration</b></i> tab.<br>"
+            "Here, you can explore the producibility of certain metabolites of interest across samples of the dataset.<br>"
+            "You can select metabolites and check whether they can be produced by metabolic networks individually, or collectively through metabolic interactions occurring across populations.<br><br>"
+            "<i> A few tips: </i><br>"
+            "<ul>"
+                "<li>You can weigh the producibility values of metabolites by the relative abundance of the producer instead of using {0,1} values.</li>"
+                "<li>If your data refers to the Metacyc database and if you have provided a padmet file (see documentation), you can also select a category of interest and explore the compounds in that category rather than picking metabolites one by one.</li>"
+            "</ul>"
+            "<i>Several plots are generated: </i><br>"
+            "<ul>"
+                "<li>The first ones are heatmaps displaying the number of metabolite producers in each sample, both at the community level (Cscope) and at the individual population level (Iscope), differences between both being the 'added-value of cooperation'. You can navigate between these three plots in the tabs below.</li>"
+                "<li>A barplot shows the percentage of samples having at least one metabolic network producing the metabolites, either individually, or taking into account interactions across populations.<br> </li>"
+                "<li>The last plot is a boxplot showing the number of producers for each metabolite, which can be filtered by metadata and colored by a variable of interest.</li>"
+            "</ul>"
+            'If you have any questions, please refer to the online '
+            '<a href="https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html" target="_blank">documentation</a> '
+            'or raise an issue on <a href="https://github.com/AuReMe/metage2metabo-postaviz/tree/main" target="_blank" > GitHub</a>.<br>'
+            '</div>'
+        )
+        return ui.HTML(msg)
 
     @render.text
     @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)

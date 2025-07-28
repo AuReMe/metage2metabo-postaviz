@@ -175,7 +175,11 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
         figures1.append(px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count",
                                     color="smplID" if color =="None" else color,
                                     hover_data="binID",
-                                    text_auto="Count_with_abundance" if with_abundance else "unique_production_count"))
+                                    text_auto="Count_with_abundance" if with_abundance else "unique_production_count",
+                                    labels={
+                                            "unique_production_count": "unique metabolites produced",
+                                            "Count_with_abundance": "abundance-weighted production of metabolites"
+                                            }))
 
     # If only one bin selected do not make boxplot.
 
@@ -522,7 +526,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         if color_input == "None":
 
             df = producer_data.select([*compounds_input])
-            return px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of mgs producers for each samples")
+            return px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
 
         else:
 
@@ -530,9 +534,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             has_unique_value = du.has_only_unique_value(df, color_input)
 
             if has_unique_value:
-                fig = px.bar(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+                fig = px.bar(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
             else:
-                fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+                fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
 
             return fig
 
@@ -553,9 +557,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
         if has_unique_value:
-            fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
+            fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
         else:
-            fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
+            fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
             fig.update_xaxes(type="category")
         return fig
 
@@ -572,10 +576,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
     if has_unique_value:
-        fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
+        fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
         fig.update_xaxes(type="category")
     else:
-        fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
+        fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of metabolic network producers")
         fig.update_xaxes(type="category")
     return fig
 
@@ -689,9 +693,11 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
     iscope_df.rename(columns={"index" : "metadata"}, inplace=True)
     iscope_df = iscope_df.melt("metadata")
 
-    fig1 = px.bar(cscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
+    #TODO legend title should be the metadata column label, not "matadata"
 
-    fig2 = px.bar(iscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Barplot showing the percentage of sample producing the compounds given in input (at least one bins of the sample).").update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
+    fig1 = px.bar(cscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Percentage of sample producing the selected metabolites (interacting community)", labels={"metadata": metadata_filter_input}).update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
+
+    fig2 = px.bar(iscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Percentage of sample producing the selected metabolites (non-interacting community)", labels={"metadata": metadata_filter_input}).update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
 
     return fig1, fig2
 
