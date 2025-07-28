@@ -318,7 +318,7 @@ Users can check the produced compounds for multiple taxonomic levels, according 
 
 If taxonomy data (`-t` option) is not provided, this tab will be disabled.
 
-Customisation of the plot:
+Customization of the plot:
 
 - Choice of the taxonomic ranks: all, taxonomic groups (e.g. phylum), or individual genomes.
 

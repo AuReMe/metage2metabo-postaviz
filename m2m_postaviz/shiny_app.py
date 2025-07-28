@@ -21,7 +21,7 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_factors(with_dtype=True)
 
-    welcome_card = ui.card(ui.output_text("Starting_message"))
+    welcome_card = ui.card(ui.output_ui("Starting_message"))
 
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
@@ -71,10 +71,21 @@ def run_shiny(data: DataStorage):
 
         overview_module_server("module_pcoa", data)
 
-        @render.text
+        @render.ui
         def Starting_message():
-            msg = "Welcome to the M2M Post-Analysis Visualization App!"
-            return msg
+            msg = (
+                # "Welcome to the M2M Post-Analysis Visualization App!"
+                '<div style="white-space: normal;">'
+                "This is the <i><b>Metadata management</b></i> tab.<br>"
+                "Here, you can check the metadata that was provided as input, and change the type of certain variables to ease plot customization in the other tabs.<br>"
+                "Note that you might want to select 'text' rather than 'category' in 'dtype' to treat the variable as a factor.<br>"
+                'If you have any questions, please refer to the online '
+                '<a href="https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html" target="_blank">documentation</a> '
+                'or raise an issue on <a href="https://github.com/AuReMe/metage2metabo-postaviz/tree/main" target="_blank" > GitHub</a>.<br>'
+                '</div>'
+                )
+            return ui.HTML(msg)
+
 
         @render.data_frame
         def metadata_table():
