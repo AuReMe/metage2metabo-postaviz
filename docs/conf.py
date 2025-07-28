@@ -1,6 +1,7 @@
 import os
 
 extensions = [
+    'sphinx_rtd_theme',
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
@@ -15,7 +16,7 @@ source_suffix = ".rst"
 master_doc = "index"
 project = "m2m-postaviz"
 year = "2023"
-author = "pleiade"
+author = "Léonard Brindel, Clémence Frioux"
 copyright = f"{year}, {author}"
 version = release = "0.0.0"
 
@@ -31,6 +32,10 @@ on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 if not on_rtd:  # only set the theme if we are building docs locally
     html_theme = "sphinx_rtd_theme"
 
+formats:
+    - pdf
+    - epub
+
 html_use_smartypants = True
 html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
@@ -42,3 +47,5 @@ html_short_title = f"{project}-{version}"
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+html_theme = "sphinx_rtd_theme"
