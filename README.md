@@ -330,13 +330,14 @@ Customization of the plot:
 
 If checking the box "weigh the producibility value with relative abundance", the normalised abundance data frame will be used for computation instead of the main dataframe. This means that producibility values of compounds by microorganisms will no longer be 0 or 1 but values corresponding to the relative abundance of the microbe. For instance, 0.3 for a producer that represents 30% of the community's relative abundance.
 
-Two plots are generated for the community scope analysis, and two plots for the individual scope analysis (#TODO). 
+Two plots are generated showing the number of metabolites selected taxa can produce
 
-- The first one depicts as a barplot the number of unique metabolites produced by the selected taxa in the selected samples
+- either considering their metabolic potential in an interacting community, i.e. selected taxa are the producers but they may depend on alternative populations to produce metabolite precursors. 
+- or considering the sole metabolic capabilities of the taxa, meaning that they do not interact with other populations to produce more metabolites.
 
-- The second plot depicts the relative abundance of the selected taxa in each sample. 
+A third plot depicts the relative abundance of the selected taxa in each sample. 
 
-- Plot 3 is a boxplot of the unique metabolites production of each selected bins in their samples. #TODO
+<!-- - Plot 3 is a boxplot of the unique metabolites production of each selected bins in their samples. #TODO -->
 
 
 > **⚠️ Warning:**
