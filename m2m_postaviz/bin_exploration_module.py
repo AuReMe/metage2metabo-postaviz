@@ -83,7 +83,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     @render.text
     def no_taxonomy_provided():
-        return "No taxonomy file has been provided. Bins exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. Metagenomes column must be the first column."
+        return "No taxonomy file has been provided. Taxonomy-based exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. The first column must be the one with identifiers matching the metabolic networks in samples."
 
     list_of_bins = Data.get_bins_list()
 
