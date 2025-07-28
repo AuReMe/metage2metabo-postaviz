@@ -20,20 +20,20 @@ def bin_exp_ui(Data: DataStorage):
         taxonomic_rank = Data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
 
-        welcome_card = ui.card(ui.output_text("Starting_message"))
+        welcome_card = ui.card(ui.output_ui("Starting_message"))
 
         bins_exploration_card = ui.card(
-            ui.card_header("Bins exploration",
+            ui.card_header("Metabolic network exploration using taxonomic information",
                 ui.tooltip(
-                    ui.input_action_button("_bin_tab", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
+                    ui.input_action_button("_bin_tab", " ", icon=icon("circle-question")), "Explore the contribution of certain metabolic networks in the samples. Choose a taxonomic level and pick one member of that level. You can also filter certain samples based on a metadata variable. Color the bars of the barplot using a variable.")),  
             ui.card_body(
                 ui.layout_sidebar(
                     ui.sidebar(
 
-                        ui.input_selectize("rank_choice", "Choose a taxonomic rank.", taxonomic_rank, selected=taxonomic_rank[0], multiple=False),
+                        ui.input_selectize("rank_choice", "Choose a taxonomic rank for analysis", taxonomic_rank, selected=taxonomic_rank[0], multiple=False),
                         ui.output_ui("rank_unique_choice"),
 
-                        ui.input_selectize("bin_factor", "Filter", factor_list, selected=factor_list[0], multiple=False),
+                        ui.input_selectize("bin_factor", "Filter samples on metadata variable", factor_list, selected=factor_list[0], multiple=False),
                         ui.output_ui("bin_factor_unique"),
 
                         ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False),
@@ -49,10 +49,10 @@ def bin_exp_ui(Data: DataStorage):
                     gap=35,
                     bg="lightgrey"
                 ),
-                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes in community."),output_widget("bin_unique_count_cscope_histplot"),full_screen=True),
-                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes as individual."),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
+                ui.card(ui.card_header("Production of unique metabolites in samples at the community level considering metabolic interactions with all populations"),output_widget("bin_unique_count_cscope_histplot"),full_screen=True),
+                ui.card(ui.card_header("Production of unique metabolites in samples at the individual population level (metabolic interactions not taken into account)"),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
                 # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
-                ui.card(ui.card_header("Respective abundance of taxa/metagenomes in their sample."),output_widget("bin_abundance_plot"),full_screen=True),
+                ui.card(ui.card_header("Relative abundance of selected taxa in samples"),output_widget("bin_abundance_plot"),full_screen=True),
             )
         ),full_screen=True)
 
@@ -66,15 +66,20 @@ def bin_exp_ui(Data: DataStorage):
 @module.server
 def bin_exp_server(input, output, session, Data: DataStorage):
 
-    @render.text
+    @render.ui
     def Starting_message():
-        msg = "This is the 'Taxonomy-based exploration' tab.<br>" \
-              "Here, you can explore the bins in your dataset based on their taxonomic classification.<br>" \
-              "You can filter the bins by taxonomic rank and factor, and visualize their unique compound production.<br>" \
-              "You can also weigh the producibility value by the relative abundance of the producer instead of using {0,1} values.<br>" \
-              "Please select the appropriate options to explore your data.<br>" \
-              "If you have any questions, please refer to the online <a 'https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html' target='_blank'> documentation </a> or raise an issue on GitHub .<br>"
-        return msg
+        msg = (
+            '<div style="white-space: normal;">'
+            "This is the <i><b>Taxonomy-based exploration</b></i> tab.<br>"
+            "Here, you can explore the contribution of metabolic networks of your dataset based on their taxonomic classification (if provided as input).<br>"
+            "You can select filter the metabolic networks by taxonomic rank, and visualize their metabolite production across samples. To do so, first select a rank of interest, then select the members of those rank you want to consider in the analysis.<br>"
+            "You can also weigh the producibility values of metabolites by the relative abundance of the producer instead of using {0,1} values.<br>" \
+            'If you have any questions, please refer to the online '
+            '<a href="https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html" target="_blank">documentation</a> '
+            'or raise an issue on <a href="https://github.com/AuReMe/metage2metabo-postaviz/tree/main" target="_blank" > GitHub</a>.<br>'
+            '</div>'
+        )
+        return ui.HTML(msg)
 
     @render.text
     def no_taxonomy_provided():
