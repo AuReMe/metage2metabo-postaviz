@@ -73,7 +73,7 @@ def run_shiny(data: DataStorage):
 
         @render.text
         def Starting_message():
-            msg = "blablabla"
+            msg = "Welcome to the M2M Post-Analysis Visualization App!"
             return msg
 
         @render.data_frame

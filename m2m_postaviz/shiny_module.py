@@ -68,7 +68,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         if df.get_column(metadata_input).dtype.is_numeric():
             df = df.sort(metadata_input)
         print(df)
-        fig = px.box(df, x="variable",y="value",color=metadata_input)
+        fig = px.box(df, x="variable",y="value", title="Individually- and community-reached metabolites in samples", color=metadata_input)
         fig.update_xaxes(type="category")
 
         return fig
@@ -349,7 +349,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
 
 def make_pcoa(data: DataStorage, column, choices, abundance, color):
-    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize
+    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customized
     by filtering on specific column, using the abundance data and color the resulting plot.
 
     Args:
@@ -393,7 +393,7 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
 
     plot_df = run_pcoa(df, metadata)
 
-    fig = px.scatter(plot_df, x="PC1", y="PC2",
+    fig = px.scatter(plot_df, x="PC1", y="PC2", title="PCoA of reached metabolites in samples (Jaccard distance)",
                         color= color
                         )
 
@@ -457,7 +457,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
     df = data.get_global_production_dataframe().to_pandas()
 
     if user_input1 == "None":
-        fig = px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
+        fig = px.box(df, y=column_value, title="Numbers of unique metabolites reached by sample.")
         return fig, df
 
     elif user_input2 == "None" or user_input1 == user_input2:
@@ -761,4 +761,3 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             plots.append(g)
 
     return plots
-

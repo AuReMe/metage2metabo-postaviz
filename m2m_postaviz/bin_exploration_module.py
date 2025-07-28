@@ -68,7 +68,12 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     @render.text
     def Starting_message():
-        msg = "blablabla"
+        msg = "This is the 'Taxonomy-based exploration' tab.<br>" \
+              "Here, you can explore the bins in your dataset based on their taxonomic classification.<br>" \
+              "You can filter the bins by taxonomic rank and factor, and visualize their unique compound production.<br>" \
+              "You can also weigh the producibility value by the relative abundance of the producer instead of using {0,1} values.<br>" \
+              "Please select the appropriate options to explore your data.<br>" \
+              "If you have any questions, please refer to the online <a 'https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html' target='_blank'> documentation </a> or raise an issue on GitHub .<br>"
         return msg
 
     @render.text

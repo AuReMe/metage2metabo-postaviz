@@ -21,13 +21,13 @@ def overview_module_ui(Data: DataStorage):
     metadata_label = Data.get_factors()
     metadata_label.remove("smplID")
 
-    welcome_card = ui.card(ui.output_text("Starting_message"))
+    welcome_card = ui.card(ui.output_ui("Starting_message"))
 
     cpds_reached = ui.card(
-        ui.card_header("Numbers of compounds reached.",
+        ui.card_header("Numbers of unique metabolites reached by community members, either individually or taking into account interactions across populations.",
             ui.tooltip(
                 ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")),
-                    "blablabla tooltips !"),),               # TOOLTIP HERE !!
+                    "This plot depicts the number of unique metabolites reached in each sample, either individually by any population (without interactions with others) or collectively taking into account interactions across populations ('Comm_reached'). Please start by selecting a metadata variable. Statistical tests can be applied to compare groups. Check 'Multiple test correction' if appropriate, and select the associated method."),), 
 
 
         ui.layout_sidebar(
@@ -49,13 +49,13 @@ def overview_module_ui(Data: DataStorage):
     )
 
     total_production_plot = ui.card(
-    ui.card_header("Total production of all compound, weighted with the abundance if provided.",
+    ui.card_header("Total production of metabolites in communities, weighted with the relative abundance data of populations if provided.",
                    ui.tooltip(
-                        ui.input_action_button("info_tot_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
+                        ui.input_action_button("info_tot_plot", " ", icon=icon("circle-question")), "Ovearall reached metabolites, taking into account the relative abundance of populations in each sample. If you have abundance data, you can check the box to use it for the plot. You can also select two metadata variables to label the X axes. Statistical tests can be applied to compare groups. Check 'Multiple test correction' if appropriate, and select the associated method. Data used to construct the dataframe and statistical test results can both be exported to files."),), 
     ui.layout_sidebar(
         ui.sidebar(
-            ui.input_select("prod_inputx1", "Label for X axis", factor_list),
-            ui.input_select("prod_inputx2", "Label for 2nd X axis", factor_list),
+            ui.input_select("prod_inputx1", "Metadat variable for X axis", factor_list),
+            ui.input_select("prod_inputx2", "Metadat variable for 2nd X axis", factor_list),
 
             ui.input_checkbox("prod_norm", "Abundance data"),
             ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
@@ -63,7 +63,7 @@ def overview_module_ui(Data: DataStorage):
                                                                                                     ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
                                                                                                     selected="bonferroni",)),
 
-            ui.input_action_button("export_global_production_plot_dataframe_button", "Save plot dataframe"),
+            ui.input_action_button("export_global_production_plot_dataframe_button", "Export plot dataframe"),
             ui.output_text_verbatim("export_global_production_plot_dataframe_txt", True),
             ui.input_action_button("export_global_production_test_button", "Export stats dataframe"),
             ui.output_text_verbatim("export_global_production_test_dataframe", True),
@@ -81,12 +81,12 @@ def overview_module_ui(Data: DataStorage):
     )
 
     pcoa_card = ui.card(
-                    ui.card_header("Principal Coordinates Analysis made with all samples. Change color input to see different clusters.",
+                    ui.card_header("Principal Coordinate Analysis",
                         ui.tooltip(
-                            ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")), #FC BLABLA HERE !!
+                            ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "PCoA perfomed on the whole dataset of samples. Select a metadata variable to color the data points. You may hide or select samples using filter provided. Note that it will not recalculate the distance matrix, simply highlight the selected samples.")),
                     ui.layout_sidebar(
                         ui.sidebar(
-                            ui.input_select(id="pcoa_color", label="Plot color.", choices=metadata_label, selected=metadata_label[0]),
+                            ui.input_select(id="pcoa_color", label="Metadata variable for point coloring.", choices=metadata_label, selected=metadata_label[0]),
                             ui.output_ui("pcoa_ui"),
                             ui.help_text(ui.output_text("display_warning_pcoa")),
                             width=300,
@@ -102,15 +102,15 @@ def overview_module_ui(Data: DataStorage):
 
 
     custom_pcoa_card = ui.card(
-                            ui.card_header("Customize the Principal Coordinates Analysis by filtering samples with their metadata value.",
+                            ui.card_header("Customized Principal Coordinate Analysis",
                                 ui.tooltip(
-                                    ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
+                                    ui.input_action_button("info_reach_plot", " ", icon=icon("circle-question")), "Customize the PCoA by selecting only samples of interest. Select a metadata variable and select groups of samples by filtering the values of that variable")),  
                             ui.layout_sidebar(
                                 ui.sidebar(
 
-                                    ui.input_select(id="custom_pcoa_selection", label="Choose column", choices=metadata_label, selected=metadata_label[0]),
+                                    ui.input_select(id="custom_pcoa_selection", label="Metadata variable", choices=metadata_label, selected=metadata_label[0]),
                                     ui.output_ui("pcoa_custom_choice"),
-                                    ui.input_select(id="pcoa_custom_color", label="Color.", choices=metadata_label, selected=metadata_label[0]),
+                                    ui.input_select(id="pcoa_custom_color", label="Color", choices=metadata_label, selected=metadata_label[0]),
                                     ui.input_checkbox("pcoa_custom_abundance_check", "Use abundance data."),
 
                                     ui.input_task_button("run_custom_pcoa","Go"),
@@ -128,7 +128,7 @@ def overview_module_ui(Data: DataStorage):
         ui.layout_column_wrap(
 
             ui.value_box(
-                "Numbers of unique metabolic network:",
+                "Numbers of unique metabolic networks:",
                 ui.output_text("unique_total_bin_count"),
                 theme="bg-gradient-indigo-purple",
             ),
@@ -140,7 +140,7 @@ def overview_module_ui(Data: DataStorage):
             ),
 
             ui.value_box(
-                "Numbers of unique compounds produced:",
+                "Numbers of unique metabolites reached by samples:",
                 ui.output_text("total_unique_cpd"),
                 theme="bg-gradient-blue-purple",
             ),
@@ -156,10 +156,22 @@ def overview_module_ui(Data: DataStorage):
 @module.server
 def overview_module_server(input, output, session, Data: DataStorage):
 
-    @render.text
+    @render.ui
     def Starting_message():
-        msg = "blablabla"
-        return msg
+        msg = (
+            '<div style="white-space: normal;">'
+            "Welcome to the <b>M2M Post-Analysis Visualization App</b>!<br>"
+            'This app allows you to explore your microbiome models generated by <a href="https://github.com/AuReMe/metage2metabo" target="_blank">Metage2Metabo</a> in various ways.<br>'
+            "You can visualize the data globally on this tab, explore the role of several populations in '<i>Taxonomy-based exploration</i>', "
+            "explore specific functions in tab '<i>metabolite-based explorations</i>'.<br>"
+            "You can also manage your metadata by changing the data types of columns in the '<i>Metadata management</i>' tab.<br>"
+            "Please select the appropriate tab to get started or start digging into your data below.<br>"
+            'If you have any questions, please refer to the online '
+            '<a href="https://metage2metabo-postaviz.readthedocs.io/en/latest/reference/m2m_postaviz.html" target="_blank">documentation</a> '
+            'or raise an issue on <a href="https://github.com/AuReMe/metage2metabo-postaviz/tree/main" target="_blank" > GitHub</a>.<br>'
+            '</div>'
+        )
+        return ui.HTML(msg)
 
     @render.text
     @reactive.event(input.export_global_production_test_button)
@@ -300,7 +312,7 @@ def overview_module_server(input, output, session, Data: DataStorage):
 
             df = df.filter(pl.col(selected_col).is_in(show_only))
 
-        fig = px.scatter(df, x="PC1", y="PC2", color=selected_col)
+        fig = px.scatter(df, x="PC1", y="PC2", title="PCoA of reached metabolites in samples (Jaccard distance)", color=selected_col)
 
         return fig
 
@@ -325,4 +337,3 @@ def overview_module_server(input, output, session, Data: DataStorage):
 
             return ui.TagList(
                         ui.input_slider("pcoa_slider", "Set min/max filter:", min=values.min(), max=values.max(), value=[values.min(),values.max()]),)
-
