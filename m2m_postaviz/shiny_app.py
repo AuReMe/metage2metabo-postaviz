@@ -21,6 +21,8 @@ def run_shiny(data: DataStorage):
 
     metadata_label = data.get_factors(with_dtype=True)
 
+    welcome_card = ui.card(ui.output_text("Starting_message"))
+
     if data.HAS_TAXONOMIC_DATA:
         taxonomic_rank = data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
@@ -54,6 +56,7 @@ def run_shiny(data: DataStorage):
             ),
 
             ui.nav_panel("Metadata management",
+                welcome_card,
                 metadata_table
                 ),
 
@@ -68,6 +71,11 @@ def run_shiny(data: DataStorage):
 
         overview_module_server("module_pcoa", data)
 
+        @render.text
+        def Starting_message():
+            msg = "blablabla"
+            return msg
+
         @render.data_frame
         def metadata_table():
             df = data.get_metadata()
@@ -76,11 +84,11 @@ def run_shiny(data: DataStorage):
         @render.text()
         @reactive.event(input.dtype_change)
         def update_metadata_log():
-            
+
             factor_choice, dtype_choice = input.metadata_factor().split("/")[0], input.metadata_dtype()
 
-            df = data.get_metadata()
-            print(df[factor_choice].dtype)
+            df = data.get_metadata().to_pandas()
+
             try:
                 df[factor_choice] = df[factor_choice].astype(dtype_choice)
 
@@ -90,7 +98,7 @@ def run_shiny(data: DataStorage):
             except ValueError as e:
 
                 text = f"Cannot perform changes, {e}"
-                
+
             new_metadata_label = data.get_factors(with_dtype=True)
             ui.update_select("metadata_factor", choices=new_metadata_label)
 

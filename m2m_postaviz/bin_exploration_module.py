@@ -1,15 +1,18 @@
-from shiny import module, ui
-from shinywidgets import output_widget
-from shinywidgets import render_widget
-from m2m_postaviz.data_struct import DataStorage
+from shiny import module
 from shiny import reactive
 from shiny import render
+from shiny import ui
+from shinywidgets import output_widget
+from shinywidgets import render_widget
+from faicons import icon_svg as icon
+
 import m2m_postaviz.shiny_module as sm
+from m2m_postaviz.data_struct import DataStorage
 
 
 @module.ui
 def bin_exp_ui(Data: DataStorage):
-    
+
     factor_list = Data.get_factors()
     factor_list.insert(0, "None")
 
@@ -17,8 +20,12 @@ def bin_exp_ui(Data: DataStorage):
         taxonomic_rank = Data.get_taxonomy_rank()
         taxonomic_rank.insert(0, "all")
 
+        welcome_card = ui.card(ui.output_text("Starting_message"))
+
         bins_exploration_card = ui.card(
-            ui.card_header("Bins exploration"),
+            ui.card_header("Bins exploration",
+                ui.tooltip(
+                    ui.input_action_button("_bin_tab", " ", icon=icon("circle-question")), "blablabla tooltips !")),  #FC BLABLA HERE !!
             ui.card_body(
                 ui.layout_sidebar(
                     ui.sidebar(
@@ -42,7 +49,8 @@ def bin_exp_ui(Data: DataStorage):
                     gap=35,
                     bg="lightgrey"
                 ),
-                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes."),output_widget("bin_unique_count_histplot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes in community."),output_widget("bin_unique_count_cscope_histplot"),full_screen=True),
+                ui.card(ui.card_header("Maximum production of unique compounds by taxa/metagenomes as individual."),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
                 # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
                 ui.card(ui.card_header("Respective abundance of taxa/metagenomes in their sample."),output_widget("bin_abundance_plot"),full_screen=True),
             )
@@ -52,16 +60,20 @@ def bin_exp_ui(Data: DataStorage):
 
         bins_exploration_card = ui.output_text_verbatim("no_taxonomy_provided")
 
-    return bins_exploration_card
+    return welcome_card, bins_exploration_card
 
 
 @module.server
 def bin_exp_server(input, output, session, Data: DataStorage):
 
+    @render.text
+    def Starting_message():
+        msg = "blablabla"
+        return msg
 
     @render.text
     def no_taxonomy_provided():
-        return f"No taxonomy file has been provided. Bins exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. Metagenomes column must be the first column."
+        return "No taxonomy file has been provided. Bins exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. Metagenomes column must be the first column."
 
     list_of_bins = Data.get_bins_list()
 
@@ -162,10 +174,14 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         return run_exploration.result()[1]
 
     @render_widget
-    def bin_unique_count_histplot():
-        return run_exploration.result()[0]
+    def bin_unique_count_cscope_histplot():
+        return run_exploration.result()[0][0]
 
-    @ui.bind_task_button(button_id="run_custom_pcoa")
+    @render_widget
+    def bin_unique_count_iscope_histplot():
+        return run_exploration.result()[0][1]
+
+    # @ui.bind_task_button(button_id="run_custom_pcoa")
     @reactive.extended_task
     async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
 

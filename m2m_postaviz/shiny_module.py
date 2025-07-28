@@ -1,22 +1,24 @@
 import time
 
+import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
 import plotly.express as px
-import plotly.graph_objects as go
-import seaborn as sns
-import matplotlib.pyplot as plt
-import matplotlib
-import polars as pl
 
-from pandas.api.types import is_numeric_dtype
+# import plotly.graph_objects as gogit stat
+import polars as pl
+import seaborn as sns
 from matplotlib.patches import Patch
-from plotly.subplots import make_subplots
+from pandas.api.types import is_numeric_dtype
+
+# from plotly.subplots import make_subplots
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
+
 
 def cpd_reached_plot(data: DataStorage, metadata_input: str):
     """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
@@ -37,9 +39,9 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     df = df.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
     df = df.select("smplID", "Comm_reached")
     df = df.group_by("smplID").agg(pl.mean("Comm_reached").cast(pl.Int32))
-    
-    df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
-    df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
+
+    # df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
+    # df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
 
     # Ind_reach
     dfi = data.get_iscope_producers_dataframe(with_metadata=False)
@@ -50,11 +52,12 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
     dfi = dfi.group_by("smplID").agg(pl.mean("Ind_reached").cast(pl.Int32))
 
     df = df.join(dfi, on="smplID")
-
+    print(df)
     if metadata_input == "None" or metadata_input == "smplID":
 
         df = df.unpivot(index=["smplID"])
-        return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
+        # return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
+        return
 
     else:
 
@@ -64,11 +67,11 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
 
         if df.get_column(metadata_input).dtype.is_numeric():
             df = df.sort(metadata_input)
+        print(df)
+        fig = px.box(df, x="variable",y="value",color=metadata_input)
+        fig.update_xaxes(type="category")
 
-        fig = px.box(df, x=metadata_input,y="value",color="variable")
-        fig.update_xaxes(type='category')
-
-        return fig 
+        return fig
 
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
@@ -123,45 +126,56 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     if len(filtered_list_of_bin) == 0:
         print("The lenght of the list of bin in selected input is zero. Possibly because the select input list come from the taxonomic dataframe while the sample in bin_dataframe does not contain those bins.")
         return
-    
+
     filter_condition=[("binID", "in", filtered_list_of_bin)]
     # if factor != "None" and len(factor_choice) > 0:
-    #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. SUBJECT TO CHANGE.
+    #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. MAY CHANGE.
 
-    df = data.get_bin_dataframe(condition=filter_condition)
-    # METADATA filter applied here instead.
+    figures1 = []
 
-    metadata = data.get_metadata().to_pandas()
+    for mode in ["cscope", "iscope"]:
 
-    df = df.merge(metadata, "inner", "smplID")
+        df = data.get_bin_dataframe(condition=filter_condition, scope_mode=mode)
+        # METADATA filter applied here instead.
 
-    if factor_choice != "None" and len(factor_choice) > 0:
+        metadata = data.get_metadata().to_pandas()
 
-        df = df.loc[df[factor].isin(factor_choice)]
+        df = df.merge(metadata, "inner", "smplID")
 
-    unique_sample_in_df = df["smplID"].unique()
+        if factor_choice != "None" and len(factor_choice) > 0:
 
-    new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
+            if is_numeric_dtype(df[factor]):
 
-    for sample in unique_sample_in_df:
+                factor_choice = list(map(float, factor_choice))
 
-        tmp_df = df.loc[df["smplID"] == sample][["binID","smplID","Production"]]
-        all_production = tmp_df["Production"].values
+            df = df.loc[df[factor].isin(factor_choice)]
 
-        tmp_production = []
+        unique_sample_in_df = df["smplID"].unique()
 
-        for prod_list in all_production:
+        new_serie_production = pd.DataFrame(columns=["smplID", "unique_production_count"])
 
-            tmp_production += list(prod_list)
+        for sample in unique_sample_in_df:
 
-        unique_production_count = len(set(tmp_production))
-        new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
+            tmp_df = df.loc[df["smplID"] == sample][["binID","smplID","Production"]]
+            all_production = tmp_df["Production"].values
 
-    df = df.merge(new_serie_production, how="inner", on="smplID")
+            tmp_production = []
 
-    df.sort_index(inplace=True)
+            for prod_list in all_production:
 
-    fig1 = px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count", color="smplID" if color =="None" else color, hover_data="binID")
+                tmp_production += list(prod_list)
+
+            unique_production_count = len(set(tmp_production))
+            new_serie_production.loc[len(new_serie_production)] = {"smplID": sample, "unique_production_count": unique_production_count}
+
+        df = df.merge(new_serie_production, how="inner", on="smplID")
+
+        df.sort_index(inplace=True)
+
+        figures1.append(px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count",
+                                    color="smplID" if color =="None" else color,
+                                    hover_data="binID",
+                                    text_auto="Count_with_abundance" if with_abundance else "unique_production_count"))
 
     # If only one bin selected do not make boxplot.
 
@@ -173,79 +187,88 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
 
-    return fig1, fig2, df, time.time() - start_timer, fig3
+    return figures1, fig2, df, time.time() - start_timer, fig3
 
+
+def cpd_reach_statistical_dataframe(data: DataStorage, column_of_interest, array_comm_reached, array_ind_reached, multiple_test_correction, correction_method):
+
+    if multiple_test_correction:
+        multipletests_method = correction_method
+    else:
+        multipletests_method = "hs"
+
+    return
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
 
-            x1, x2 = user_input1, user_input2
+    x1, x2 = user_input1, user_input2
 
-            # No input selected
-            if x1 == "None":
-                return
+    # No input selected
+    if x1 == "None":
+        return
 
-            if multiple_test_correction:
-                multipletests_method = correction_method
+    if multiple_test_correction:
+        multipletests_method = correction_method
+    else:
+        multipletests_method = "hs"
+
+    if with_abundance and data.HAS_ABUNDANCE_DATA:
+        column_value = "Total_abundance_weighted"
+    else:
+        column_value = "Total_production"
+
+    df = data.get_global_production_dataframe().to_pandas()
+
+    # At least first axis selected
+    if x2 == "None":
+        df = df[[column_value,x1]]
+        df = df.dropna()
+
+        if is_numeric_dtype(df[x1]):
+
+            res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+
+            return res
+
+        res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
+        # all_dataframe["global_production_test_dataframe"] = res
+
+        return res
+
+    # Both axis have been selected and are not equal.
+    if x1 != x2:
+
+        df = df[[column_value,x1,x2]]
+        df = df.dropna()
+
+        if is_numeric_dtype(df[x1]):
+
+            if is_numeric_dtype(df[x2]):
+
+                # Double cor
+                res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+                res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
+                return pd.concat([res1,res2])
+
             else:
-                multipletests_method = "hs"
 
-            if with_abundance and data.HAS_ABUNDANCE_DATA:
-                column_value = "Total_abundance_weighted"
-            else:
-                column_value = "Total_production"
+                # cor filtered by second categorical factor .loc
+                all_results = []
+                for unique_x2_value in df[x2].unique():
 
-            df = data.get_global_production_dataframe().to_pandas()
+                    value_array = df.loc[df[x2] == unique_x2_value][column_value]
+                    factor_array = df.loc[df[x2] == unique_x2_value][x1]
 
-            # At least first axis selected
-            if x2 == "None":
-                df = df[[column_value,x1]]
-                df = df.dropna()
+                    all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
 
-                if is_numeric_dtype(df[x1]):
+                return pd.concat(all_results)
 
-                    res = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
+        res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
+        # all_dataframe["global_production_test_dataframe"] = res
 
-                    return res
+        return res
 
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
-                # all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-
-            # Both axis have been selected and are not equal.
-            if x1 != x2:
-
-                df = df[[column_value,x1,x2]]
-                df = df.dropna()
-
-                if is_numeric_dtype(df[x1]):
-
-                    if is_numeric_dtype(df[x2]):
-
-                        # Double cor
-                        res1 = du.correlation_test(df[column_value].to_numpy(), df[x1].to_numpy(), x1)
-                        res2 = du.correlation_test(df[column_value].to_numpy(), df[x2].to_numpy(), x2)
-                        return pd.concat([res1,res2])
-
-                    else:
-
-                        # cor filtered by second categorical factor .loc
-                        all_results = []
-                        for unique_x2_value in df[x2].unique():
-
-                            value_array = df.loc[df[x2] == unique_x2_value][column_value]
-                            factor_array = df.loc[df[x2] == unique_x2_value][x1]
-
-                            all_results.append(du.correlation_test(value_array, factor_array, unique_x2_value))
-
-                        return pd.concat(all_results)
-
-                res = du.preprocessing_for_statistical_tests(df, [column_value], x1, x2, multipletests=multiple_test_correction, multipletests_method=multipletests_method)
-                # all_dataframe["global_production_test_dataframe"] = res
-
-                return res
-
-            return
+    return
 
 
 def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance = None):
@@ -284,7 +307,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
         return res
 
     if x1 != x2:
-        
+
         df = data.get_cscope_producers_dataframe().to_pandas()
         df = df[[*y1,x1,x2]]
         df = df.dropna()
@@ -326,7 +349,7 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
 
 def make_pcoa(data: DataStorage, column, choices, abundance, color):
-    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize 
+    """Produce a Principal Coordinate Analysis with data. The Pcoa can be customize
     by filtering on specific column, using the abundance data and color the resulting plot.
 
     Args:
@@ -339,11 +362,15 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     Returns:
         px.scatter: Plotly scatter figure.
     """
+
+    print(f"Abundance: {abundance}")
+
     if abundance:
         df = data.get_normalised_abundance_dataframe().to_pandas()
     else:
         df = data.get_main_dataframe().to_pandas()
 
+    print(f"Dataframe used: {df}")
     metadata = data.get_metadata().to_pandas()
 
     if du.is_indexed_by_id(df):
@@ -401,9 +428,10 @@ def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_meth
 
     df_pcoa = coordinate[["PC1","PC2"]]
     df_pcoa["smplID"] = main_dataframe.index.to_numpy()
-
+    print(df_pcoa)
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
+    print(df_pcoa)
 
     return df_pcoa
 
@@ -419,6 +447,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
 
     Returns:
         px.box: Plotly express object.
+        pd.Dataframe: dataframe used for the plot.
     """
     if with_abundance and data.HAS_ABUNDANCE_DATA:
         column_value = "Total_abundance_weighted"
@@ -428,8 +457,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
     df = data.get_global_production_dataframe().to_pandas()
 
     if user_input1 == "None":
-
-        return px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
+        fig = px.box(df, y=column_value, title="Numbers of unique compounds produced by sample.")
+        return fig, df
 
     elif user_input2 == "None" or user_input1 == user_input2:
 
@@ -446,8 +475,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         else:
 
             fig = px.box(df, x=user_input1 , y=column_value, color=user_input1, title=f"Numbers of unique compounds produced by samples filtered by {user_input1}")
-            fig.update_xaxes(type='category')
-            return fig
+            fig.update_xaxes(type="category")
+            return fig, df
 
     else:
 
@@ -461,8 +490,8 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
             fig = px.bar(df,x=user_input1,y=column_value,color=user_input2)
         else:
             fig = px.box(df,x=user_input1,y=column_value,color=user_input2)
-            fig.update_xaxes(type='category')
-        return fig
+            fig.update_xaxes(type="category")
+        return fig, df
 
 
 def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):
@@ -470,7 +499,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
     if len(compounds_input) == 0:
         return
 
-    if with_abundance == True:
+    if with_abundance:
         producer_data = data.get_normalised_abundance_dataframe(with_metadata=True)
     else:
         producer_data = data.get_cscope_producers_dataframe()
@@ -527,7 +556,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
         else:
             fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of genomes producers")
-            fig.update_xaxes(type='category')
+            fig.update_xaxes(type="category")
         return fig
 
     df = producer_data.select([*compounds_input,user_input1,color_input])
@@ -535,7 +564,7 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if is_numeric_dtype(df[user_input1]):
         df.sort_values(user_input1, inplace=True)
-    
+
     has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
 
     if df.get_column(user_input1).dtype.is_numeric():
@@ -544,10 +573,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if has_unique_value:
         fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of genomes producers")
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type="category")
     else:
         fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of genomes producers")
-        fig.update_xaxes(type='category')
+        fig.update_xaxes(type="category")
     return fig
 
 
@@ -693,14 +722,14 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
     Returns:
         list: List of three clustermap matrix object.
     """
-    matplotlib.use('pdf')
+    matplotlib.use("pdf")
     plots = []
 
     for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
 
         dataframe = dataframe.to_pandas()
         dataframe.set_index("smplID", inplace = True)
-        
+
         if metadata_input is not None and metadata_input != "None":
 
             metadata = data.get_metadata()
@@ -721,7 +750,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             g = sns.clustermap(dataframe, row_colors=row_colors, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
             handles = [Patch(facecolor=lut[name]) for name in lut]
             plt.legend(handles, lut, title=metadata_input,
-            bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc='upper right')
+            bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc="upper right")
 
             plots.append(g)
 
