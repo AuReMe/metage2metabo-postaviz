@@ -1,11 +1,12 @@
-from pathlib import Path
 from json import load
+from pathlib import Path
 from typing import Optional
-from m2m_postaviz.lineage import Lineage
-import time
+
 import pandas as pd
-import seaborn as sns
 import polars as pl
+
+from m2m_postaviz.lineage import Lineage
+
 
 class DataStorage:
 
@@ -32,7 +33,7 @@ class DataStorage:
 
         self.USE_METACYC_PADMET = loaded_files["padmet_compounds_category_tree.json"]
 
-        self.current_plot = {}
+        self.current_working_dataframe = {}
 
         if save_path is not None:
 
@@ -40,6 +41,21 @@ class DataStorage:
 
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
+
+    def keep_working_dataframe(self, tab_id, dataframe):
+
+        self.current_working_dataframe[tab_id] = dataframe
+
+
+    def get_working_dataframe(self, tab_id):
+
+        try:
+            current_dataframe = self.current_working_dataframe[tab_id]
+        except KeyError:
+            print("No current dataframe for the total production plot, It may happen when no plot have been made during the session.")
+            return
+
+        return current_dataframe
 
     def open_tsv(self, key: str):
         """Return the dataframe corresponding to the key given as input.
@@ -82,7 +98,7 @@ class DataStorage:
         return df
 
 
-    def get_bin_dataframe(self, columns = None, condition = None) -> pd.DataFrame:
+    def get_bin_dataframe(self, columns = None, condition = None, scope_mode = "cscope") -> pd.DataFrame:
         """Find the bin_dataframe file in the save_path of DataStorage object and read it with the condition given in args.
 
         Args:
@@ -94,7 +110,7 @@ class DataStorage:
         """
 
         for file in self.output_path.iterdir():
-            if file.is_file() and file.name == "bin_dataframe.parquet.gzip":
+            if file.is_file() and file.name == f"bin_dataframe_{scope_mode}.parquet.gzip":
                 return self.read_parquet_with_pandas(file, col=columns, condition=condition)
 
 
@@ -177,11 +193,17 @@ class DataStorage:
         return ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"]
 
 
-    def set_metadata(self, new_metadata: pl.DataFrame):
+    def set_metadata(self, new_metadata):
 
         metadata_path = Path(self.output_path, "metadata_dataframe_postaviz.parquet.gzip")
 
-        new_metadata.write_parquet(metadata_path, compression="gzip")
+        if isinstance(new_metadata, pl.DataFrame):
+
+            new_metadata.write_parquet(metadata_path, compression="gzip")
+
+        if isinstance(new_metadata, pd.DataFrame):
+
+            new_metadata.to_parquet(metadata_path, compression="gzip")
 
 
     def get_taxonomic_dataframe(self) -> pl.DataFrame:
@@ -285,11 +307,12 @@ class DataStorage:
 
         if Path(self.output_path, file_name).is_file():
             new_file_name = self.check_and_rename(Path(self.output_path, file_name))
-            print(new_file_name)
             sns_obj.savefig(new_file_name)
-            
+            return f"Filed saved in: {Path(self.output_path, new_file_name)}"
+
         else:
             sns_obj.savefig(Path(self.output_path, file_name))
+            return f"Filed saved in: {Path(self.output_path, file_name)}"
 
 
     def check_and_rename(self, file_path: Path, add: int = 0) -> Path:
@@ -416,7 +439,7 @@ class DataStorage:
         return all_files
 
 
-    def get_added_value_dataframe(self, cpd_input = None, sample_filter_mode = "", sample_filter_value = []):
+    def get_added_value_dataframe(self, cpd_input = None, sample_filter_mode = "", sample_filter_value = None):
         """Return Cscope producers dataframe, Iscope producers dataframe and the difference of these two dataframes.
 
         Args:
@@ -440,7 +463,7 @@ class DataStorage:
 
         #     iscope_df = iscope_df.with_columns(pl.lit(0).alias(col)) NOT NEEDED ANYMORE
 
-        if sample_filter_mode != "All":
+        if sample_filter_mode != "All" and sample_filter_value is not None:
 
             if sample_filter_mode == "Include":
 
@@ -485,11 +508,11 @@ class DataStorage:
 
         lin=Lineage()
         lin.construct_dict(tree,0)
-        list_final=list()
-        for k,v in lin.level_dict.items():
+        list_final= []
+        for _k,v in lin.level_dict.items():
             list_final.extend(v)
 
-        list_final.insert(0,list(tree.keys())[0])
+        list_final.insert(0,list(tree.keys())[0])  # noqa: RUF015
 
         return list_final
 
@@ -595,7 +618,7 @@ class DataStorage:
 
         # shiny_dict_level = {}
         # for key, value in level_dict.items():
-        
+
         #     tmp_dict = {}
 
         #     for val in value:
@@ -613,7 +636,7 @@ class DataStorage:
         #     shiny_dict_level[new_key] = tmp_dict
         # print(f"Took {time.time() - start} sec. --Metacyc_category_list Getter.")
         return final_res
-        
+
 
     def get_outsider_cpd(self):
         """Return the compounds found in data but doesnt fit in OTHERS category
@@ -628,8 +651,15 @@ class DataStorage:
         diff = [cpd for cpd in cpd_in_data if cpd not in cpd_in_db]
 
         return diff, str("Others " + str(len(diff)) + "/" + str(len(cpd_in_db)))
-    
+
 
     def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
 
         return cpd_index[cpd_list_index]
+
+
+    def tooltip_icon(self):
+
+        icon = Path(Path(__file__).parent, "information.png")
+        return str(icon)
+

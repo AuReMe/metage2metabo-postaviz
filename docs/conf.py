@@ -1,6 +1,7 @@
 import os
 
 extensions = [
+    'sphinx_rtd_theme',
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
     "sphinx.ext.coverage",
@@ -15,7 +16,7 @@ source_suffix = ".rst"
 master_doc = "index"
 project = "m2m-postaviz"
 year = "2023"
-author = "pleiade"
+author = "Léonard Brindel, Clémence Frioux"
 copyright = f"{year}, {author}"
 version = release = "0.0.0"
 
@@ -42,3 +43,5 @@ html_short_title = f"{project}-{version}"
 napoleon_use_ivar = True
 napoleon_use_rtype = False
 napoleon_use_param = False
+
+html_theme = "sphinx_rtd_theme"

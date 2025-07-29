@@ -1,14 +1,14 @@
-import pandas as pd
-from pathlib import Path
-import warnings
-import plotly.express as px
-import plotly
 import shutil
-import seaborn as sns
+import warnings
+from pathlib import Path
 
+import pandas as pd
+import plotly
+import plotly.express as px
+import seaborn as sns
 from m2m_postaviz import data_utils as du
-from m2m_postaviz.data_struct import DataStorage
 from m2m_postaviz import shiny_module as sm
+from m2m_postaviz.data_struct import DataStorage
 
 # From this test file, get to the test directory then the POSTAVIZ dir.
 BASE_DIR = Path(__file__).parent
@@ -36,7 +36,7 @@ if TMP_DIR.is_dir():
     TMP_DIR.mkdir()
 else:
     TMP_DIR.mkdir(parents=True)
-    
+
 metadata_file = Path(TEST_DATA_CONTAINER, "metadata_test_data.tsv")
 taxonomy_file = Path(TEST_DATA_CONTAINER, "taxonomy_test_data.tsv")
 abundance_file = Path(TEST_DATA_CONTAINER, "abundance_test_data.tsv")
@@ -118,7 +118,7 @@ def test_query_parquet():
     taxonomic_rank_unique_input = "Fusobacteriia"
 
     list_of_bin_in_rank = data.get_bin_list_from_taxonomic_rank(taxonomic_rank_input, taxonomic_rank_unique_input)
-    
+
     query = [("binID", "in", list_of_bin_in_rank)]
 
     df = data.get_bin_dataframe(condition=query)
@@ -129,9 +129,9 @@ def test_query_parquet():
 
     assert df.empty == False, "bin_dataframe is empty."
 
-    assert all(df['c'].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
+    assert all(df["c"].to_numpy() == "Fusobacteriia"), f"Bin_dataframe with rank choice of {taxonomic_rank_input} should only contain {taxonomic_rank_unique_input}."
 
-    
+
 def test_shiny_module():
 
     data = DataStorage(TMP_DIR)
@@ -144,24 +144,24 @@ def test_shiny_module():
                                                                                                         "c",
                                                                                                         "Clostridia",
                                                                                                         True, "Days")
-    
+
     production_histplot2, production_boxplot2, df2, timing2, abundance_plot2 = sm.bin_exploration_processing(data,
                                                                                                     "Group",
                                                                                                     ["Control","Treatment"],
                                                                                                     "all",
                                                                                                     "Clostridia",
                                                                                                     True, "Days")
-    
+
     production_histplot3, production_boxplot3, df3, timing3, abundance_plot3 = sm.bin_exploration_processing(data,
                                                                                                     "Group",
                                                                                                     ["Control","Treatment"],
                                                                                                     "mgs",
                                                                                                     "MB2bin10 taxonomy",
                                                                                                     True, "Days")
-    
+
     # Object type check.
 
-    assert isinstance(production_histplot, plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
+    assert isinstance(production_histplot[0], plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
 
     assert isinstance(production_boxplot, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
 
@@ -169,7 +169,7 @@ def test_shiny_module():
 
     assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot2, plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
+    assert isinstance(production_histplot2[0], plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
 
     assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot2 is not a plotly express boxplot"
 
@@ -177,7 +177,7 @@ def test_shiny_module():
 
     assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance2 barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot3, plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
+    assert isinstance(production_histplot3[0], plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
 
     assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot3 is not a plotly express boxplot"
 
@@ -187,13 +187,13 @@ def test_shiny_module():
 
     # Object is empty check.
 
-    assert production_histplot.data != tuple(), "Production histogram is empty."
+    assert production_histplot[0].data != tuple(), "Production histogram is empty."
 
     assert production_boxplot.data != tuple(), "Production boxplot is empty."
 
     assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
-    assert production_histplot2.data != tuple(), "Production histogram is empty."
+    assert production_histplot2[0].data != tuple(), "Production histogram is empty."
 
     assert production_boxplot2.data != tuple(), "Production boxplot is empty."
 
@@ -233,9 +233,9 @@ def test_shiny_module():
 
     # Test for total production reactive plot.
 
-    reactive_total_production_plot = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
-    reactive_total_production_plot_abundance = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
-    reactive_total_production_plot_2 = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
+    reactive_total_production_plot, df = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
+    reactive_total_production_plot_abundance, df = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
+    reactive_total_production_plot_2, df = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
 
     assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 

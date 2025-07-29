@@ -1,4 +1,4 @@
-docs/input_data_details.rstTutorial: Exploring M2M-PostAViz with Example Data
+Tutorial: Exploring M2M-PostAViz with Example Data
 =================================================
 
 This tutorial demonstrates how to use M2M-PostAViz with the built-in test dataset. You will learn how to launch the application, navigate its main features, and interpret the results.
