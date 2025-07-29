@@ -32,10 +32,6 @@ on_rtd = os.environ.get("READTHEDOCS", None) == "True"
 if not on_rtd:  # only set the theme if we are building docs locally
     html_theme = "sphinx_rtd_theme"
 
-formats:
-    - pdf
-    - epub
-
 html_use_smartypants = True
 html_last_updated_fmt = "%b %d, %Y"
 html_split_index = False
