@@ -27,7 +27,7 @@ Input data details
       sample_2/
         ...
 
-- **Metadata associated to samples**:  
+- **📄 Metadata associated to samples**:  
   Tabulated file, first column is the sample identifier matching the output of M2M.
 
   +----------+-----+---------+
@@ -40,8 +40,8 @@ Input data details
   | sample_3 | 68  | Germany |
   +----------+-----+---------+
 
-- **Taxonomy of the MAGs/genomes**:  
-  Tabulated file, first column matches the identifiers of the metabolic networks.
+- **📄 Taxonomy of the MAGs/genomes**:  
+  Tabulated file, first column matches the IDs of the metabolic networks.
 
   +-----------+----------+-------------------+---------------------+---------------------+-----------------------+----------------+--------------------------+
   | Genome_ID | Domain   | Phylum            | Class               | Order               | Family                | Genus          | Species                  |
@@ -53,8 +53,8 @@ Input data details
   | MAG_2     | Archaea  | Euryarchaeota     | Methanobacteria     | Methanobacteriales  | Methanobacteriaceae   | Methanobacterium | Methanobacterium formicicum |
   +-----------+----------+-------------------+---------------------+---------------------+-----------------------+----------------+--------------------------+
 
-- **Abundance of the MAGs/genomes in the samples/communities**:  
-  Tabulated file, will be normalised by column sum during processing.
+- **📄 Abundance of the MAGs/genomes in the samples/communities**:  
+  Tabulated file, normalized by column sum during processing.
 
   +------------+----------+----------+----------+
   | identifier | Sample_1 | Sample_2 | Sample_3 |
@@ -66,15 +66,7 @@ Input data details
   | MAG_2      |   20.3   |  14.7    |  18.9    |
   +------------+----------+----------+----------+
 
-- **Metacyc database in padmet format** (optional):  
-  Used to take advantage of the ontology of metabolite categories provided in the MetaCyc database. Only relevant if the metabolic networks analysed in Metage2Metabo were generated with PathwayTools or come from the BioCyc database.
-
-  .. code-block:: bash
-
-      pip install padmet
-      padmet pgdb_to_padmet --pgdb 28.5/data --version 28.5 --db metacyc --output metacyc28_5.padmet
-
-- **Precomputed data for M2M-PostAViz**:  
+- **🚀 Precomputed data for M2M-PostAViz**:  
   Can be stored when running the tool with the ``-o`` flag and loaded for future runs.
 
   .. code-block:: bash

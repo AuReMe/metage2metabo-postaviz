@@ -1,4 +1,4 @@
-=====
+docs/tutorial.rst=====
 Usage
 =====
 
@@ -14,7 +14,7 @@ Command-line usage
 
 Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in two ways:
 
-- **By providing all input data** (first run or when datasets change):
+- **📄 🐢 By providing all input data** (first run or when datasets change):
 
   .. code-block:: bash
 
@@ -25,7 +25,7 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
                    -o save/path \
                    --no-metacyc  # (Optional)
 
-- **By providing the preprocessed data** (for fast restarts):
+- **🚀 By providing the preprocessed data** (for fast restarts):
 
   .. code-block:: bash
 
