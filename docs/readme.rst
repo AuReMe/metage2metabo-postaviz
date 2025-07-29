@@ -1,1 +1,1 @@
-.. include:: ../README.rst
+.. This file is now unused. See the new split documentation pages.
