@@ -5,9 +5,12 @@ Contents
 .. toctree::
    :maxdepth: 2
 
-   readme
+   overview
    installation
+   quickstart
+   input_data
    usage
+   application
    reference/index
    contributing
    authors
