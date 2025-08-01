@@ -18,17 +18,17 @@ M2M-PostAViz integrates and analyses all these outputs, especially in a context 
    :width: 70%
 
 License
-=======
+-------
 
 GNU Lesser General Public License v3 (LGPLv3)
 
 Authors
-=======
+-------
 
 Léonard Brindel and `Clémence Frioux <https://cfrioux.github.io>`__ -- `Inria Pleiade team <https://team.inria.fr/pleiade/>`__
 
 Acknowledgements
-================
+----------------
 
 - David James Sherman
 - Jean-Marc Frigerio

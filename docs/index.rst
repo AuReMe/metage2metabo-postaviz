@@ -7,13 +7,11 @@ Contents
 
    overview
    installation
-   quickstart
-   input_data
    usage
    application
-   reference/index
+   tutorial
+   reference/api
    contributing
-   authors
    changelog
 
 Indices and tables
