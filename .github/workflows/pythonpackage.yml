@@ -49,6 +49,5 @@ jobs:
     - name: Test with pytest
       run: |
         pip install pytest
-        cd test
-        pytest abundance_test.py
-        pytest data_process_test.py
+        pytest test/abundance_test.py
+        pytest test/data_process_test.py
