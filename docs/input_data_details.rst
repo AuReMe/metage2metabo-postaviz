@@ -53,7 +53,7 @@ Input data details
   | MAG_2     | Archaea  | Euryarchaeota     | Methanobacteria     | Methanobacteriales  | Methanobacteriaceae   | Methanobacterium | Methanobacterium formicicum |
   +-----------+----------+-------------------+---------------------+---------------------+-----------------------+----------------+--------------------------+
 
-- **📄 Abundance of the MAGs/genomes in the samples/communities**:  
+- **📊 Abundance of the MAGs/genomes in the samples/communities**:  
   Tabulated file, normalized by column sum during processing.
 
   +------------+----------+----------+----------+

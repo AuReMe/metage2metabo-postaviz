@@ -13,7 +13,7 @@ Command-line usage
 
 Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in two ways:
 
-- **📄 🐢 By providing all input data** (first run or when datasets change):
+- **By providing all input data (slow mode)** (first run or when datasets change):
 
   .. code-block:: bash
 
@@ -24,7 +24,7 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
                    -o save/path \
                    --no-metacyc  # (Optional)
 
-- **🚀 By providing the preprocessed data** (for fast restarts):
+- **By providing the preprocessed data (fast mode)** (for fast restarts):
 
   .. code-block:: bash
 
@@ -46,15 +46,15 @@ Summary of input files
 +===================+=============================================================+
 | M2M output        | Output directory for each sample from Metage2Metabo         |
 +-------------------+-------------------------------------------------------------+
-| 📄 Metadata       | Tabulated file, first column is sample identifier           |
+| Metadata          | Tabulated file, first column is sample identifier           |
 +-------------------+-------------------------------------------------------------+
-| 📄 Taxonomy       | Tabulated file, first column is genome/metabolic network ID |
+| Taxonomy          | Tabulated file, first column is genome/metabolic network ID |
 +-------------------+-------------------------------------------------------------+
-| 📄 Abundance      | Tabulated file, normalized by column sum                    |
+| Abundance         | Tabulated file, normalized by column sum                    |
 +-------------------+-------------------------------------------------------------+
 | Metacyc (optional)| Padmet format, for compound ontology                        |
 +-------------------+-------------------------------------------------------------+
-| 🚀 Precomputed    | Directory with preprocessed dataframes (for fast restart)   |
+| Precomputed       | Directory with preprocessed dataframes (for fast restart)   |
 +-------------------+-------------------------------------------------------------+
 
 The mandatory input data are the outputs of Metage2Metabo for each sample/microbial community, and the metadata associated to each of them. Additional facultative inputs are advised to gain the most out of the analysis: taxonomy of the genomes associated to the metabolic networks, abundance of these genomes in the samples/community. It is also possible to provide the Metacyc ontology of the metabolic compounds to analyse the predictions at the level of metabolite families. The latter is only relevant if the metabolic networks were obtained with PathwayTools, i.e. are made of compound identifiers that fit the Metacyc database.

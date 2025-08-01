@@ -7,12 +7,12 @@ Metage2Metabo-PostAViz's API
 Data structures
 ---------------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.data_struct
+.. automodule:: m2m_postaviz.data_struct
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: m2m_postaviz.m2m_postaviz.data_utils
+.. automodule:: m2m_postaviz.data_utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -20,7 +20,7 @@ Data structures
 Overview exploration
 --------------------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.overview_module
+.. automodule:: m2m_postaviz.overview_module
    :members:
    :undoc-members:
    :show-inheritance:
@@ -28,7 +28,7 @@ Overview exploration
 Exploration of metabolites
 --------------------------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.cpd_exploration_module
+.. automodule:: m2m_postaviz.cpd_exploration_module
    :members:
    :undoc-members:
    :show-inheritance:
@@ -36,7 +36,7 @@ Exploration of metabolites
 Exploration of taxa
 -------------------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.bin_exploration_module
+.. automodule:: m2m_postaviz.bin_exploration_module
    :members:
    :undoc-members:
    :show-inheritance:
@@ -44,7 +44,7 @@ Exploration of taxa
 Lineage and taxonomy
 --------------------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.lineage
+.. automodule:: m2m_postaviz.lineage
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,12 +52,12 @@ Lineage and taxonomy
 Shiny app
 ---------
 
-.. automodule:: m2m_postaviz.m2m_postaviz.shiny_app
+.. automodule:: m2m_postaviz.shiny_app
    :members:
    :undoc-members:
    :show-inheritance:
 
-.. automodule:: m2m_postaviz.m2m_postaviz.shiny_module
+.. automodule:: m2m_postaviz.shiny_module
    :members:
    :undoc-members:
    :show-inheritance:
