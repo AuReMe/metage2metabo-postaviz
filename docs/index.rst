@@ -10,6 +10,7 @@ Contents
    usage
    application
    tutorial
+   reference/index
    reference/api
    contributing
    changelog
