@@ -2,7 +2,7 @@
 Installation
 ============
 
-M2M-PostAViz is tested with Python version 3.10, 3.11 and 3.12.
+M2M-PostAViz is tested with Python version 3.12 and 3.13.
 
 At the command line::
 
@@ -12,6 +12,7 @@ To install the latest development version from source::
 
     git clone https://gitlab.inria.fr/postaviz/m2m-postaviz.git
     cd m2m-postaviz
+    pip install -r requirements.txt
     pip install .
 
 Dependencies

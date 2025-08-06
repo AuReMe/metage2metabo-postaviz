@@ -6,6 +6,8 @@ M2M-PostAViz (_M2M Post-Analysis and Visualization_) is an interactive platform 
 
 ## Installation
 
+The application is tested on Python versions 3.12 and 3.13, on Windows, MacOS and Ubuntu.
+
 Install with pip:
 
 ```sh
@@ -17,6 +19,7 @@ Or from source:
 ```sh
 git clone https://gitlab.inria.fr/postaviz/m2m-postaviz.git
 cd m2m-postaviz
+pip install -r requirements.txt
 pip install .
 ```
 
