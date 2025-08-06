@@ -1,6 +1,6 @@
-[![PyPI version](https://img.shields.io/pypi/v/metage2metabo-postaviz.svg)](https://pypi.org/project/metage2metabo-postaviz/) [![GitHub license](https://img.shields.io/github/license/AuReMe/metage2metabo-postaviz.svg)](https://github.com/AuReMe/metage2metabo-postaviz/blob/main/LICENSE) [![Actions Status](https://github.com/AuReMe/metage2metabo-postaviz/actions/workflows/pythonpackage.yml/badge.svg)](https://github.com/AuReMe/metage2metabo-postaviz/actions/workflows/pythonpackage.yml) [![Documentation Status](https://readthedocs.org/projects/metage2metabo-postaviz/badge/?version=latest)](https://metage2metabo-postaviz.readthedocs.io/en/latest/?badge=latest)
+[![PyPI version](https://img.shields.io/pypi/v/m2m-postaviz.svg)](https://pypi.org/project/m2m-postaviz/) [![GitHub license](https://img.shields.io/github/license/AuReMe/metage2metabo-postaviz.svg)](https://github.com/AuReMe/metage2metabo-postaviz/blob/main/LICENSE) [![Actions Status](https://github.com/AuReMe/metage2metabo-postaviz/actions/workflows/pythonpackage.yml/badge.svg)](https://github.com/AuReMe/metage2metabo-postaviz/actions/workflows/pythonpackage.yml) [![Documentation Status](https://readthedocs.org/projects/metage2metabo-postaviz/badge/?version=latest)](https://metage2metabo-postaviz.readthedocs.io/en/latest/?badge=latest)
 
-# M2M-PostAViz
+# Metage2Metabo-PostAViz (M2M-PostAViz)
 
 M2M-PostAViz (_M2M Post-Analysis and Visualization_) is an interactive platform for exploring metabolic potential predictions from [Metage2Metabo (M2M)](https://github.com/AuReMe/metage2metabo/tree/main).
 
