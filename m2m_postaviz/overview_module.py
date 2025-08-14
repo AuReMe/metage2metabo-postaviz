@@ -39,6 +39,8 @@ def overview_module_ui(Data: DataStorage):
                     ui.input_select("multiple_test_method_reach","Method",
                         ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
                         selected="bonferroni",)),
+
+                ui.input_task_button("run_reached_cpd","Go"),
                 width=300,
                 bg="lightgrey"
                 ),
@@ -207,12 +209,26 @@ def overview_module_server(input, output, session, Data: DataStorage):
 
         return fig
 
+    @reactive.effect
+    @reactive.event(input.run_reached_cpd, ignore_none=False, ignore_init=True)
+    def handle_click_reached_cpd():
+        make_cpd_reached_plot(input.cpd_reach_input())
+
+    @ui.bind_task_button(button_id="run_reached_cpd")
+    @reactive.extended_task
+    async def make_cpd_reached_plot(metadata_column):
+        
+        return sm.cpd_reached_plot(Data, metadata_column)
+
     @render.data_frame
     def cpd_reach_test_dataframe():
 
-        df = Data.get_overview_reachplot_stats_dataframe()
-        print(df)
-        return df
+        return make_cpd_reached_plot.result()[1]
+    
+    @render_widget
+    def cpd_reach_plot():
+
+        return make_cpd_reached_plot.result()[0]
 
     @render.data_frame
     def production_test_dataframe():
@@ -226,10 +242,6 @@ def overview_module_server(input, output, session, Data: DataStorage):
         Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
 
         return test_dataframe
-
-    @render_widget
-    def cpd_reach_plot():
-        return sm.cpd_reached_plot(Data, input.cpd_reach_input())
 
     @render.text
     def unique_total_bin_count():

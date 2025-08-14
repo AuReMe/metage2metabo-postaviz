@@ -756,13 +756,12 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
             df = df.sort(metadata_input)
 
         stat_df = reached_compounds_plot_stats_tests(df, metadata_input)
-        print(stat_df)
-        data.set_overview_reachplot_stats_dataframe(stat_df)
+        # data.set_overview_reachplot_stats_dataframe(stat_df)
 
         fig = px.box(df, x="variable",y="value", title="Individually- and community-reached metabolites in samples", color=metadata_input)
         fig.update_xaxes(type="category")
 
-        return fig
+        return fig, stat_df
 
 
 def wilcoxon_mann_whitney(data, metadata_input):
