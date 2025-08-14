@@ -53,6 +53,7 @@ def bin_exp_ui(Data: DataStorage):
                 ui.card(ui.card_header("Production of unique metabolites in samples at the individual population level (metabolic interactions not taken into account)"),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
                 # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
                 ui.card(ui.card_header("Relative abundance of selected taxa in samples"),output_widget("bin_abundance_plot"),full_screen=True),
+                ui.card(ui.card_header("Find something to say here."),output_widget("bin_metadata_filter"),full_screen=True),
             )
         ),full_screen=True)
 
@@ -182,6 +183,10 @@ def bin_exp_server(input, output, session, Data: DataStorage):
     @render_widget
     def bin_abundance_plot():
         return run_exploration.result()[1]
+
+    @render_widget
+    def bin_metadata_filter():
+        return run_exploration.result()[5]
 
     @render_widget
     def bin_unique_count_cscope_histplot():

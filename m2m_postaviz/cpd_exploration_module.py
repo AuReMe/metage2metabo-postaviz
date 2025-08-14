@@ -346,7 +346,12 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         sample_metadata_filter2 = input.sample_filter_metadata2()
         metadata = Data.get_metadata()
 
-        metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+        try:
+            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+        except:
+            metadata = metadata.with_columns(pl.col(sample_metadata_filter1)).cast(pl.String)
+            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+
         metadata = metadata.get_column("smplID").to_list()
 
         return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)

@@ -140,7 +140,12 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
 
-    return figures1, fig2, df, time.time() - start_timer, fig3
+    if factor is not None:
+        figure_by_metadata = px.box(df, x=factor, y="Count_with_abundance" if with_abundance else "Count", hover_data="binID", color=factor)
+    else:
+        figure_by_metadata = None
+
+    return figures1, fig2, df, time.time() - start_timer, fig3, figure_by_metadata
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
@@ -314,7 +319,6 @@ def make_pcoa(data: DataStorage, column, choices, abundance, color):
     else:
         df = data.get_main_dataframe().to_pandas()
 
-    print(f"Dataframe used: {df}")
     metadata = data.get_metadata().to_pandas()
 
     if du.is_indexed_by_id(df):
@@ -372,10 +376,9 @@ def run_pcoa(main_dataframe: pd.DataFrame, metadata: pd.DataFrame, distance_meth
 
     df_pcoa = coordinate[["PC1","PC2"]]
     df_pcoa["smplID"] = main_dataframe.index.to_numpy()
-    print(df_pcoa)
+
     df_pcoa = df_pcoa.merge(metadata, "inner", "smplID")
     df_pcoa.set_index("smplID",inplace=True)
-    print(df_pcoa)
 
     return df_pcoa
 
