@@ -212,13 +212,13 @@ def overview_module_server(input, output, session, Data: DataStorage):
     @reactive.effect
     @reactive.event(input.run_reached_cpd, ignore_none=False, ignore_init=True)
     def handle_click_reached_cpd():
-        make_cpd_reached_plot(input.cpd_reach_input())
+        make_cpd_reached_plot(input.cpd_reach_input(), input.multiple_correction_reach_plot(), input.multiple_test_method_reach())
 
     @ui.bind_task_button(button_id="run_reached_cpd")
     @reactive.extended_task
-    async def make_cpd_reached_plot(metadata_column):
+    async def make_cpd_reached_plot(metadata_column, multiple_correction, correction_method):
         
-        return sm.cpd_reached_plot(Data, metadata_column)
+        return sm.cpd_reached_plot(Data, metadata_column, multiple_correction, correction_method)
 
     @render.data_frame
     def cpd_reach_test_dataframe():

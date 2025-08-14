@@ -760,19 +760,6 @@ def build_pcoa_dataframe(save_path: Path) -> pd.DataFrame:
     return
 
 
-def wilcoxon_mann_whitney(dataframe, factor_name, method:str = "pearson"):
-
-
-
-    if method == "pearson":
-        res = stats.pearsonr(dataframe)
-    else:
-        res = stats.spearmanr(dataframe, axis=1)
-
-    print(res)
-    return
-
-
 def correlation_test(value_array, factor_array, factor_name, method:str = "pearson"):
 
     if method == "pearson":

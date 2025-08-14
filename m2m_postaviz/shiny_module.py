@@ -16,6 +16,8 @@ from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from scipy import stats
+from statsmodels.stats.multitest import multipletests
+
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
@@ -707,7 +709,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
     return plots
 
 
-def cpd_reached_plot(data: DataStorage, metadata_input: str):
+def cpd_reached_plot(data: DataStorage, metadata_input: str, multiple_correction, correction_method):
     """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
     The plot can be grouped by the metadata.
     Args:
@@ -755,7 +757,7 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         if df.get_column(metadata_input).dtype.is_numeric():
             df = df.sort(metadata_input)
 
-        stat_df = reached_compounds_plot_stats_tests(df, metadata_input)
+        stat_df = reached_compounds_plot_stats_tests(df, metadata_input, multiple_correction, correction_method)
         # data.set_overview_reachplot_stats_dataframe(stat_df)
 
         fig = px.box(df, x="variable",y="value", title="Individually- and community-reached metabolites in samples", color=metadata_input)
@@ -764,9 +766,17 @@ def cpd_reached_plot(data: DataStorage, metadata_input: str):
         return fig, stat_df
 
 
-def wilcoxon_mann_whitney(data, metadata_input):
+def wilcoxon_mann_whitney(data, metadata_input, context, multiple_correction, multiple_correction_method):
+    """Receive a dictionnary whose key/value be used to apply wilcoxon test if they value array are the same lenght. Mann-Whitney otherwise.
 
-    results = pd.DataFrame(columns=["Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
+    Args:
+        data (Dict): Dictionnary of the Metadata {unique metadata value : [ value array ]}
+        metadata_input (_type_): _description_
+
+    Returns:
+        pd.Dataframe: Pandas dataframe of the resulting tests.
+    """
+    results = pd.DataFrame(columns=["Context", "Metadata_column", "Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
 
     for factor, value in data.items():
 
@@ -798,13 +808,41 @@ def wilcoxon_mann_whitney(data, metadata_input):
             else:
                 symbol = "***"
 
-            results.loc[len(results)] = {"Metadata_column": metadata_input,
+            results.loc[len(results)] = {"Context": context,"Metadata_column": metadata_input,
                                         "Factor1": factor, "Sample size1": len(value),
                                         "Factor2": factor2, "Sample size2": len(value2),
                                         "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method
                                         }
 
+    if multiple_correction:
+
+        pvals_before_correction = results["Pvalue"].to_numpy()
+        reject, pvals_after_correction, _, __ = multipletests(pvals_before_correction, method = multiple_correction_method)
+
+        results["Pvalue corrected"] = pvals_after_correction
+        results["Significance corrected"] = results["Pvalue corrected"].apply(lambda x:get_significance_symbol(x))
+        results["Correction method"] = multiple_correction_method
+
     return results
+
+
+def get_significance_symbol(pval: float) -> str:
+    """Return Significance symbol depending on pvalue given.
+
+    Args:
+        pval (float): Pvalue of the test
+
+    Returns:
+        str: Significance's symbol
+    """
+    if pval >= 0.05:
+        return "ns"
+    elif pval >= 0.01:
+        return "*"
+    elif pval >= 0.001:
+        return "**"
+    else:
+        return "***"
 
 
 def split_value_column_with_metadata(df, metadata_column):
@@ -845,22 +883,35 @@ def split_value_column_with_metadata(df, metadata_column):
     return data_to_test
 
 
-def reached_compounds_plot_stats_tests(df, metadata_input):
+def reached_compounds_plot_stats_tests(df, metadata_input, multiple_correction, correction_method):
+    """Takes the reached_cpd_plot dataframe to process the different combination for the Wilcoxon/Whitney test.
 
-    if isinstance(df, pd.DataFrame):
+    Args:
+        df (pl.Dataframe): Dataframe of the plot.
+        metadata_input (_type_): Metadata column choosed in input.
 
-        df_comm = df.loc[df["variable"] == "community-reached"]
+    Raises:
+        TypeError: The dataframe in input must be a Polars dataframe.
 
-        df_ind = df.loc[df["variable"] == "individually-reached"]
-
+    Returns:
+        Dataframe: Dataframe of the results
+    """
     if isinstance(df, pl.DataFrame):
 
         df_comm = df.filter(pl.col("variable") == "community-reached").drop("variable")
 
         df_ind = df.filter(pl.col("variable") == "individually-reached").drop("variable")
 
-    data_to_test = split_value_column_with_metadata(df_comm, metadata_input)
+    else:
 
-    res = wilcoxon_mann_whitney(data_to_test, metadata_input)
+        raise TypeError(f"Dataframe received for the reach_compounds_plot stat function should be a Polars dataframe. not {type(df)}")
+
+    comm_data = split_value_column_with_metadata(df_comm, metadata_input)
+    ind_data = split_value_column_with_metadata(df_ind, metadata_input)
+
+    comm_res = wilcoxon_mann_whitney(comm_data, metadata_input, "community", multiple_correction, correction_method)
+    ind_res = wilcoxon_mann_whitney(ind_data, metadata_input, "individually", multiple_correction, correction_method)
+
+    res = pd.concat([comm_res, ind_res])
 
     return res
