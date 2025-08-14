@@ -100,7 +100,6 @@ def overview_module_ui(Data: DataStorage):
                     min_height="600px"
                     )
 
-
     custom_pcoa_card = ui.card(
                             ui.card_header("Customized Principal Coordinate Analysis",
                                 ui.tooltip(
@@ -211,14 +210,9 @@ def overview_module_server(input, output, session, Data: DataStorage):
     @render.data_frame
     def cpd_reach_test_dataframe():
 
-        test_dataframe = sm.cpd_reach_statistical_dataframe(Data, input.cpd_reach_input(),
-                                                            input.multiple_correction_reach_plot(),
-                                                            input.multiple_test_method_reach()
-                                                            )
-
-        # Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
-
-        return test_dataframe
+        df = Data.get_overview_reachplot_stats_dataframe()
+        print(df)
+        return df
 
     @render.data_frame
     def production_test_dataframe():

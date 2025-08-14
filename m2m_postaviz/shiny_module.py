@@ -15,63 +15,10 @@ from pandas.api.types import is_numeric_dtype
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
+from scipy import stats
 
 from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
-
-
-def cpd_reached_plot(data: DataStorage, metadata_input: str):
-    """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
-    The plot can be grouped by the metadata.
-    Args:
-        data (DataStorage): DataStorage object.
-        metadata_input (str): Metadata column label.
-
-    Returns:
-        plotly.express.boxplot: Plotly boxplot
-    """
-    total_cpd = len(data.get_compound_list())
-
-    # Comm_reach
-    df = data.get_cscope_producers_dataframe(with_metadata=False)
-    df = df.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
-    df = df.unpivot(index=["smplID"],value_name="Comm_reached")
-    df = df.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
-    df = df.select("smplID", "Comm_reached")
-    df = df.group_by("smplID").agg(pl.mean("Comm_reached").cast(pl.Int32))
-
-    # df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
-    # df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
-
-    # Ind_reach
-    dfi = data.get_iscope_producers_dataframe(with_metadata=False)
-    dfi = dfi.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
-    dfi = dfi.unpivot(index=["smplID"],value_name="Ind_reached")
-    dfi = dfi.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
-    dfi = dfi.select("smplID", "Ind_reached")
-    dfi = dfi.group_by("smplID").agg(pl.mean("Ind_reached").cast(pl.Int32))
-
-    df = df.join(dfi, on="smplID")
-    print(df)
-    if metadata_input == "None" or metadata_input == "smplID":
-
-        df = df.unpivot(index=["smplID"])
-        # return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
-        return
-
-    else:
-
-        metadata = data.get_metadata().select("smplID",metadata_input)
-        df = df.join(metadata, on ="smplID")
-        df = df.unpivot(index=["smplID",metadata_input])
-
-        if df.get_column(metadata_input).dtype.is_numeric():
-            df = df.sort(metadata_input)
-        print(df)
-        fig = px.box(df, x="variable",y="value", title="Individually- and community-reached metabolites in samples", color=metadata_input)
-        fig.update_xaxes(type="category")
-
-        return fig
 
 
 def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
@@ -193,15 +140,6 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     return figures1, fig2, df, time.time() - start_timer, fig3
 
-
-def cpd_reach_statistical_dataframe(data: DataStorage, column_of_interest, array_comm_reached, array_ind_reached, multiple_test_correction, correction_method):
-
-    if multiple_test_correction:
-        multipletests_method = correction_method
-    else:
-        multipletests_method = "hs"
-
-    return
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
 
@@ -767,3 +705,163 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             plots.append(g)
 
     return plots
+
+
+def cpd_reached_plot(data: DataStorage, metadata_input: str):
+    """Produce and return a plotly.express boxplot of the compounds reached by the sample in community, individually or not reached.
+    The plot can be grouped by the metadata.
+    Args:
+        data (DataStorage): DataStorage object.
+        metadata_input (str): Metadata column label.
+
+    Returns:
+        plotly.express.boxplot: Plotly boxplot
+    """
+    # total_cpd = len(data.get_compound_list())
+
+    # Comm_reach
+    df = data.get_cscope_producers_dataframe(with_metadata=False)
+    df = df.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
+    df = df.unpivot(index=["smplID"],value_name="community-reached")
+    df = df.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
+    df = df.select("smplID", "community-reached")
+    df = df.group_by("smplID").agg(pl.mean("community-reached").cast(pl.Int32))
+
+    # df = df.with_columns(pl.lit(total_cpd).alias("Unreached"))
+    # df = df.with_columns(pl.col("Unreached").sub(pl.col("Comm_reached")))
+
+    # Ind_reach
+    dfi = data.get_iscope_producers_dataframe(with_metadata=False)
+    dfi = dfi.with_columns(pl.when(pl.exclude("smplID") > 0).then(1).otherwise(0).name.keep())
+    dfi = dfi.unpivot(index=["smplID"],value_name="individually-reached")
+    dfi = dfi.with_columns(pl.exclude("smplID", "variable").sum().over("smplID").name.keep())
+    dfi = dfi.select("smplID", "individually-reached")
+    dfi = dfi.group_by("smplID").agg(pl.mean("individually-reached").cast(pl.Int32))
+
+    df = df.join(dfi, on="smplID")
+
+    if metadata_input == "None" or metadata_input == "smplID":
+
+        df = df.unpivot(index=["smplID"])
+        # return px.bar(df, x="smplID",y="value",color="variable",barmode="group")
+        return
+
+    else:
+
+        metadata = data.get_metadata().select("smplID",metadata_input)
+        df = df.join(metadata, on ="smplID")
+        df = df.unpivot(index=["smplID",metadata_input])
+
+        if df.get_column(metadata_input).dtype.is_numeric():
+            df = df.sort(metadata_input)
+
+        stat_df = reached_compounds_plot_stats_tests(df, metadata_input)
+        print(stat_df)
+        data.set_overview_reachplot_stats_dataframe(stat_df)
+
+        fig = px.box(df, x="variable",y="value", title="Individually- and community-reached metabolites in samples", color=metadata_input)
+        fig.update_xaxes(type="category")
+
+        return fig
+
+
+def wilcoxon_mann_whitney(data, metadata_input):
+
+    results = pd.DataFrame(columns=["Factor1", "Sample size1", "Factor2", "Sample size2", "Method", "Statistic", "Pvalue", "Significance"])
+
+    for factor, value in data.items():
+
+        for factor2, value2 in data.items():
+
+            if factor == factor2:
+                continue
+
+            if len(value) < 1 or len(value2) < 1:
+                continue
+
+            if factor2 in results["Factor1"].tolist():
+                continue
+
+            if len(value) == len(value2):
+                test_value, pvalue = stats.wilcoxon(value, value2)
+                test_method = "Wilcoxon"
+
+            else:
+                test_value, pvalue = stats.mannwhitneyu(value, value2)
+                test_method = "Mann-Whitney"
+
+            if pvalue >= 0.05:
+                symbol = "ns"
+            elif pvalue >= 0.01:
+                symbol = "*"
+            elif pvalue >= 0.001:
+                symbol = "**"
+            else:
+                symbol = "***"
+
+            results.loc[len(results)] = {"Metadata_column": metadata_input,
+                                        "Factor1": factor, "Sample size1": len(value),
+                                        "Factor2": factor2, "Sample size2": len(value2),
+                                        "Statistic": test_value, "Pvalue": pvalue, "Significance": symbol, "Method": test_method
+                                        }
+
+    return results
+
+
+def split_value_column_with_metadata(df, metadata_column):
+    """Split the metadata column of the dataframe into dictionnary whose keys are the unique value of the column
+    and value as a list of value from "value" column corresponding to th metadata value.
+
+    Example:
+
+    ┌────────────┬──────┬───────┐
+    │ smplID     ┆ Days ┆ value │   
+    │ ---        ┆ ---  ┆ ---   │
+    │ str        ┆ i64  ┆ i64   │
+    ╞════════════╪══════╪═══════╡
+    │ ERAS1d0    ┆ 0    ┆ 1027  │
+    │ ERAS2d0    ┆ 0    ┆ 1021  │
+    │ ERAS3d0    ┆ 0    ┆ 942   │
+    │ ERAS4d0    ┆ 0    ┆ 1086  │
+    │ ERAS5d0    ┆ 0    ┆ 1069  │
+    │ ERAS8d180  ┆ 180  ┆ 1034  │
+    │ ERAS9d180  ┆ 180  ┆ 1040  │
+    │ ERAS10d180 ┆ 180  ┆ 1061  │
+    │ ERAS11d180 ┆ 180  ┆ 1105  │
+    │ ERAS12d180 ┆ 180  ┆ 1027  │
+    └────────────┴──────┴───────┘
+
+    Expected result: {0: [1027, 1021, 942, 1086, 1069, 1034], 180: [1034, 1034, 1040, 1061, 1105, 1027]}
+
+    Args:
+        df (pl.Dataframe): Polars dataframe.
+    """
+
+    data_to_test = {}
+
+    for unique_value in df[metadata_column].unique().__iter__():
+
+        data_to_test[unique_value] = df.filter(pl.col(metadata_column) == unique_value).select(pl.col("value")).to_series().to_list()
+
+    return data_to_test
+
+
+def reached_compounds_plot_stats_tests(df, metadata_input):
+
+    if isinstance(df, pd.DataFrame):
+
+        df_comm = df.loc[df["variable"] == "community-reached"]
+
+        df_ind = df.loc[df["variable"] == "individually-reached"]
+
+    if isinstance(df, pl.DataFrame):
+
+        df_comm = df.filter(pl.col("variable") == "community-reached").drop("variable")
+
+        df_ind = df.filter(pl.col("variable") == "individually-reached").drop("variable")
+
+    data_to_test = split_value_column_with_metadata(df_comm, metadata_input)
+
+    res = wilcoxon_mann_whitney(data_to_test, metadata_input)
+
+    return res
