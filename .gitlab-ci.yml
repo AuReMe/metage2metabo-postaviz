@@ -23,48 +23,48 @@ before_script:
   - python3 -m pip install tox --user
 
 stages:
-  # - test
-  # - quality
+  - test
+  - quality
   - mirror
 
 
-# coverage:
-#   stage: test
-#   script:
-#     - tox run -e clean,py39,py312,report
-#   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-#   artifacts:
-#     paths:
-#       - htmlcov/
-#       - coverage.xml
-#     reports:
-#       junit: toxtests.xml
+coverage:
+  stage: test
+  script:
+    - tox run -e clean,py39,py312,report
+  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+  artifacts:
+    paths:
+      - htmlcov/
+      - coverage.xml
+    reports:
+      junit: toxtests.xml
 
 
-# sonarqube-check:
-#   stage: quality
-#   needs: ["coverage"]
-#   image: 
-#     name: sonarsource/sonar-scanner-cli:5.0.1
-#     entrypoint: [""]
-#   variables:
-#     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-#     GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
-#   # cache:
-#   #   key: "${CI_JOB_NAME}"
-#   #   paths:
-#   #     - .sonar/cache
-#   script: 
-#     - tox run -e sonar
-#   allow_failure: true
-#   only:
-#     - merge_requests
-#     - main
-#     # - develop
-#   artifacts:
-#     paths:
-#       - pylint-report.txt
-#       - coverage.xml
+sonarqube-check:
+  stage: quality
+  needs: ["coverage"]
+  image: 
+    name: sonarsource/sonar-scanner-cli:5.0.1
+    entrypoint: [""]
+  variables:
+    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+  # cache:
+  #   key: "${CI_JOB_NAME}"
+  #   paths:
+  #     - .sonar/cache
+  script: 
+    - tox run -e sonar
+  allow_failure: true
+  only:
+    - merge_requests
+    - main
+    # - develop
+  artifacts:
+    paths:
+      - pylint-report.txt
+      - coverage.xml
 
 # Attempt to mirror using deploy key. Does not work because port 443 is not allowed by GitLab. 
 # mirror_to_github:
