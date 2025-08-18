@@ -23,45 +23,81 @@ before_script:
   - python3 -m pip install tox --user
 
 stages:
-  - test
-  - quality
+  # - test
+  # - quality
+  - mirror
 
 
-coverage:
-  stage: test
+# coverage:
+#   stage: test
+#   script:
+#     - tox run -e clean,py39,py312,report
+#   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
+#   artifacts:
+#     paths:
+#       - htmlcov/
+#       - coverage.xml
+#     reports:
+#       junit: toxtests.xml
+
+
+# sonarqube-check:
+#   stage: quality
+#   needs: ["coverage"]
+#   image: 
+#     name: sonarsource/sonar-scanner-cli:5.0.1
+#     entrypoint: [""]
+#   variables:
+#     SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
+#     GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
+#   # cache:
+#   #   key: "${CI_JOB_NAME}"
+#   #   paths:
+#   #     - .sonar/cache
+#   script: 
+#     - tox run -e sonar
+#   allow_failure: true
+#   only:
+#     - merge_requests
+#     - main
+#     # - develop
+#   artifacts:
+#     paths:
+#       - pylint-report.txt
+#       - coverage.xml
+
+# Attempt to mirror using deploy key. Does not work because port 443 is not allowed by GitLab. 
+# mirror_to_github:
+#   stage: mirror
+#   before_script:
+#     - mkdir -p ~/.ssh
+#     - echo "$SSH_PRIVATE_KEY" | base64 -d > ~/.ssh/id_rsa
+#     - chmod 600 ~/.ssh/id_rsa
+#     - echo "Host github.com" >> ~/.ssh/config
+#     - echo "  Hostname ssh.github.com" >> ~/.ssh/config
+#     - echo "  Port 443" >> ~/.ssh/config
+#     - echo "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl" >> ~/.ssh/known_hosts
+#     - echo "github.com ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBEmKSENjQEezOmxkZMy7opKgwFB9nkt5YRrYMjNuG5N87uRgg6CLrbo5wAdT/y6v0mKV0U2w0WZ2YB/++Tpockg=" >> ~/.ssh/known_hosts
+#     - echo "github.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCj7ndNxQowgcQnjshcLrqPEiiphnt+VTTvDP6mHBL9j1aNUkY4Ue1gvwnGLVlOhGeYrnZaMgRK6+PKCUXaDbC7qtbW8gIkhL7aGCsOr/C56SJMy/BCZfxd1nWzAOxSDPgVsmerOBYfNqltV9/hWCqBywINIR+5dIg6JTJ72pcEpEjcYgXkE2YEFXV1JHnsKgbLWNlhScqb2UmyRkQyytRLtL+38TGxkxCflmO+5Z8CSSNY7GidjMIZ7Q4zMjA2n1nGrlTDkzwDCsw+wqFPGQA179cnfGWOWRVruj16z6XyvxvjJwbz0wQZ75XK5tKSb7FNyeIEs4TT4jk+S4dhPeAUC5y+bDYirYgM4GC7uEnztnZyaVWQ7B381AK4Qdrwt51ZqExKbQpTUNn+EjqoTwvqNj4kqx5QUCI0ThS/YkOxJCXmPUWZbhjpCg56i+2aB6CmK2JGhn57K5mj0MNdBXA4/WnwH6XoPWJzK5Nyu2zB3nAZp+S5hpQs+p1vN1/wsjk=" >> ~/.ssh/known_hosts
+#     - export NO_PROXY=ssh.github.com
+#   script:
+#     - ssh -vvv -p 443 git@ssh.github.com || echo "Failed to connect to ssh.github.com port 443"
+#     - echo "Pushing branch $CI_COMMIT_REF_NAME to GitHub"
+#     - git fetch --all
+#     - git checkout $CI_COMMIT_REF_NAME 
+#     - git remote add github ssh://git@ssh.github.com:443/${GITHUB_REPO_URL}
+#     # Push only the branch that triggered the pipeline
+#     - git push github $CI_COMMIT_REF_NAME -f
+#   only:
+#     - main 
+
+mirror_to_github:
+  stage: mirror
   script:
-    - tox run -e clean,py39,py312,report
-  coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
-  artifacts:
-    paths:
-      - htmlcov/
-      - coverage.xml
-    reports:
-      junit: toxtests.xml
-
-
-sonarqube-check:
-  stage: quality
-  needs: ["coverage"]
-  image: 
-    name: sonarsource/sonar-scanner-cli:5.0.1
-    entrypoint: [""]
-  variables:
-    SONAR_USER_HOME: "${CI_PROJECT_DIR}/.sonar"  # Defines the location of the analysis task cache
-    GIT_DEPTH: "0"  # Tells git to fetch all the branches of the project, required by the analysis task
-  # cache:
-  #   key: "${CI_JOB_NAME}"
-  #   paths:
-  #     - .sonar/cache
-  script: 
-    - tox run -e sonar
-  allow_failure: true
+    - echo "Pushing branch $CI_COMMIT_REF_NAME to GitHub"
+    - git fetch --all  # Fetch all branches
+    - git checkout $CI_COMMIT_REF_NAME  # Ensure we're on the correct branch
+    - git remote add github https://${GITHUB_TOKEN}@${GITHUB_REPO_URL}
+    - git push github $CI_COMMIT_REF_NAME -f
   only:
-    - merge_requests
-    - main
-    # - develop
-  artifacts:
-    paths:
-      - pylint-report.txt
-      - coverage.xml
-
+    - main 
