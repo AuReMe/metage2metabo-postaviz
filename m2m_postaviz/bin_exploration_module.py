@@ -34,7 +34,10 @@ def bin_exp_ui(Data: DataStorage):
                         ui.output_ui("rank_unique_choice"),
 
                         ui.input_selectize("bin_factor", "Filter samples on metadata variable", factor_list, selected=factor_list[0], multiple=False),
-                        ui.output_ui("bin_factor_unique"),
+                        ui.panel_conditional("input.bin_factor !== 'None'",
+                            ui.output_ui("bin_factor_unique"),
+                            ui.input_checkbox("group_plot", "Group the X axis by the metadata instead of the samples's ID.",value=False)),
+
 
                         ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False),
 
@@ -184,9 +187,9 @@ def bin_exp_server(input, output, session, Data: DataStorage):
     def bin_abundance_plot():
         return run_exploration.result()[1]
 
-    @render_widget
-    def bin_metadata_filter():
-        return run_exploration.result()[5]
+    # @render_widget
+    # def bin_metadata_filter():
+    #     return run_exploration.result()[5]
 
     @render_widget
     def bin_unique_count_cscope_histplot():
@@ -198,11 +201,11 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     # @ui.bind_task_button(button_id="run_custom_pcoa")
     @reactive.extended_task
-    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
+    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color, group):
 
-        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color)
+        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color, group)
 
     @reactive.effect
     @reactive.event(input.run_bin_exploration, ignore_none=True)
     def handle_click_bin_exploration():
-        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color())
+        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color(), input.group_plot())

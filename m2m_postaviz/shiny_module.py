@@ -23,7 +23,7 @@ from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
 
-def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color):
+def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color, group_by_metadata = False):
     """Takes inputs from shiny application to return 3 ploty objects:
     - hist plot of the unique production of metabolites by selected bins, weighted by abundance or not.
     - box plot of production of metabolites by bin selected.
@@ -121,14 +121,26 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
         df.sort_index(inplace=True)
 
-        figures1.append(px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count",
-                                    color="smplID" if color =="None" else color,
-                                    hover_data="binID",
-                                    text_auto="Count_with_abundance" if with_abundance else "unique_production_count",
-                                    labels={
-                                            "unique_production_count": "unique metabolites produced",
-                                            "Count_with_abundance": "abundance-weighted production of metabolites"
-                                            }))
+        if group_by_metadata and factor != "None":
+
+            figures1.append(px.box(df, x=factor, y="Count_with_abundance" if with_abundance else "unique_production_count",
+                                        color=None if color == "None" else color,
+                                        hover_data="binID",
+                                        labels={
+                                                "unique_production_count": "unique metabolites produced",
+                                                "Count_with_abundance": "abundance-weighted production of metabolites"
+                                                }))
+        
+        else:
+
+            figures1.append(px.histogram(df, x="smplID", y="Count_with_abundance" if with_abundance else "unique_production_count",
+                                        color="smplID" if color =="None" else color,
+                                        hover_data="binID",
+                                        text_auto="Count_with_abundance" if with_abundance else "unique_production_count",
+                                        labels={
+                                                "unique_production_count": "unique metabolites produced",
+                                                "Count_with_abundance": "abundance-weighted production of metabolites"
+                                                }))
 
     # If only one bin selected do not make boxplot.
 
@@ -140,12 +152,12 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
 
-    if factor is not None:
-        figure_by_metadata = px.box(df, x=factor, y="Count_with_abundance" if with_abundance else "Count", hover_data="binID", color=factor)
-    else:
-        figure_by_metadata = None
+    # if factor is not None:
+    #     figure_by_metadata = px.box(df, x=factor, y="Count_with_abundance" if with_abundance else "Count", hover_data="binID", color=factor)
+    # else:
+    #     figure_by_metadata = None
 
-    return figures1, fig2, df, time.time() - start_timer, fig3, figure_by_metadata
+    return figures1, fig2, df, time.time() - start_timer, fig3
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
