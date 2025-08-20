@@ -41,26 +41,6 @@ class DataStorage:
 
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
-        self.overview_reachplot_dataframe = None
-
-        self.overview_reachplot_stats_dataframe = None
-
-    def set_overview_reachplot_dataframe(self, dataframe):
-
-        self.overview_reachplot_dataframe = dataframe
-
-    def set_overview_reachplot_stats_dataframe(self, dataframe):
-
-        self.overview_reachplot_stats_dataframe = dataframe
-
-    def get_overview_reachplot_dataframe(self):
-
-        return self.overview_reachplot_dataframe
-
-    def get_overview_reachplot_stats_dataframe(self):
-
-        return self.overview_reachplot_stats_dataframe
-
     def keep_working_dataframe(self, tab_id, dataframe):
 
         self.current_working_dataframe[tab_id] = dataframe
@@ -70,7 +50,7 @@ class DataStorage:
         try:
             current_dataframe = self.current_working_dataframe[tab_id]
         except KeyError:
-            print("No current dataframe for the total production plot, It may happen when no plot have been made during the session.")
+            print("No current dataframe stored, It may happen when no plot have been made during the session.")
             return
 
         return current_dataframe

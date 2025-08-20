@@ -215,15 +215,22 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
     @reactive.extended_task
     async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
 
+        if len(selected_compounds) == 0:
+            return
+
         cpd_filtered_list = []
         for cpd in Data.get_compound_list():
             if cpd[:-3] in selected_compounds:
                 cpd_filtered_list.append(cpd)
 
-        if len(selected_compounds) == 0:
-            return
+        if len(selected_compounds) == 1 and col_cluster == True:
+            # Columns clustering on one compound(column) will throw an error. EmptyMatrix
+            col_cluster = False
 
-        nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
+        try:
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
+        except:
+            nb_producers_boxplot = None
 
         if user_input1 != "None":
 
