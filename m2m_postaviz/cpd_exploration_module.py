@@ -90,8 +90,10 @@ def cpd_tab_ui(Data: DataStorage):
             ui.nav_panel("Individual metabolic potential", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
             title= "Barplot showing the percentage of samples having at least one metabolic network able to produce the metabolites, either individually or considering interactions across populations."),
 
-        ui.card(ui.card_header("Boxplot showing the number of metabolic network producers for selected metabolites"),
-            output_widget("cpd_exp_producers_plot"),full_screen=True),
+        ui.navset_card_tab(
+            ui.nav_panel("Community metabolic potential", ui.card(output_widget("cpd_exp_producers_plot"), full_screen=True)),
+            ui.nav_panel("Individual metabolic potential", ui.card(output_widget("cpd_exp_producers_plot2"), full_screen=True)),
+            title= "Boxplot showing the number of metabolic network producers for selected metabolites."),
 
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
 
@@ -209,7 +211,11 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
     @render_widget
     def cpd_exp_producers_plot():
-        return cpd_plot_generation.result()[0]
+        return cpd_plot_generation.result()[0][0]
+
+    @render_widget
+    def cpd_exp_producers_plot2():
+        return cpd_plot_generation.result()[0][1]
 
     @ui.bind_task_button(button_id="run_plot_generation")
     @reactive.extended_task
@@ -237,7 +243,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
 
         else:
-            percent_barplot = None
+            percent_barplot = [None, None]
 
         if with_statistic:
 

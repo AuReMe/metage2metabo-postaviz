@@ -222,9 +222,15 @@ class DataStorage:
         return df
 
 
+    def get_normalised_iscope_abundance_dataframe(self, with_metadata = False) -> pl.DataFrame:
+        df = self.open_tsv(key="normalised_iscope_abundance_dataframe_postaviz.tsv")
 
-    # def is_indexed(self, df: pd.DataFrame) -> bool:
-    #     return True if df.index.name == "smplID" else False
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.join(metadata,"smplID",how="left")
+
+        return df
 
 
     def get_factors(self, remove_smpl_col = False, insert_none = False, with_dtype = False) -> list:
@@ -300,6 +306,7 @@ class DataStorage:
             except Exception as e:
                 logs = e
             return logs
+
 
     def save_seaborn_plot(self, sns_obj, file_name):
 
@@ -490,7 +497,6 @@ class DataStorage:
         return cscope_df, iscope_df, added_value_dataframe
 
 
-
     def get_cpd_category_tree(self) -> dict:
         with open(Path(self.output_path, "padmet_compounds_category_tree.json")) as fp:
             tree = load(fp)
@@ -655,9 +661,4 @@ class DataStorage:
 
         return cpd_index[cpd_list_index]
 
-
-    def tooltip_icon(self):
-
-        icon = Path(Path(__file__).parent, "information.png")
-        return str(icon)
 

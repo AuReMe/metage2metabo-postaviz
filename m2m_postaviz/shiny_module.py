@@ -459,70 +459,93 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         return
 
     if with_abundance:
-        producer_data = data.get_normalised_abundance_dataframe(with_metadata=True)
+        cscope_df = data.get_normalised_abundance_dataframe(with_metadata=True)
+        iscope_df = data.get_normalised_iscope_abundance_dataframe(with_metadata=True)
     else:
-        producer_data = data.get_cscope_producers_dataframe()
-    # producer_data_iscope = data.get_iscope_metabolite_production_dataframe()
+        cscope_df = data.get_cscope_producers_dataframe()
+        iscope_df = data.get_iscope_producers_dataframe()
+    # cscope_df_iscope = data.get_iscope_metabolite_production_dataframe()
 
     if sample_filter_button != "All" and len(sample_filter_value) != 0:
 
         if sample_filter_button == "Include":
 
-            producer_data = producer_data.filter(pl.col("smplID").is_in(sample_filter_value))
+            cscope_df = cscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
+            iscope_df = cscope_df.filter(pl.col("smplID").is_in(sample_filter_value))
 
         elif sample_filter_button == "Exclude":
 
-            producer_data = producer_data.filter(~pl.col("smplID").is_in(sample_filter_value))
+            cscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
+            iscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
 
-    # producer_data = producer_data.set_index("smplID")
+    # cscope_df = cscope_df.set_index("smplID")
+
+    resulting_plots = []
 
     if user_input1 == "None":
 
         if color_input == "None":
 
-            df = producer_data.select([*compounds_input])
-            return px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
+            df = cscope_df.select([*compounds_input])
+            dfi = iscope_df.select([*compounds_input])
+            fig1 = px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
+            fig2 = px.box(dfi, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
+            return fig1, fig2
 
         else:
 
-            df = producer_data.select([*compounds_input, color_input])
+            df = cscope_df.select([*compounds_input, color_input])
+            dfi = iscope_df.select([*compounds_input, color_input])
             has_unique_value = du.has_only_unique_value(df, color_input)
 
             if has_unique_value:
                 fig = px.bar(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
+                fig2 = px.bar(dfi, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
             else:
                 fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
+                fig2 = px.box(dfi, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
 
-            return fig
+            return fig, fig2
 
     if color_input == "None" or user_input1 == color_input: # If only the filtering by metadata has been selected (no color).
 
-        df = producer_data.select([*compounds_input,user_input1])
+        df = cscope_df.select([*compounds_input,user_input1])
         df = df.drop_nulls()
+        dfi = iscope_df.select([*compounds_input,user_input1])
+        dfi = dfi.drop_nulls()
 
         if is_numeric_dtype(df[user_input1]):
             df.sort_values(user_input1, inplace=True)
+            dfi.sort_values(user_input1, inplace=True)
 
         has_unique_value = du.has_only_unique_value(df, user_input1)
 
         if df.get_column(user_input1).dtype.is_numeric():
 
             df = df.sort(user_input1)
-
             df = df.with_columns(pl.col(user_input1).cast(pl.String))
+
+            dfi = dfi.sort(user_input1)
+            dfi = dfi.with_columns(pl.col(user_input1).cast(pl.String))
 
         if has_unique_value:
             fig = px.bar(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
+            fig2 = px.bar(dfi, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
         else:
             fig = px.box(df, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
             fig.update_xaxes(type="category")
-        return fig
+            fig2 = px.box(dfi, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
+            fig2.update_xaxes(type="category")
+        return fig, fig2
 
-    df = producer_data.select([*compounds_input,user_input1,color_input])
+    df = cscope_df.select([*compounds_input,user_input1,color_input])
     df = df.drop_nulls()
+    dfi = iscope_df.select([*compounds_input,user_input1,color_input])
+    dfi = dfi.drop_nulls()
 
     if is_numeric_dtype(df[user_input1]):
         df.sort_values(user_input1, inplace=True)
+        dfi.sort_values(user_input1, inplace=True)
 
     has_unique_value = du.has_only_unique_value(df, user_input1, color_input)
 
@@ -530,13 +553,20 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         df = df.sort(user_input1)
         df = df.with_columns(pl.col(user_input1).cast(pl.String))
 
+        dfi = dfi.sort(user_input1)
+        dfi = dfi.with_columns(pl.col(user_input1).cast(pl.String))
+
     if has_unique_value:
         fig = px.bar(df, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
         fig.update_xaxes(type="category")
+        fig2 = px.bar(dfi, x=user_input1, y=compounds_input,color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
+        fig2.update_xaxes(type="category")
     else:
         fig = px.box(df, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of metabolic network producers")
         fig.update_xaxes(type="category")
-    return fig
+        fig2 = px.box(dfi, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of metabolic network producers")
+        fig2.update_xaxes(type="category")
+    return fig, fig2
 
 
 def df_to_plotly(df):
