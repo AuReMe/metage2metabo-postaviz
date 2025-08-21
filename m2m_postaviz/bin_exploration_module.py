@@ -111,7 +111,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         choices = df.get_column(factor_choice).unique().to_list()
 
         return ui.TagList(
-            ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
+            ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True, selected=choices)
             )
 
     @render.ui

@@ -74,6 +74,7 @@ def cpd_tab_ui(Data: DataStorage):
 
                 ui.input_task_button("run_plot_generation","Generate plots"),
                 ui.input_checkbox("save_raw_data", "Save dataframe used to generate plots."),
+                ui.output_text_verbatim("save_raw_data_logs"),
 
             width=400,
             gap=35,
@@ -135,6 +136,11 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             '</div>'
         )
         return ui.HTML(msg)
+
+
+    @render.text
+    def save_raw_data_logs():
+        return f"Data will be saved in {Data.raw_data_path}."
 
     @render.text
     @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
@@ -240,20 +246,17 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             nb_producers_boxplot = [None, None]
 
         if user_input1 != "None":
-
             percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value, save_raw_data)
 
         else:
             percent_barplot = [None, None]
 
         if with_statistic:
-
             try:
                 stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method, save_raw_data)
             except:  # noqa: E722
                 stat_dataframe = None
         else:
-
             stat_dataframe = None
 
         cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value, save_raw_data) ###
