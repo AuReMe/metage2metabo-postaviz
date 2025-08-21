@@ -39,11 +39,27 @@ class DataStorage:
 
             self.output_path = save_path
 
+        self.raw_data_path = Path(save_path, "raw_dataframes")
+
+        if not self.raw_data_path.is_dir():
+            self.raw_data_path.mkdir(parents=True, exist_ok=True)
+
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
-    def keep_working_dataframe(self, tab_id, dataframe):
+    def keep_working_dataframe(self, tab_id, dataframe, on_RAM_only = False):
 
-        self.current_working_dataframe[tab_id] = dataframe
+        if on_RAM_only:
+            self.current_working_dataframe[tab_id] = dataframe
+            return
+
+        full_path = Path(self.raw_data_path, tab_id+".tsv")
+        
+        if isinstance(dataframe, pd.DataFrame):
+            dataframe.to_csv(full_path, sep="\t")
+        if isinstance(dataframe, pl.DataFrame):
+            dataframe.write_csv(full_path, separator="\t")
+
+        print(f"saved {tab_id} at: {full_path}")
 
     def get_working_dataframe(self, tab_id):
 

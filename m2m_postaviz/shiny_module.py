@@ -232,7 +232,7 @@ def global_production_statistical_dataframe(data: DataStorage, user_input1, user
     return
 
 
-def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance = None):
+def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_choices, user_input1, user_input2, multiple_test_correction, correction_method, save_raw_data):
     y1, x1, x2 = metabolites_choices, user_input1, user_input2
 
     if len(y1) == 0:
@@ -256,14 +256,17 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
             correlation_results = []
 
             for y_value in y1:
-
                 correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), x1))
+
+            if save_raw_data:
+                data.keep_working_dataframe("cpdtab_stats_raw_dataframe", df)
 
             return pd.concat(correlation_results)
 
-
         res = du.preprocessing_for_statistical_tests(df, y1, x1, multipletests = multiple_test_correction, multipletests_method= correction_method)
-        # all_dataframe["metabolites_production_test_dataframe"] = res
+
+        if save_raw_data:
+            data.keep_working_dataframe("cpdtab_stats_raw_dataframe", df)
 
         return res
 
@@ -284,6 +287,9 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
                     correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x1+" "+y_value)))
                     correlation_results.append(du.correlation_test(df[y_value].to_numpy(), df[x1].to_numpy(), str(x2+" "+y_value)))
 
+                if save_raw_data:
+                    data.keep_working_dataframe("cpdtab_stats_raw_dataframe", df)
+
                 return pd.concat(correlation_results)
 
             else: # Second input is not Float type
@@ -299,12 +305,18 @@ def metabolites_production_statistical_dataframe(data: DataStorage, metabolites_
 
                         correlation_results.append(du.correlation_test(value_array.to_numpy(), factor_array.to_numpy(), str(x2_unique_value)+" "+y_value))
 
+                if save_raw_data:
+                    data.keep_working_dataframe("cpdtab_stats_raw_dataframe", df)
+
                 return pd.concat(correlation_results)
 
         else:
 
             res = du.preprocessing_for_statistical_tests(df, y1, x1, x2, multipletests = multiple_test_correction, multipletests_method= correction_method)
             # all_dataframe["metabolites_production_test_dataframe"] = res
+
+        if save_raw_data:
+            data.keep_working_dataframe("cpdtab_stats_raw_dataframe", df)
 
         return res
 
@@ -453,7 +465,7 @@ def render_reactive_total_production_plot(data: DataStorage, user_input1, user_i
         return fig, df
 
 
-def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None):
+def render_reactive_metabolites_production_plot(data: DataStorage, compounds_input, user_input1, color_input = "None", sample_filter_button = "All", sample_filter_value = [], with_abundance = None, save_raw_data = False):
 
     if len(compounds_input) == 0:
         return
@@ -478,10 +490,6 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             cscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
             iscope_df = cscope_df.filter(~pl.col("smplID").is_in(sample_filter_value))
 
-    # cscope_df = cscope_df.set_index("smplID")
-
-    resulting_plots = []
-
     if user_input1 == "None":
 
         if color_input == "None":
@@ -490,6 +498,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             dfi = iscope_df.select([*compounds_input])
             fig1 = px.box(df, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
             fig2 = px.box(dfi, y=compounds_input).update_layout(yaxis_title="Numbers of metabolic network producers for each sample")
+
+            if save_raw_data:
+                data.keep_working_dataframe("cpd_producers_cscope", df)
+                data.keep_working_dataframe("cpd_producers_iscope", dfi)
             return fig1, fig2
 
         else:
@@ -505,6 +517,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
                 fig = px.box(df, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
                 fig2 = px.box(dfi, y=compounds_input, color=color_input).update_layout(yaxis_title="Numbers of metabolic network producers")
 
+            if save_raw_data:
+                data.keep_working_dataframe("cpd_producers_cscope", df)
+                data.keep_working_dataframe("cpd_producers_iscope", dfi)
             return fig, fig2
 
     if color_input == "None" or user_input1 == color_input: # If only the filtering by metadata has been selected (no color).
@@ -536,6 +551,10 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
             fig.update_xaxes(type="category")
             fig2 = px.box(dfi, x=user_input1, y=compounds_input, color=user_input1).update_layout(yaxis_title="Numbers of metabolic network producers")
             fig2.update_xaxes(type="category")
+
+        if save_raw_data:
+            data.keep_working_dataframe("cpd_producers_cscope", df)
+            data.keep_working_dataframe("cpd_producers_iscope", dfi)
         return fig, fig2
 
     df = cscope_df.select([*compounds_input,user_input1,color_input])
@@ -566,6 +585,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
         fig.update_xaxes(type="category")
         fig2 = px.box(dfi, x=user_input1, y=compounds_input, color=color_input, boxmode="group").update_layout(yaxis_title="Numbers of metabolic network producers")
         fig2.update_xaxes(type="category")
+        if save_raw_data:
+            data.keep_working_dataframe("cpd_producers_cscope", df)
+            data.keep_working_dataframe("cpd_producers_iscope", dfi)
     return fig, fig2
 
 
@@ -575,7 +597,7 @@ def df_to_plotly(df):
             "y": df.index.tolist()}
 
 
-def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str, sample_filter_button = "All", sample_filter_value = []):
+def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_filter_input: str, sample_filter_button = "All", sample_filter_value = [], save_raw_data = False):
     """Produce two plotly figure barplot from the list of compounds and the column filter given in input.
 
     Args:
@@ -684,6 +706,10 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
 
     fig2 = px.bar(iscope_df, x = "variable", y = "value", color = "metadata", barmode="group", title="Percentage of sample producing the selected metabolites (non-interacting community)", labels={"metadata": metadata_filter_input}).update_layout(bargap=0.2,xaxis_title="Compounds", yaxis_title="Percent of sample producing the compound")
 
+    if save_raw_data:
+        data.keep_working_dataframe("percentage_producers_cscope", cscope_df)
+        data.keep_working_dataframe("percentage_producers_iscope", iscope_df)
+
     return fig1, fig2
 
 
@@ -698,7 +724,7 @@ def col_value_to_percent(col: pd.Series):
     return final_val
 
 
-def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_cluster = False, col_cluster = False, filter_mode = None, filter_values = None):
+def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_cluster = False, col_cluster = False, filter_mode = None, filter_values = None, save_raw_data = False):
     """Produce a customizable Seaborn clustermap. Distance matrix use the jaccard method when clustering enabled.
 
     Args:
@@ -715,6 +741,7 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
     """
     matplotlib.use("pdf")
     plots = []
+    raw_dataframes = []
 
     for dataframe in data.get_added_value_dataframe(cpd_input, filter_mode, filter_values):
 
@@ -741,15 +768,24 @@ def sns_clustermap(data: DataStorage, cpd_input, metadata_input = None, row_clus
             g = sns.clustermap(dataframe, row_colors=row_colors, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
             handles = [Patch(facecolor=lut[name]) for name in lut]
             plt.legend(handles, lut, title=metadata_input,
+                       
             bbox_to_anchor=(1, 1), bbox_transform=plt.gcf().transFigure, loc="upper right")
-
+            if save_raw_data:
+                raw_dataframes.append(dataframe)
             plots.append(g)
 
         else :
 
             g = sns.clustermap(dataframe, metric="jaccard", col_cluster=col_cluster, row_cluster=row_cluster, cbar_pos=(.9, .2, .03, .2), xticklabels=True)
 
+            if save_raw_data:
+                raw_dataframes.append(dataframe)
             plots.append(g)
+
+    if save_raw_data:
+        for i in range(len(raw_dataframes)):
+            name = "clustermap_seaborn_raw_dataframe_" + str(i)
+            data.keep_working_dataframe(name, raw_dataframes[i])
 
     return plots
 

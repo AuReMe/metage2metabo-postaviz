@@ -205,7 +205,7 @@ def overview_module_server(input, output, session, Data: DataStorage):
 
         fig, df = sm.render_reactive_total_production_plot(Data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
-        Data.keep_working_dataframe("total_production_plot_dataframe", df)
+        Data.keep_working_dataframe("total_production_plot_dataframe", df, on_RAM_only=True)
 
         return fig
 
@@ -239,7 +239,7 @@ def overview_module_server(input, output, session, Data: DataStorage):
                                                             input.multiple_test_method_global(),
                                                             input.prod_norm())
 
-        Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
+        Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe, on_RAM_only=True)
 
         return test_dataframe
 

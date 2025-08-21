@@ -73,6 +73,7 @@ def cpd_tab_ui(Data: DataStorage):
                     ),
 
                 ui.input_task_button("run_plot_generation","Generate plots"),
+                ui.input_checkbox("save_raw_data", "Save dataframe used to generate plots."),
 
             width=400,
             gap=35,
@@ -173,19 +174,19 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
     @render.plot
     def heatmap_cscope():
         plot_object = cpd_plot_generation.result()[3][0]
-        Data.keep_working_dataframe("cscope_heatmap", plot_object)
+        Data.keep_working_dataframe("cscope_heatmap", plot_object, True)
         return plot_object
 
     @render.plot
     def heatmap_iscope():
         plot_object = cpd_plot_generation.result()[3][1]
-        Data.keep_working_dataframe("iscope_heatmap", plot_object)
+        Data.keep_working_dataframe("iscope_heatmap", plot_object, True)
         return plot_object
 
     @render.plot
     def heatmap_added_value():
         plot_object = cpd_plot_generation.result()[3][2]
-        Data.keep_working_dataframe("advalue_heatmap", plot_object)
+        Data.keep_working_dataframe("advalue_heatmap", plot_object, True)
         return plot_object
 
     @render.data_frame
@@ -219,7 +220,7 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
     @ui.bind_task_button(button_id="run_plot_generation")
     @reactive.extended_task
-    async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
+    async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance, save_raw_data):
 
         if len(selected_compounds) == 0:
             return
@@ -234,13 +235,13 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             col_cluster = False
 
         try:
-            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance, save_raw_data) ###
         except:
-            nb_producers_boxplot = None
+            nb_producers_boxplot = [None, None]
 
         if user_input1 != "None":
 
-            percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
+            percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value, save_raw_data)
 
         else:
             percent_barplot = [None, None]
@@ -248,14 +249,14 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         if with_statistic:
 
             try:
-                stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
+                stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method, save_raw_data)
             except:  # noqa: E722
                 stat_dataframe = None
         else:
 
             stat_dataframe = None
 
-        cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value) ###
+        cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value, save_raw_data) ###
 
         return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
 
@@ -267,7 +268,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                             input.color_filter_input(),
                             input.sample_filter_choice_input(), input.sample_filter_selection_input(),
                             input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
-                            input.multiple_correction_method(), input.row_cluster(), input.col_cluster(), input.render_cpd_abundance())
+                            input.multiple_correction_method(), input.row_cluster(), input.col_cluster(),
+                            input.render_cpd_abundance(), input.save_raw_data())
 
 
     @reactive.effect
