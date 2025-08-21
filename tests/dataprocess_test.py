@@ -139,22 +139,22 @@ def test_shiny_module():
     # Test for bins exploration tab
 
     production_histplot, production_boxplot, df, timing, abundance_plot = sm.bin_exploration_processing(data,
-                                                                                                        "Group",
-                                                                                                        ["Control","Treatment"],
+                                                                                                        "Antibiotics",
+                                                                                                        ["YES","NO"],
                                                                                                         "c",
                                                                                                         "Clostridia",
                                                                                                         True, "Days")
 
     production_histplot2, production_boxplot2, df2, timing2, abundance_plot2 = sm.bin_exploration_processing(data,
-                                                                                                    "Group",
-                                                                                                    ["Control","Treatment"],
+                                                                                                    "Antibiotics",
+                                                                                                    ["YES","NO"],
                                                                                                     "all",
                                                                                                     "Clostridia",
                                                                                                     True, "Days")
 
     production_histplot3, production_boxplot3, df3, timing3, abundance_plot3 = sm.bin_exploration_processing(data,
-                                                                                                    "Group",
-                                                                                                    ["Control","Treatment"],
+                                                                                                    "Antibiotics",
+                                                                                                    ["YES","NO"],
                                                                                                     "mgs",
                                                                                                     "MB2bin10 taxonomy",
                                                                                                     True, "Days")
@@ -223,9 +223,9 @@ def test_shiny_module():
 
         warnings.simplefilter("ignore")
 
-        custom_pcoa_category_factor = sm.make_pcoa(data, "Group", ["Control","Treatment"], True, "Days")
+        custom_pcoa_category_factor = sm.make_pcoa(data, "Antibiotics", ["YES","NO"], True, "Days")
 
-        custom_pcoa_integer_factor = sm.make_pcoa(data, "Days", [0, 180], False, "Group")
+        custom_pcoa_integer_factor = sm.make_pcoa(data, "Days", [0, 180], False, "Antibiotics")
 
     assert custom_pcoa_category_factor.data != tuple(), "Custom pcoa function returned empty plot"
 
@@ -233,9 +233,9 @@ def test_shiny_module():
 
     # Test for total production reactive plot.
 
-    reactive_total_production_plot, df = sm.render_reactive_total_production_plot(data, "Group", "Days", False)
-    reactive_total_production_plot_abundance, df = sm.render_reactive_total_production_plot(data, "Group", "Days", True)
-    reactive_total_production_plot_2, df = sm.render_reactive_total_production_plot(data, "Group", "Group", False)
+    reactive_total_production_plot, df = sm.render_reactive_total_production_plot(data, "Antibiotics", "Days", False)
+    reactive_total_production_plot_abundance, df = sm.render_reactive_total_production_plot(data, "Antibiotics", "Days", True)
+    reactive_total_production_plot_2, df = sm.render_reactive_total_production_plot(data, "Antibiotics", "Antibiotics", False)
 
     assert isinstance(reactive_total_production_plot, plotly.graph_objs._figure.Figure), "reactive_total_production_plot is supposed to be a plotly graph object."
 
@@ -251,8 +251,8 @@ def test_shiny_module():
 
     # Test for metabolites production reactive plot.
 
-    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days")
-    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Group", "Days")
+    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Antibiotics", "Days")
+    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Antibiotics", "Days")
 
     assert isinstance(reactive_metabolites_production_plot, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
 
@@ -271,15 +271,15 @@ def test_statistic_method():
         assert total_production_test_dataframe == None, "global_production_statistical_dataframe function should have return None with user_input1 == None."
 
         # Return Wilcoxon/Man-whitney dataframe
-        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Group", "Days", True, "simes-hochberg", True)
+        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Antibiotics", "Days", True, "simes-hochberg", True)
         assert total_production_test_dataframe["Method"].unique() == "Wilcoxon", "global_production_statistical_dataframe function should've return dataframe with Wilcoxon test method"
 
         # Return Correlation dataframe
-        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Days", "Group", True, "simes-hochberg", True)
+        total_production_test_dataframe = sm.global_production_statistical_dataframe(data, "Days", "Antibiotics", True, "simes-hochberg", True)
         assert total_production_test_dataframe["Method"].unique() == "pearson", "global_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
         # Return Wilcoxon/Man-whitney dataframe
-        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "None", True, "simes-hochberg", True)
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Antibiotics", "None", True, "simes-hochberg", True)
         assert metabolites_production_test_dataframe["Method"].unique() == "Mann-Whitney", "metabolites_production_statistical_dataframe function should've return dataframe with Mann-Whitney test method"
         
         # Return Correlation dataframe        
@@ -287,11 +287,11 @@ def test_statistic_method():
         assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
         # Return Wilcoxon/Man-whitney dataframe
-        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Group", "Days", True, "simes-hochberg", True )
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Antibiotics", "Days", True, "simes-hochberg", True )
         assert metabolites_production_test_dataframe["Method"].unique() == "Wilcoxon", "metabolites_production_statistical_dataframe function should've return dataframe with Wilcoxon test method"
 
         # Return Correlation dataframe
-        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Group", True, "simes-hochberg", True )
+        metabolites_production_test_dataframe = sm.metabolites_production_statistical_dataframe(data, ["CPD-15709[c]", "CPD-372[c]"], "Days", "Antibiotics", True, "simes-hochberg", True )
         assert metabolites_production_test_dataframe["Method"].unique() == "pearson", "metabolites_production_statistical_dataframe function should've return dataframe with Pearson test method"
 
     # Test Save function with DF.
