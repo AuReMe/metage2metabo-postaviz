@@ -23,7 +23,7 @@ from m2m_postaviz import data_utils as du
 from m2m_postaviz.data_struct import DataStorage
 
 
-def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color, group_by_metadata = False):
+def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, rank_choice, with_abundance, color, group_by_metadata = False, save_raw_data = False):
     """Takes inputs from shiny application to return 3 ploty objects:
     - hist plot of the unique production of metabolites by selected bins, weighted by abundance or not.
     - box plot of production of metabolites by bin selected.
@@ -81,7 +81,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     #     filter_condition.append((factor, "in", factor_choice)) ### Metadata filter applied directly on parquet dataframe / DISABLED because the bin_dataframe no longer hold metadata. MAY CHANGE.
 
     figures1 = []
-
+    raw_save = []
     for mode in ["cscope", "iscope"]:
 
         df = data.get_bin_dataframe(condition=filter_condition, scope_mode=mode)
@@ -120,6 +120,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
         df = df.merge(new_serie_production, how="inner", on="smplID")
 
         df.sort_index(inplace=True)
+        raw_save.append(df)
 
         if group_by_metadata and factor != "None":
 
@@ -157,7 +158,12 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     # else:
     #     figure_by_metadata = None
 
-    return figures1, fig2, df, time.time() - start_timer, fig3
+    if save_raw_data:
+        data.keep_working_dataframe("bin_production_cscope", raw_save[0])
+        data.keep_working_dataframe("bin_production_iscope", raw_save[1])
+        data.keep_working_dataframe("bin_abundance", df)
+
+    return figures1, fig2, df, time.time() - start_timer, None
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):

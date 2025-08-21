@@ -502,7 +502,7 @@ def metadata_processing(metadata_path: Path, save_path: Path):
     if file_exist("metadata_dataframe_postaviz.parquet.gzip", save_path):
         return
     else:
-        metadata = open_tsv(metadata_path)
+        metadata = pd.read_csv(metadata_path, sep="\t", index_col=0)
         metadata = metadata.rename(columns={metadata.columns[0]: "smplID"})
         metadata.to_parquet(Path(save_path,"metadata_dataframe_postaviz.parquet.gzip"), index= True if is_indexed_by_id(metadata) else False)
 

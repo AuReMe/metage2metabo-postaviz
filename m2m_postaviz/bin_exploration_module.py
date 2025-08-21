@@ -45,6 +45,9 @@ def bin_exp_ui(Data: DataStorage):
 
                         ui.input_task_button("run_bin_exploration","Go"),
 
+                        ui.input_checkbox("save_raw_data", "Save dataframe used to generate plots."),
+                        ui.output_text_verbatim("save_raw_data_logs"),
+
                         ui.output_text("bin_size_text"),
                         ui.output_text("Timer_info"),
 
@@ -84,6 +87,10 @@ def bin_exp_server(input, output, session, Data: DataStorage):
             '</div>'
         )
         return ui.HTML(msg)
+
+    @render.text
+    def save_raw_data_logs():
+        return f"Data will be saved in {Data.raw_data_path}."
 
     @render.text
     def no_taxonomy_provided():
@@ -179,9 +186,9 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         timer = run_exploration.result()[3]
         return f"Took {timer} seconds to run."
 
-    @render_widget
-    def bin_boxplot_count():
-        return run_exploration.result()[4]
+    # @render_widget
+    # def bin_boxplot_count():
+    #     return run_exploration.result()[4]
 
     @render_widget
     def bin_abundance_plot():
@@ -199,12 +206,12 @@ def bin_exp_server(input, output, session, Data: DataStorage):
     @reactive.event(input.run_bin_exploration, ignore_init=True, ignore_none=True)
     def handle_click_bin_exploration():
 
-        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color(), input.group_plot())
+        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color(), input.group_plot(), input.save_raw_data())
 
     @ui.bind_task_button(button_id="run_bin_exploration")
     @reactive.extended_task
-    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color, group = False):
+    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color, group = False, save_raw_data = False):
 
-        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color, group)
+        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color, group, save_raw_data)
 
 
