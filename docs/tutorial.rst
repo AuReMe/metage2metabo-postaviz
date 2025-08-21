@@ -40,6 +40,10 @@ Step 2: Overview Tab
   - Grouping samples by metadata variables
   - Exporting data frames and plots
 
+.. image:: ./pictures/screenshot_overview.png
+   :alt: Overview exploration tab
+   :width: 100%
+
 Step 3: Taxonomy-based Exploration Tab
 --------------------------------------
 
@@ -53,6 +57,12 @@ Step 3: Taxonomy-based Exploration Tab
 - **Plots:**  
   - Number of metabolites produced by selected taxa (individual and community metabolic potentials)
   - Relative abundance of selected taxa in samples
+
+.. image:: ./pictures/screenshot_taxotab.png
+   :alt: Taxonomy-based exploration tab
+   :width: 100%
+
+
 
 Step 4: Metabolite-based Exploration Tab
 ----------------------------------------
@@ -68,6 +78,10 @@ Step 4: Metabolite-based Exploration Tab
   - Heatmaps of compound production
   - Percentage of samples producing selected compounds
   - Boxplots grouped by metadata
+
+.. image:: ./pictures/screenshot_metabotab.png
+   :alt: Metabolite-based exploration tab
+   :width: 100%
 
 Step 5: Metadata Management Tab
 -------------------------------

@@ -56,8 +56,8 @@ def overview_module_ui(Data: DataStorage):
                         ui.input_action_button("info_tot_plot", " ", icon=icon("circle-question")), "Ovearall reached metabolites, taking into account the relative abundance of populations in each sample. If you have abundance data, you can check the box to use it for the plot. You can also select two metadata variables to label the X axes. Statistical tests can be applied to compare groups. Check 'Multiple test correction' if appropriate, and select the associated method. Data used to construct the dataframe and statistical test results can both be exported to files."),), 
     ui.layout_sidebar(
         ui.sidebar(
-            ui.input_select("prod_inputx1", "Metadat variable for X axis", factor_list),
-            ui.input_select("prod_inputx2", "Metadat variable for 2nd X axis", factor_list),
+            ui.input_select("prod_inputx1", "Metadata variable for X axis", factor_list),
+            ui.input_select("prod_inputx2", "Metadata variable for 2nd X axis", factor_list),
 
             ui.input_checkbox("prod_norm", "Abundance data"),
             ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
