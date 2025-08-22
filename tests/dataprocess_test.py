@@ -138,21 +138,21 @@ def test_shiny_module():
 
     # Test for bins exploration tab
 
-    production_histplot, production_boxplot, df, timing, abundance_plot = sm.bin_exploration_processing(data,
+    (production_cscope, production_iscope), abundance_plot, timing = sm.bin_exploration_processing(data,
                                                                                                         "Antibiotics",
                                                                                                         ["YES","NO"],
                                                                                                         "c",
                                                                                                         "Clostridia",
                                                                                                         True, "Days")
 
-    production_histplot2, production_boxplot2, df2, timing2, abundance_plot2 = sm.bin_exploration_processing(data,
+    (production_cscope2, production_iscope2), abundance_plot2, timing = sm.bin_exploration_processing(data,
                                                                                                     "Antibiotics",
                                                                                                     ["YES","NO"],
                                                                                                     "all",
                                                                                                     "Clostridia",
                                                                                                     True, "Days")
 
-    production_histplot3, production_boxplot3, df3, timing3, abundance_plot3 = sm.bin_exploration_processing(data,
+    (production_cscope3, production_iscope3), abundance_plot3, timing = sm.bin_exploration_processing(data,
                                                                                                     "Antibiotics",
                                                                                                     ["YES","NO"],
                                                                                                     "mgs",
@@ -161,41 +161,35 @@ def test_shiny_module():
 
     # Object type check.
 
-    assert isinstance(production_histplot[0], plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
+    assert isinstance(production_cscope, plotly.graph_objs._figure.Figure), "production_histplot is not a plotly express histplot"
 
-    assert isinstance(production_boxplot, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
-
-    assert isinstance(df, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+    assert isinstance(production_iscope, plotly.graph_objs._figure.Figure), "Production boxplot is not a plotly express boxplot"
 
     assert isinstance(abundance_plot, plotly.graph_objs._figure.Figure), "Abundance barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot2[0], plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
+    assert isinstance(production_cscope2, plotly.graph_objs._figure.Figure), "production_histplot2 is not a plotly express histplot"
 
-    assert isinstance(production_boxplot2, plotly.graph_objs._figure.Figure), "Production boxplot2 is not a plotly express boxplot"
-
-    assert isinstance(df2, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
+    assert isinstance(production_iscope2, plotly.graph_objs._figure.Figure), "Production boxplot2 is not a plotly express boxplot"
 
     assert isinstance(abundance_plot2, plotly.graph_objs._figure.Figure), "Abundance2 barplot is not a plotly express barplot"
 
-    assert isinstance(production_histplot3[0], plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
+    assert isinstance(production_cscope3, plotly.graph_objs._figure.Figure), "production_histplot3 is not a plotly express histplot"
 
-    assert isinstance(production_boxplot3, plotly.graph_objs._figure.Figure), "Production boxplot3 is not a plotly express boxplot"
+    assert isinstance(production_iscope3, plotly.graph_objs._figure.Figure), "Production boxplot3 is not a plotly express boxplot"
 
-    assert isinstance(df3, pd.DataFrame), "Dataframe returned by bin_exploration_processing is not a pandas dataframe."
-
-    assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
+    # assert abundance_plot3 is None, "Abundance3 barplot should be Nonetype."
 
     # Object is empty check.
 
-    assert production_histplot[0].data != tuple(), "Production histogram is empty."
+    assert production_cscope.data != tuple(), "Production histogram is empty."
 
-    assert production_boxplot.data != tuple(), "Production boxplot is empty."
+    assert production_iscope.data != tuple(), "Production boxplot is empty."
 
     assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
-    assert production_histplot2[0].data != tuple(), "Production histogram is empty."
+    assert production_cscope2.data != tuple(), "Production histogram is empty."
 
-    assert production_boxplot2.data != tuple(), "Production boxplot is empty."
+    assert production_iscope2.data != tuple(), "Production boxplot is empty."
 
     assert abundance_plot.data != tuple(), "Abundance barplot is empty."
 
@@ -251,13 +245,11 @@ def test_shiny_module():
 
     # Test for metabolites production reactive plot.
 
-    reactive_metabolites_production_plot = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Antibiotics", "Days")
-    reactive_metabolites_production_plot_abundance = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"],"Antibiotics", "Days")
+    metabolites_prod_plot_cscope, metabolites_prod_plot_iscope = sm.render_reactive_metabolites_production_plot(data, ["CPD-15709[c]", "CPD-372[c]"], "Antibiotics", "Days")
 
-    assert isinstance(reactive_metabolites_production_plot, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
+    assert isinstance(metabolites_prod_plot_cscope, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
 
-    assert isinstance(reactive_metabolites_production_plot_abundance, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
-
+    assert isinstance(metabolites_prod_plot_iscope, plotly.graph_objs._figure.Figure), "reactive_metabolites_production_plot is supposed to be a plotly graph object."
 
 def test_statistic_method():
     

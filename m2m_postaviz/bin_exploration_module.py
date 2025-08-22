@@ -183,7 +183,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     @render.text
     def Timer_info():
-        timer = run_exploration.result()[3]
+        timer = run_exploration.result()[2]
         return f"Took {timer} seconds to run."
 
     # @render_widget

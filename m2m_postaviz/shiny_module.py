@@ -43,7 +43,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
         color (str): Column of the metadata selected to group result by color.
 
     Returns:
-        tuple: (Histplot, boxplot, the dataframe created from the filters, time, barplot)
+        tuple: (Tuple(bin_production_plot_cscope, bin_production_plot_iscope), Abundance_plot, time)
     """
     start_timer = time.time()
 
@@ -145,25 +145,20 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     # If only one bin selected do not make boxplot.
 
-    if len(filtered_list_of_bin) > 1:
-        fig3 = px.box(df, x="smplID", y="Count_with_abundance" if with_abundance else "Count", color="smplID" if color =="None" else color, hover_data="binID")
+    # if len(filtered_list_of_bin) > 1:
+    #     fig3 = px.box(df, x="smplID", y="Count_with_abundance" if with_abundance else "Count", color="smplID" if color =="None" else color, hover_data="binID")
 
-    else:
-        fig3 = None
+    # else:
+    #     fig3 = None
 
     fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
-
-    # if factor is not None:
-    #     figure_by_metadata = px.box(df, x=factor, y="Count_with_abundance" if with_abundance else "Count", hover_data="binID", color=factor)
-    # else:
-    #     figure_by_metadata = None
 
     if save_raw_data:
         data.keep_working_dataframe("bin_production_cscope", raw_save[0])
         data.keep_working_dataframe("bin_production_iscope", raw_save[1])
         data.keep_working_dataframe("bin_abundance", df)
 
-    return figures1, fig2, df, time.time() - start_timer, None
+    return figures1, fig2, time.time() - start_timer
 
 
 def global_production_statistical_dataframe(data: DataStorage, user_input1, user_input2, multiple_test_correction, correction_method, with_abundance):
