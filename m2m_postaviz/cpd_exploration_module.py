@@ -73,6 +73,8 @@ def cpd_tab_ui(Data: DataStorage):
                     ),
 
                 ui.input_task_button("run_plot_generation","Generate plots"),
+                ui.input_checkbox("save_raw_data", "Save dataframe used to generate plots."),
+                ui.output_text_verbatim("save_raw_data_logs"),
 
             width=400,
             gap=35,
@@ -90,8 +92,10 @@ def cpd_tab_ui(Data: DataStorage):
             ui.nav_panel("Individual metabolic potential", ui.card(output_widget("sample_percentage_production_iscope"), full_screen=True)),
             title= "Barplot showing the percentage of samples having at least one metabolic network able to produce the metabolites, either individually or considering interactions across populations."),
 
-        ui.card(ui.card_header("Boxplot showing the number of metabolic network producers for selected metabolites"),
-            output_widget("cpd_exp_producers_plot"),full_screen=True),
+        ui.navset_card_tab(
+            ui.nav_panel("Community metabolic potential", ui.card(output_widget("cpd_exp_producers_plot"), full_screen=True)),
+            ui.nav_panel("Individual metabolic potential", ui.card(output_widget("cpd_exp_producers_plot2"), full_screen=True)),
+            title= "Boxplot showing the number of metabolic network producers for selected metabolites."),
 
         ui.card(ui.output_data_frame("cpd_exp_stat_dataframe"),full_screen=True),
 
@@ -133,6 +137,11 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         )
         return ui.HTML(msg)
 
+
+    @render.text
+    def save_raw_data_logs():
+        return f"Data will be saved in {Data.raw_data_path}."
+
     @render.text
     @reactive.event(input.save_cscope_heatmap, ignore_none=True, ignore_init=True)
     def log_cscope_save():
@@ -171,19 +180,19 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
     @render.plot
     def heatmap_cscope():
         plot_object = cpd_plot_generation.result()[3][0]
-        Data.keep_working_dataframe("cscope_heatmap", plot_object)
+        Data.keep_working_dataframe("cscope_heatmap", plot_object, True)
         return plot_object
 
     @render.plot
     def heatmap_iscope():
         plot_object = cpd_plot_generation.result()[3][1]
-        Data.keep_working_dataframe("iscope_heatmap", plot_object)
+        Data.keep_working_dataframe("iscope_heatmap", plot_object, True)
         return plot_object
 
     @render.plot
     def heatmap_added_value():
         plot_object = cpd_plot_generation.result()[3][2]
-        Data.keep_working_dataframe("advalue_heatmap", plot_object)
+        Data.keep_working_dataframe("advalue_heatmap", plot_object, True)
         return plot_object
 
     @render.data_frame
@@ -209,40 +218,48 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
     @render_widget
     def cpd_exp_producers_plot():
-        return cpd_plot_generation.result()[0]
+        return cpd_plot_generation.result()[0][0]
+
+    @render_widget
+    def cpd_exp_producers_plot2():
+        return cpd_plot_generation.result()[0][1]
 
     @ui.bind_task_button(button_id="run_plot_generation")
     @reactive.extended_task
-    async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance):
+    async def cpd_plot_generation(selected_compounds, user_input1, user_color_input, sample_filter_mode, sample_filter_value, with_statistic, with_multiple_correction, multiple_correction_method, row_cluster, col_cluster, render_cpd_abundance, save_raw_data):
+
+        if len(selected_compounds) == 0:
+            return
 
         cpd_filtered_list = []
         for cpd in Data.get_compound_list():
             if cpd[:-3] in selected_compounds:
                 cpd_filtered_list.append(cpd)
 
-        if len(selected_compounds) == 0:
-            return
+        if len(selected_compounds) == 1 and col_cluster == True:
+            # Columns clustering on one compound(column) will throw an error. EmptyMatrix
+            col_cluster = False
 
-        nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance) ###
+        try:
+            nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance, save_raw_data) ###
+        except:
+            nb_producers_boxplot = [None, None]
 
         if user_input1 != "None":
-
-            percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value)
+            percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value, save_raw_data)
 
         else:
-            percent_barplot = None
+            percent_barplot = [None, None]
 
         if with_statistic:
-
             try:
-                stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method)
+                stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method, save_raw_data)
             except:  # noqa: E722
                 stat_dataframe = None
         else:
-
             stat_dataframe = None
 
-        cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value) ###
+        cscope_heatmap, iscope_heatmap, added_value_heatmap = sm.sns_clustermap(Data, cpd_filtered_list, user_input1, row_cluster, col_cluster, sample_filter_mode, sample_filter_value, save_raw_data) ###
 
         return nb_producers_boxplot, percent_barplot, stat_dataframe, (cscope_heatmap, iscope_heatmap, added_value_heatmap)
 
@@ -254,7 +271,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
                             input.color_filter_input(),
                             input.sample_filter_choice_input(), input.sample_filter_selection_input(),
                             input.exp_cpd_generate_stat_dataframe(), input.multiple_correction(),
-                            input.multiple_correction_method(), input.row_cluster(), input.col_cluster(), input.render_cpd_abundance())
+                            input.multiple_correction_method(), input.row_cluster(), input.col_cluster(),
+                            input.render_cpd_abundance(), input.save_raw_data())
 
 
     @reactive.effect
@@ -346,7 +364,12 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         sample_metadata_filter2 = input.sample_filter_metadata2()
         metadata = Data.get_metadata()
 
-        metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+        try:
+            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+        except:
+            metadata = metadata.with_columns(pl.col(sample_metadata_filter1)).cast(pl.String)
+            metadata = metadata.filter(pl.col(sample_metadata_filter1).is_in(sample_metadata_filter2))
+
         metadata = metadata.get_column("smplID").to_list()
 
         return ui.update_selectize("sample_filter_selection_input", choices=metadata, selected = metadata)

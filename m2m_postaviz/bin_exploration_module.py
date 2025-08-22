@@ -34,7 +34,10 @@ def bin_exp_ui(Data: DataStorage):
                         ui.output_ui("rank_unique_choice"),
 
                         ui.input_selectize("bin_factor", "Filter samples on metadata variable", factor_list, selected=factor_list[0], multiple=False),
-                        ui.output_ui("bin_factor_unique"),
+                        ui.panel_conditional("input.bin_factor !== 'None'",
+                            ui.output_ui("bin_factor_unique")),
+
+                        ui.input_checkbox("group_plot", "Group the X axis by the metadata instead of the samples's ID.",value=False),
 
                         ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False),
 
@@ -42,19 +45,23 @@ def bin_exp_ui(Data: DataStorage):
 
                         ui.input_task_button("run_bin_exploration","Go"),
 
+                        ui.input_checkbox("save_raw_data", "Save dataframe used to generate plots."),
+                        ui.output_text_verbatim("save_raw_data_logs"),
+
                         ui.output_text("bin_size_text"),
                         ui.output_text("Timer_info"),
 
                     width=400,
                     gap=35,
                     bg="lightgrey"
-                ),
+                    ),
                 ui.card(ui.card_header("Production of unique metabolites in samples at the community level considering metabolic interactions with all populations"),output_widget("bin_unique_count_cscope_histplot"),full_screen=True),
                 ui.card(ui.card_header("Production of unique metabolites in samples at the individual population level (metabolic interactions not taken into account)"),output_widget("bin_unique_count_iscope_histplot"),full_screen=True),
                 # ui.card(ui.card_header(),output_widget("bin_boxplot_count"),full_screen=True),
                 ui.card(ui.card_header("Relative abundance of selected taxa in samples"),output_widget("bin_abundance_plot"),full_screen=True),
-            )
-        ),full_screen=True)
+                )
+            ),full_screen=True
+        )
 
     else:
 
@@ -82,6 +89,10 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         return ui.HTML(msg)
 
     @render.text
+    def save_raw_data_logs():
+        return f"Data will be saved in {Data.raw_data_path}."
+
+    @render.text
     def no_taxonomy_provided():
         return "No taxonomy file has been provided. Taxonomy-based exploration disabled.\n You can use the -t option to provide a taxonomy file in txt or tsv/csv format. The first column must be the one with identifiers matching the metabolic networks in samples."
 
@@ -107,7 +118,7 @@ def bin_exp_server(input, output, session, Data: DataStorage):
         choices = df.get_column(factor_choice).unique().to_list()
 
         return ui.TagList(
-            ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True)
+            ui.input_selectize("bin_factor_unique", "Select", choices=choices, multiple=True, remove_button=True, selected=choices)
             )
 
     @render.ui
@@ -172,12 +183,12 @@ def bin_exp_server(input, output, session, Data: DataStorage):
 
     @render.text
     def Timer_info():
-        timer = run_exploration.result()[3]
+        timer = run_exploration.result()[2]
         return f"Took {timer} seconds to run."
 
-    @render_widget
-    def bin_boxplot_count():
-        return run_exploration.result()[4]
+    # @render_widget
+    # def bin_boxplot_count():
+    #     return run_exploration.result()[4]
 
     @render_widget
     def bin_abundance_plot():
@@ -191,13 +202,16 @@ def bin_exp_server(input, output, session, Data: DataStorage):
     def bin_unique_count_iscope_histplot():
         return run_exploration.result()[0][1]
 
-    # @ui.bind_task_button(button_id="run_custom_pcoa")
-    @reactive.extended_task
-    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color):
-
-        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color)
-
     @reactive.effect
-    @reactive.event(input.run_bin_exploration, ignore_none=True)
+    @reactive.event(input.run_bin_exploration, ignore_init=True, ignore_none=True)
     def handle_click_bin_exploration():
-        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color())
+
+        run_exploration(input.bin_factor(), input.bin_factor_unique(), input.rank_choice(), input.rank_unique_choice(), input.with_bin_abundance(), input.bin_color(), input.group_plot(), input.save_raw_data())
+
+    @ui.bind_task_button(button_id="run_bin_exploration")
+    @reactive.extended_task
+    async def run_exploration(factor, factor_choice, rank, rank_choice, with_abundance, color, group = False, save_raw_data = False):
+
+        return sm.bin_exploration_processing(Data, factor, factor_choice, rank, rank_choice, with_abundance, color, group, save_raw_data)
+
+

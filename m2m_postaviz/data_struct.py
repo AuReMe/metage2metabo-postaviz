@@ -39,20 +39,34 @@ class DataStorage:
 
             self.output_path = save_path
 
+        self.raw_data_path = Path(save_path, "raw_dataframes")
+
+        if not self.raw_data_path.is_dir():
+            self.raw_data_path.mkdir(parents=True, exist_ok=True)
+
         print(f"Taxonomy provided : {self.HAS_TAXONOMIC_DATA}\nAbundance provided: {self.HAS_ABUNDANCE_DATA}\nMetacyc database in use: {self.USE_METACYC_PADMET}")
 
+    def keep_working_dataframe(self, tab_id, dataframe, on_RAM_only = False):
 
-    def keep_working_dataframe(self, tab_id, dataframe):
+        if on_RAM_only:
+            self.current_working_dataframe[tab_id] = dataframe
+            return
 
-        self.current_working_dataframe[tab_id] = dataframe
+        full_path = Path(self.raw_data_path, tab_id+".tsv")
+        
+        if isinstance(dataframe, pd.DataFrame):
+            dataframe.to_csv(full_path, sep="\t")
+        if isinstance(dataframe, pl.DataFrame):
+            dataframe.write_csv(full_path, separator="\t")
 
+        print(f"saved {tab_id} at: {full_path}")
 
     def get_working_dataframe(self, tab_id):
 
         try:
             current_dataframe = self.current_working_dataframe[tab_id]
         except KeyError:
-            print("No current dataframe for the total production plot, It may happen when no plot have been made during the session.")
+            print("No current dataframe stored, It may happen when no plot have been made during the session.")
             return
 
         return current_dataframe
@@ -224,9 +238,15 @@ class DataStorage:
         return df
 
 
+    def get_normalised_iscope_abundance_dataframe(self, with_metadata = False) -> pl.DataFrame:
+        df = self.open_tsv(key="normalised_iscope_abundance_dataframe_postaviz.tsv")
 
-    # def is_indexed(self, df: pd.DataFrame) -> bool:
-    #     return True if df.index.name == "smplID" else False
+        if with_metadata:
+
+            metadata = self.get_metadata()
+            df = df.join(metadata,"smplID",how="left")
+
+        return df
 
 
     def get_factors(self, remove_smpl_col = False, insert_none = False, with_dtype = False) -> list:
@@ -302,6 +322,7 @@ class DataStorage:
             except Exception as e:
                 logs = e
             return logs
+
 
     def save_seaborn_plot(self, sns_obj, file_name):
 
@@ -492,7 +513,6 @@ class DataStorage:
         return cscope_df, iscope_df, added_value_dataframe
 
 
-
     def get_cpd_category_tree(self) -> dict:
         with open(Path(self.output_path, "padmet_compounds_category_tree.json")) as fp:
             tree = load(fp)
@@ -657,9 +677,4 @@ class DataStorage:
 
         return cpd_index[cpd_list_index]
 
-
-    def tooltip_icon(self):
-
-        icon = Path(Path(__file__).parent, "information.png")
-        return str(icon)
 

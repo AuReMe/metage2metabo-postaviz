@@ -39,6 +39,8 @@ def overview_module_ui(Data: DataStorage):
                     ui.input_select("multiple_test_method_reach","Method",
                         ["bonferroni","sidak","holm-sidak","holm","simes-hochberg","hommel","fdr_bh","fdr_by","fdr_tsbh","fdr_tsbky"],
                         selected="bonferroni",)),
+
+                ui.input_task_button("run_reached_cpd","Go"),
                 width=300,
                 bg="lightgrey"
                 ),
@@ -54,8 +56,8 @@ def overview_module_ui(Data: DataStorage):
                         ui.input_action_button("info_tot_plot", " ", icon=icon("circle-question")), "Ovearall reached metabolites, taking into account the relative abundance of populations in each sample. If you have abundance data, you can check the box to use it for the plot. You can also select two metadata variables to label the X axes. Statistical tests can be applied to compare groups. Check 'Multiple test correction' if appropriate, and select the associated method. Data used to construct the dataframe and statistical test results can both be exported to files."),), 
     ui.layout_sidebar(
         ui.sidebar(
-            ui.input_select("prod_inputx1", "Metadat variable for X axis", factor_list),
-            ui.input_select("prod_inputx2", "Metadat variable for 2nd X axis", factor_list),
+            ui.input_select("prod_inputx1", "Metadata variable for X axis", factor_list),
+            ui.input_select("prod_inputx2", "Metadata variable for 2nd X axis", factor_list),
 
             ui.input_checkbox("prod_norm", "Abundance data"),
             ui.input_checkbox("multiple_correction_global_plot", "Multiple test correction"),
@@ -99,7 +101,6 @@ def overview_module_ui(Data: DataStorage):
                     full_screen=True,
                     min_height="600px"
                     )
-
 
     custom_pcoa_card = ui.card(
                             ui.card_header("Customized Principal Coordinate Analysis",
@@ -204,21 +205,30 @@ def overview_module_server(input, output, session, Data: DataStorage):
 
         fig, df = sm.render_reactive_total_production_plot(Data, input.prod_inputx1(), input.prod_inputx2(), input.prod_norm())
 
-        Data.keep_working_dataframe("total_production_plot_dataframe", df)
+        Data.keep_working_dataframe("total_production_plot_dataframe", df, on_RAM_only=True)
 
         return fig
+
+    @reactive.effect
+    @reactive.event(input.run_reached_cpd, ignore_none=False, ignore_init=True)
+    def handle_click_reached_cpd():
+        make_cpd_reached_plot(input.cpd_reach_input(), input.multiple_correction_reach_plot(), input.multiple_test_method_reach())
+
+    @ui.bind_task_button(button_id="run_reached_cpd")
+    @reactive.extended_task
+    async def make_cpd_reached_plot(metadata_column, multiple_correction, correction_method):
+        
+        return sm.cpd_reached_plot(Data, metadata_column, multiple_correction, correction_method)
 
     @render.data_frame
     def cpd_reach_test_dataframe():
 
-        test_dataframe = sm.cpd_reach_statistical_dataframe(Data, input.cpd_reach_input(),
-                                                            input.multiple_correction_reach_plot(),
-                                                            input.multiple_test_method_reach()
-                                                            )
+        return make_cpd_reached_plot.result()[1]
+    
+    @render_widget
+    def cpd_reach_plot():
 
-        # Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
-
-        return test_dataframe
+        return make_cpd_reached_plot.result()[0]
 
     @render.data_frame
     def production_test_dataframe():
@@ -229,13 +239,9 @@ def overview_module_server(input, output, session, Data: DataStorage):
                                                             input.multiple_test_method_global(),
                                                             input.prod_norm())
 
-        Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe)
+        Data.keep_working_dataframe("total_production_test_dataframe", test_dataframe, on_RAM_only=True)
 
         return test_dataframe
-
-    @render_widget
-    def cpd_reach_plot():
-        return sm.cpd_reached_plot(Data, input.cpd_reach_input())
 
     @render.text
     def unique_total_bin_count():
