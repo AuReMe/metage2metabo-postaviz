@@ -614,6 +614,7 @@ def percentage_smpl_producing_cpd(data: DataStorage, cpd_input: list, metadata_f
         data (DataStorage): DataStorage object
         cpd_input (list): List of compounds input
         metadata_filter_input (str): Column label of metadata filter
+        sample_filter_button : Enable row filtering by sample's ID of value of metadata.
 
     Returns:
         Tuple: Tuple with cscope plot and iscope plot

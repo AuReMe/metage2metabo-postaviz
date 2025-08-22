@@ -201,16 +201,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
     @render_widget
     def sample_percentage_production_cscope():
-        try:
-            plot = cpd_plot_generation.result()[1][0]
-        except TypeError:
-            ui.notification_show(
-            "Sample Percentage production plot needs a metadata filter input.",
-            type="warning",
-            duration=6,)
-            plot = None
 
-        return plot
+        return cpd_plot_generation.result()[1][0]
 
     @render_widget
     def sample_percentage_production_iscope():
@@ -250,6 +242,10 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
             percent_barplot = sm.percentage_smpl_producing_cpd(Data, cpd_filtered_list, user_input1, sample_filter_mode, sample_filter_value, save_raw_data)
 
         else:
+            ui.notification_show(
+            "Sample Percentage production plot needs a metadata filter input.",
+            type="warning",
+            duration=6,)
             percent_barplot = [None, None]
 
         if with_statistic:
