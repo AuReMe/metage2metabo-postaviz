@@ -242,7 +242,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
         try:
             nb_producers_boxplot = sm.render_reactive_metabolites_production_plot(Data, cpd_filtered_list, user_input1, user_color_input, sample_filter_mode, sample_filter_value, render_cpd_abundance, save_raw_data) ###
-        except:
+        except Exception as e:
+            print(e)
             nb_producers_boxplot = [None, None]
 
         if user_input1 != "None":
@@ -254,7 +255,8 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
         if with_statistic:
             try:
                 stat_dataframe = sm.metabolites_production_statistical_dataframe(Data, cpd_filtered_list, user_input1, "None", with_multiple_correction, multiple_correction_method, save_raw_data)
-            except:  # noqa: E722
+            except Exception as e:
+                print(e)
                 stat_dataframe = None
         else:
             stat_dataframe = None

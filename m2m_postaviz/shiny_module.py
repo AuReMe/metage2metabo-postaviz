@@ -47,6 +47,9 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
     """
     start_timer = time.time()
 
+    if not data.HAS_ABUNDANCE_DATA:
+        with_abundance = False
+
     list_of_bins = data.get_bins_list()
 
     if rank == "mgs":
@@ -150,8 +153,11 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     # else:
     #     fig3 = None
+    if with_abundance:
+        fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
+    else:
+        fig2 = None
 
-    fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
 
     if save_raw_data:
         data.keep_working_dataframe("bin_production_cscope", raw_save[0])
@@ -470,6 +476,9 @@ def render_reactive_metabolites_production_plot(data: DataStorage, compounds_inp
 
     if len(compounds_input) == 0:
         return
+
+    if not data.HAS_ABUNDANCE_DATA:
+        with_abundance = False
 
     if with_abundance:
         cscope_df = data.get_normalised_abundance_dataframe(with_metadata=True)

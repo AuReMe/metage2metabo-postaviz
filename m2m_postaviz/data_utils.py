@@ -3,6 +3,7 @@ import sys
 import tarfile
 import tempfile
 import time
+import warnings
 from multiprocessing import Pool
 from multiprocessing import cpu_count
 from pathlib import Path
@@ -467,7 +468,9 @@ def build_dataframes(dir_path: Path, metadata_path: Path, abundance_path: Option
 
         load_sample_iscope_data(dir_path, iscope_directory, iscope_file_format)
 
-    relative_abundance(abundance_path, save_path, iscope_directory, "iscope")
+    if abundance_path is not None:
+
+        relative_abundance(abundance_path, save_path, iscope_directory, "iscope")
 
     producers_dataframe(iscope_directory, save_path, "iscope")
 
@@ -866,7 +869,7 @@ def bin_dataframe_build(scope_directory: Path, scope_mode: str = "cscope", abund
         return
 
     print("Building bin dataframe...")
-
+    warnings.simplefilter(action='ignore', category=pd.errors.PerformanceWarning)
     start = time.time()
 
     cpd_index = pd.read_csv(Path(savepath,"compounds_index.tsv"), sep="\t").squeeze()
