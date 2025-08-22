@@ -153,7 +153,7 @@ def bin_exploration_processing(data: DataStorage, factor, factor_choice, rank, r
 
     # else:
     #     fig3 = None
-    if with_abundance:
+    if data.HAS_ABUNDANCE_DATA:
         fig2 = px.bar(df, x="smplID", y="Abundance", color="Abundance", hover_data="binID")
     else:
         fig2 = None

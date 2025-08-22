@@ -125,8 +125,12 @@ def relative_abundance(abundance_path: Path, save_path: Path, cscope_dir: Path, 
     Returns:
         Dataframe: production dataframe with sample in rows and compounds in column. Weighted by abundance.
     """
+    if scope == "cscope":
+        filename_to_check = "normalised_abundance_dataframe_postaviz.tsv"
+    if scope == "iscope":
+        filename_to_check = "normalised_iscope_abundance_dataframe_postaviz.tsv"
 
-    if file_exist("normalised_abundance_dataframe_postaviz.tsv", save_path) and file_exist("abundance_file.tsv", save_path):
+    if file_exist(filename_to_check, save_path) and file_exist("abundance_file.tsv", save_path):
         print("Abundance dataframe already exist in save directory.")
         return
     # Read csv with pandas to avoid Polars schema lenght limit. Reset index and transform to polars.

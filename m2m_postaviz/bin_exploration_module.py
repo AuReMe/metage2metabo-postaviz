@@ -37,7 +37,7 @@ def bin_exp_ui(Data: DataStorage):
                         ui.panel_conditional("input.bin_factor !== 'None'",
                             ui.output_ui("bin_factor_unique")),
 
-                        ui.input_checkbox("group_plot", "Group the X axis by the metadata instead of the samples's ID.",value=False),
+                        ui.input_checkbox("group_plot", "Group the X axis by the metadata instead of the sample's ID.",value=False),
 
                         ui.input_selectize("bin_color", "Color", factor_list, selected=factor_list[0], multiple=False),
 
@@ -64,7 +64,7 @@ def bin_exp_ui(Data: DataStorage):
         )
 
     else:
-
+        welcome_card = ui.card(ui.output_ui("Starting_message"))
         bins_exploration_card = ui.output_text_verbatim("no_taxonomy_provided")
 
     return welcome_card, bins_exploration_card
