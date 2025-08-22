@@ -34,8 +34,8 @@ def bin_exp_ui(Data: DataStorage):
                         ui.output_ui("rank_unique_choice"),
 
                         ui.input_selectize("bin_factor", "Filter samples on metadata variable", factor_list, selected=factor_list[0], multiple=False),
-                        ui.panel_conditional("input.bin_factor !== 'None'",
-                            ui.output_ui("bin_factor_unique")),
+
+                        ui.output_ui("bin_factor_unique"),
 
                         ui.input_checkbox("group_plot", "Group the X axis by the metadata instead of the sample's ID.",value=False),
 
