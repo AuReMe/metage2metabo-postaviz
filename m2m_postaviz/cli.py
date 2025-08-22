@@ -46,7 +46,7 @@ parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
-parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. If created if not valid. If not provided, save options disabled.")
+parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. Must be provided.")
 parser.add_argument("-l", "--load", help="Run postaviz from save directory")
 parser.add_argument("-c", "--metacyc", help="Run postaviz with the metacyc database as padmet file. This is usefull when the metabolite ID from the scopes use metacyc ID. Enable the research by category of metabolites.")
 
@@ -97,9 +97,10 @@ def main(args=None):
         arg_parser = vars(parser.parse_args())
         
         # Check if required arguments are provided
-        if not arg_parser["dir"] or not arg_parser["metadata"]:
+        if not arg_parser["dir"] or not arg_parser["metadata"] or not arg_parser["output"]:
             print(MESSAGE)
             print("\nError: Required arguments missing.")
+            print("Data directory (-d), metadata (-m) and output(-o) are required.")
             print("Use --help for more information about required arguments.")
             return
         
@@ -115,11 +116,14 @@ def main(args=None):
         except:
           abundance_path = None
           
-        if not arg_parser["output"]:
-            print("Warning: No output path provided. Save options will be disabled.")
-            save_path = None
-        else:
-            save_path = Path(arg_parser["output"]).resolve()
+        save_path = Path(arg_parser["output"]).resolve()
+
+        if not save_path.is_dir():
+          try:
+            save_path.mkdir(parents=True, exist_ok=True)
+          except Exception as e:
+            print(e)
+            return
         
         try:
           metacyc = Path(arg_parser["metacyc"]).resolve()
