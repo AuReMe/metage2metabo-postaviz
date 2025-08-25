@@ -86,3 +86,5 @@ packages = ['m2m_postaviz', 'm2m_postaviz.postaviz_test_data']
 package-dir = {'m2m_postaviz' = 'm2m_postaviz'}
 package-data = {'m2m_postaviz' = ['postaviz_test_data/table_test_postaviz.tar.gz']}
 
+[tool.setuptools.dynamic]
+version = {attr = "m2m_postaviz.__version__"}
