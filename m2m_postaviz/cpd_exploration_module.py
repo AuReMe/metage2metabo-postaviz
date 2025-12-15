@@ -14,13 +14,63 @@ from m2m_postaviz.data_struct import DataStorage
 @module.ui
 def cpd_tab_ui(Data: DataStorage):
 
+    # Build first-level options: top-level categories first, then all others (prefixed)
+    def _first_selector_options():
+        tree = Data.get_cpd_category_tree()
+        # Unwrap artificial root
+        unwrapped = tree
+        if len(unwrapped) == 1 and all(isinstance(v, dict) for v in unwrapped.values()):
+            (_, unwrapped) = next(iter(unwrapped.items()))
+
+        # Top-level options (direct children)
+        data_cpd_list = Data.get_compound_list(without_compartment=True)
+        top_level = []
+        for key, child in unwrapped.items():
+            if not child:
+                continue
+            cpd_in_category = []
+            Data.get_compounds_from_category(child, cpd_in_category)
+            final_cpd_list = [cpd for cpd in data_cpd_list if cpd in cpd_in_category]
+            top_level.append(f"{key} ({len(final_cpd_list)}/{len(cpd_in_category)})")
+
+        # All categories (entire tree)
+        all_with_counts = Data.get_metacyc_category_list()
+
+        # Merge with top-level first, then the rest (excluding duplicates and the single artificial root if present)
+        seen = set()
+        merged = []
+        for item in top_level:
+            merged.append(item)
+            seen.add(item.split(" (")[0])
+        for item in all_with_counts:
+            name = item.split(" (")[0]
+            if name in ("All_metabolites",):
+                continue
+            if name not in seen:
+                merged.append(f"-- {item}")  # prefix to visually separate deeper nodes
+                seen.add(name)
+        return merged
+
     if Data.USE_METACYC_PADMET:
 
-        cpd_exploration_all_category = Data.get_metacyc_category_list()
+        cpd_exploration_all_category = _first_selector_options()
 
-        cpd_exploration_all_category.insert(0, Data.get_outsider_cpd()[1])
+        # Add global All/Others with counts for the first selector
+        data_cpd_list = Data.get_compound_list(without_compartment=True)
+        all_cpd_list = []
+        Data.get_compounds_from_category(Data.get_cpd_category_tree(), all_cpd_list)
+        outsiders_full = Data.get_outsider_cpd()[0]
+        all_cpd_list = list(set(all_cpd_list + outsiders_full))
+        all_in_data = len([cpd for cpd in all_cpd_list if cpd in data_cpd_list])
+        all_label = f"All ({all_in_data}/{len(all_cpd_list)})"
 
-        cpd_exploration_all_category.insert(0,"None")
+        outsiders = outsiders_full
+        outsiders_in_data = len([cpd for cpd in outsiders if cpd in data_cpd_list])
+        outsiders_label = f"Others ({outsiders_in_data}/{len(all_cpd_list)})"
+
+        cpd_exploration_all_category.insert(0, outsiders_label)
+        cpd_exploration_all_category.insert(0, all_label)
+        cpd_exploration_all_category.insert(0, "None")
 
     else:
 
@@ -36,8 +86,10 @@ def cpd_tab_ui(Data: DataStorage):
         ui.layout_sidebar(
             ui.sidebar(
 
-                ui.input_selectize("first_category_input","Select any compound category from the Metacyc database.\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category, multiple=False),
-                ui.input_selectize("category_choice_input", "Select a sub category of the Metacyc database", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
+                ui.input_selectize("first_category_input","Select any compound category from the Metacyc database (optional).\n(Compounds in data / Compounds in metacyc database)",choices=cpd_exploration_all_category, multiple=False),
+                ui.markdown("**Available top-level categories:** " + ", ".join([c.rsplit(" (", 1)[0] for c in cpd_exploration_all_category if c not in ("None",) and not c.startswith("Others") and not c.startswith("-- ")])),
+                ui.input_selectize("category_choice_input", "Select a sub category of the Metacyc database (optional)", choices=cpd_exploration_all_category, selected=cpd_exploration_all_category[0], multiple=False, width="400px"),
+                ui.input_selectize("category_choice_input_lvl3", "Select a third-level category (optional)", choices=[], selected=None, multiple=False, width="400px"),
 
                 ui.card(" ",
                     ui.input_selectize("compounds_choice_input", "Select compounds", choices=Data.get_compound_list(without_compartment=True), multiple=True, remove_button=True),
@@ -112,6 +164,131 @@ def cpd_tab_ui(Data: DataStorage):
 @module.server
 def cpd_tab_server(input, output, session, Data: DataStorage):
 
+    # Helper to strip trailing counts added to labels, e.g., "Alkaloids (10/20)"
+    def _strip_label(label: str) -> str:
+        if label is None:
+            return ""
+        # Remove visual prefixes like '-- '
+        while label.startswith('-') or label.startswith(' '):
+            label = label.lstrip('-').lstrip()
+        if "(" in label:
+            return label.rsplit(" (", 1)[0]
+        # Handle labels with trailing counts without parentheses, e.g., "Others 3/10"
+        parts = label.split()
+        if len(parts) > 1 and "/" in parts[-1]:
+            return " ".join(parts[:-1])
+        return label
+
+    # Helper to get ALL available categories with optional parent filter
+    def _get_all_categories_with_counts(parent_key: str | None = None):
+        """Get all categories at the next level, or all categories if parent_key is None."""
+        tree = Data.get_cpd_category_tree()
+        
+        # Navigate to the parent subtree if specified
+        if parent_key:
+            subtree_list = []
+            Data.get_sub_tree_recursive(tree, parent_key, subtree_list)
+            if not subtree_list:
+                return []
+            subtree = subtree_list[0]
+        else:
+            subtree = tree
+            # If the subtree is wrapped in a single artificial root, unwrap it
+            if len(subtree) == 1 and all(isinstance(v, dict) for v in subtree.values()):
+                (_, subtree) = next(iter(subtree.items()))
+
+        data_cpd_list = Data.get_compound_list(without_compartment=True)
+        options = []
+        for key, child in subtree.items():
+            if not child:
+                continue  # skip leaves (compounds)
+            cpd_in_category = []
+            Data.get_compounds_from_category(child, cpd_in_category)
+            final_cpd_list = [cpd for cpd in data_cpd_list if cpd in cpd_in_category]
+            options.append(f"{key} ({len(final_cpd_list)}/{len(cpd_in_category)})")
+        return options
+
+    def _get_children_with_counts_within(subtree: dict | None):
+        """Get direct children with counts within a specific subtree (no cross-branch lookups)."""
+        if subtree is None:
+            return []
+        data_cpd_list = Data.get_compound_list(without_compartment=True)
+        options = []
+        for key, child in subtree.items():
+            if not child:
+                continue
+            cpd_in_category = []
+            Data.get_compounds_from_category(child, cpd_in_category)
+            final_cpd_list = [cpd for cpd in data_cpd_list if cpd in cpd_in_category]
+            options.append(f"{key} ({len(final_cpd_list)}/{len(cpd_in_category)})")
+        return options
+
+    # Helpers for All/Others counts on a subtree
+    def _subtree_for_key(key: str | None):
+        tree = Data.get_cpd_category_tree()
+        if key is None or key == "":
+            return tree
+        lst = []
+        Data.get_sub_tree_recursive(tree, key, lst)
+        return lst[0] if lst else None
+
+    def _subtree_for_key_within(root: dict | None, key: str | None):
+        """Search for a key within a given subtree only (avoids cross-branch collisions)."""
+        if root is None or key is None:
+            return None
+        if key in root:
+            return root.get(key)
+        for _ck, cv in root.items():
+            if isinstance(cv, dict):
+                found = _subtree_for_key_within(cv, key)
+                if found is not None:
+                    return found
+        return None
+
+    def _compounds_recursive(subtree: dict):
+        cpds = []
+        if subtree is None:
+            return cpds
+        Data.get_compounds_from_category(subtree, cpds)
+        return list(set(cpds))
+
+    def _compounds_direct(subtree: dict):
+        cpds = []
+        if subtree is None:
+            return cpds
+        for key, child in subtree.items():
+            if not child:
+                cpds.append(key)
+        return list(set(cpds))
+
+    def _format_counts_label(name: str, cpds: list[str]):
+        unique_cpds = list(set(cpds))
+        data_cpd_list = set(Data.get_compound_list(True))
+        in_data = len([c for c in unique_cpds if c in data_cpd_list])
+        total = len(unique_cpds)
+        return f"{name} ({in_data}/{total})"
+
+    def _direct_child_keys(subtree: dict):
+        return [k for k, v in subtree.items() if isinstance(v, dict) and v]
+
+    def _aggregate_grandchildren_with_counts(first_key: str):
+        first_sub = _subtree_for_key(first_key)
+        if first_sub is None:
+            return []
+        # Collect unique grandchildren keys
+        grandchildren = set()
+        for child_k, child_v in first_sub.items():
+            if isinstance(child_v, dict) and child_v:
+                for gc_k, gc_v in child_v.items():
+                    if isinstance(gc_v, dict) and gc_v:
+                        grandchildren.add(gc_k)
+        # Build labels with counts
+        labels = []
+        for gc in sorted(grandchildren):
+            sub = _subtree_for_key(gc)
+            cpds = _compounds_recursive(sub)
+            labels.append(_format_counts_label(gc, cpds))
+        return labels
     @render.ui
     def Starting_message():
         msg = (
@@ -280,27 +457,97 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             return
 
-        metacyc_category_first_input = input.first_category_input().split(" ")[0]
+        first_label = input.first_category_input()
+        first_key = _strip_label(first_label)
 
-        if metacyc_category_first_input == "Others":
+        if first_key in ("None", ""):
+            # No first category: clear second/third
+            ui.update_selectize("category_choice_input", choices=["None"], selected="None")
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
 
-            return ui.update_selectize("category_choice_input", choices=["Others"])
+        if first_key == "Others":
+            outsiders = Data.get_outsider_cpd()[0]
+            all_label = _format_counts_label("All", outsiders)
+            ui.update_selectize("category_choice_input", choices=[all_label, "None"], selected="None")
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
 
-        if metacyc_category_first_input == "None" or metacyc_category_first_input == "":
+        if first_key == "All":
+            all_cpds_global = Data.get_compound_list(without_compartment=True)
+            all_label = _format_counts_label("All", all_cpds_global)
+            ui.update_selectize("category_choice_input", choices=["None"], selected="None")
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
 
-            return ui.update_selectize("category_choice_input", choices=[])
+        # Get child categories of the selected first category and add All/Others
+        first_sub = _subtree_for_key(first_key)
+        # All compounds under first
+        all_cpds_first = _compounds_recursive(first_sub)
+        all_label = _format_counts_label("All", all_cpds_first)
+        # Others: direct compounds under first
+        others_cpds_first = _compounds_direct(first_sub)
+        others_label = _format_counts_label("Others", others_cpds_first)
 
-        category_node = []
+        second_level_choices = _get_all_categories_with_counts(first_key)
+        final_choices = [all_label, others_label] + second_level_choices
 
-        Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), metacyc_category_first_input, category_node)
+        ui.update_selectize("category_choice_input", choices=final_choices, selected=all_label)
+        return ui.update_selectize("category_choice_input_lvl3", choices=[], selected=None)
 
-        category_node = category_node[0]
+    @reactive.effect
+    def _update_third_category_choices():
 
-        new_sub_category_list = Data.get_metacyc_category_list(category_node)
+        if not Data.USE_METACYC_PADMET:
 
-        new_sub_category_list.insert(0, input.first_category_input())
+            return
 
-        return ui.update_selectize("category_choice_input", choices=new_sub_category_list)
+        second_label = input.category_choice_input()
+        second_key = _strip_label(second_label)
+
+        # If none selected, clear third-level choices
+        if second_key in ("None", "", None):
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
+
+        first_key = _strip_label(input.first_category_input())
+
+        # If first is Others or missing, no third level applies
+        if first_key in ("Others", "", None):
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
+
+        # If second is Others, no third level applies
+        if second_key == "Others":
+            return ui.update_selectize("category_choice_input_lvl3", choices=["None"], selected="None")
+
+        # Build choices depending on second selection
+        if second_key == "All":
+            # Aggregate direct children across all second-level categories
+            third_level_choices = _aggregate_grandchildren_with_counts(first_key)
+            # All/Others at third relative to first (aggregate)
+            first_sub = _subtree_for_key(first_key)
+            if first_sub is None:
+                return ui.update_selectize("category_choice_input_lvl3", choices=[], selected=None)
+            all_cpds_first = _compounds_recursive(first_sub)
+            others_cpds_agg = []
+            for child_k, child_v in first_sub.items():
+                if isinstance(child_v, dict) and child_v:
+                    others_cpds_agg.extend(_compounds_direct(child_v))
+            others_cpds_agg = list(set(others_cpds_agg))
+            all_label = _format_counts_label("All", all_cpds_first)
+            others_label = _format_counts_label("Others", others_cpds_agg)
+            final_choices = [all_label, others_label] + third_level_choices
+            return ui.update_selectize("category_choice_input_lvl3", choices=final_choices, selected=all_label)
+        else:
+            # Third-level under the specific second category
+            first_sub = _subtree_for_key(first_key)
+            second_sub = _subtree_for_key_within(first_sub, second_key)
+            if second_sub is None:
+                return ui.update_selectize("category_choice_input_lvl3", choices=[], selected=None)
+
+            third_level_choices = _get_children_with_counts_within(second_sub)
+            all_cpds_second = _compounds_recursive(second_sub)
+            others_cpds_second = _compounds_direct(second_sub)
+            all_label = _format_counts_label("All", all_cpds_second)
+            others_label = _format_counts_label("Others", others_cpds_second)
+            final_choices = [all_label, others_label] + third_level_choices
+            return ui.update_selectize("category_choice_input_lvl3", choices=final_choices, selected=all_label)
 
     @reactive.effect
     def _update_compounds_choices():
@@ -309,33 +556,103 @@ def cpd_tab_server(input, output, session, Data: DataStorage):
 
             return
 
-        category_level = input.category_choice_input().split(" ")[0]
+        # Prefer the deepest selection available: third level > second level > first level
+        third_label = input.category_choice_input_lvl3()
+        second_label = input.category_choice_input()
+        first_label = input.first_category_input()
 
-        if category_level == "":
+        # Prefer deepest non-None/non-"None"; otherwise fall back to first
+        target_label = None
+        if third_label not in (None, "None"):
+            target_label = third_label
+        elif second_label not in (None, "None"):
+            target_label = second_label
+        else:
+            target_label = first_label
 
+        target_key = _strip_label(target_label)
+
+        if target_key in ("", "None", None):
             return ui.update_selectize("compounds_choice_input", choices=[])
 
-        if category_level == "None":
+        # Determine compounds based on All/Others logic
+        first_key = _strip_label(first_label)
+        second_key = _strip_label(second_label)
+        third_key = _strip_label(third_label) if third_label else None
 
-            return ui.update_selectize("compounds_choice_input", choices=Data.get_compound_list(without_compartment=True))
+        data_cpd_list = set(Data.get_compound_list(True))
 
-        if category_level == "Others":
+        def _cpds_in_data(cpds):
+            return sorted(list(set([c for c in cpds if c in data_cpd_list])))
 
-            return ui.update_selectize("compounds_choice_input", choices=Data.get_outsider_cpd()[0])
+        # Special handling when first category is None/empty
+        if first_key in ("None", ""):
+            return ui.update_selectize("compounds_choice_input", choices=[])
 
-        category_node = []
+        # Special handling when first category is All
+        if first_key == "All":
+            final_cpd_list = _cpds_in_data(Data.get_compound_list(without_compartment=True))
+            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
-        Data.get_sub_tree_recursive(Data.get_cpd_category_tree(), category_level, category_node)
+        # Special handling when first category is Others
+        if first_key == "Others":
+            outsiders = Data.get_outsider_cpd()[0]
+            final_cpd_list = _cpds_in_data(outsiders)
+            return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 
-        category_node = category_node[0]
+        # If target is Others but subtree missing, return empty
+        if target_key == "Others" and _subtree_for_key(target_key) is None:
+            return ui.update_selectize("compounds_choice_input", choices=[])
 
-        cpds_found = []
+        first_sub = _subtree_for_key(first_key)
 
-        Data.get_compounds_from_category(category_node, cpds_found)
+        # Compute target subtree and compound list
+        if third_key and third_key not in ("None", ""):
+            # Third-level selected
+            if third_key == "All":
+                # Compounds under second selection (or first if second is All)
+                if second_key == "All":
+                    sub = first_sub
+                else:
+                    sub = _subtree_for_key_within(first_sub, second_key)
+                cpds_found = _compounds_recursive(sub)
+            elif third_key == "Others":
+                # Direct compounds under second level (or aggregated across all seconds if second is All)
+                if second_key == "All":
+                    cpds_found = []
+                    if first_sub:
+                        for ck, cv in first_sub.items():
+                            if isinstance(cv, dict) and cv:
+                                cpds_found.extend(_compounds_direct(cv))
+                    cpds_found = list(set(cpds_found))
+                else:
+                    sub = _subtree_for_key_within(first_sub, second_key)
+                    cpds_found = _compounds_direct(sub)
+            else:
+                # Specific third-level node within the selected second branch (or all children when second is All)
+                if second_key == "All":
+                    sub = _subtree_for_key_within(first_sub, third_key)
+                else:
+                    second_sub = _subtree_for_key_within(first_sub, second_key)
+                    sub = _subtree_for_key_within(second_sub, third_key)
+                cpds_found = _compounds_recursive(sub)
+        elif second_key and second_key not in ("", "None"):
+            # Second-level selected
+            if second_key == "All":
+                sub = first_sub
+                cpds_found = _compounds_recursive(sub)
+            elif second_key == "Others":
+                sub = first_sub
+                cpds_found = _compounds_direct(sub)
+            else:
+                sub = _subtree_for_key_within(first_sub, second_key)
+                cpds_found = _compounds_recursive(sub)
+        else:
+            # Only first-level selected
+            sub = _subtree_for_key(first_key)
+            cpds_found = _compounds_recursive(sub)
 
-        cpd_list = Data.get_compound_list(True)
-
-        final_cpd_list = [cpd for cpd in cpd_list if cpd in cpds_found]
+        final_cpd_list = _cpds_in_data(cpds_found)
 
         return ui.update_selectize("compounds_choice_input", choices=final_cpd_list, selected=final_cpd_list)
 

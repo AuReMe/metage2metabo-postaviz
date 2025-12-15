@@ -526,6 +526,10 @@ class DataStorage:
 
             tree = self.get_cpd_category_tree()
 
+        # Handle empty tree case
+        if not tree or len(tree) == 0:
+            return []
+
         lin=Lineage()
         lin.construct_dict(tree,0)
         list_final= []
@@ -676,5 +680,3 @@ class DataStorage:
     def get_cpd_label(cpd_index: pd.Series, cpd_list_index):
 
         return cpd_index[cpd_list_index]
-
-
