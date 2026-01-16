@@ -25,14 +25,14 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ubuntu-latest, windows-latest, macos-latest] # macos-latest
+        platform: [ubuntu-latest, windows-latest] #, macos-latest 
         python-version: [3.12, 3.13]
     runs-on: ${{ matrix.platform }}
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v6
+      uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
     - name: Install dependencies
