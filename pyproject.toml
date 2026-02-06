@@ -19,6 +19,7 @@ dependencies = [
   'shinywidgets',
   'scikit-bio',
   'pyarrow',
+  'python-libsbml>=5.20.5,<5.21.0',
   'seaborn',
 ]
 
