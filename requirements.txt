@@ -5,7 +5,7 @@ plotly>=5.18.0
 shiny>=0.6.0
 shinywidgets>=0.2.3
 scikit-bio>=0.5.9
-pyarrow>=14.0.0,<23.0.0
+pyarrow==22.0.0
 python-libsbml>=5.20.5,<5.21.0
 seaborn>=0.13.2
 polars>=1.12.0
