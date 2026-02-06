@@ -103,11 +103,27 @@ class DataStorage:
 
             kargs["columns"] = col
 
-        if condition is not None:
-
-            kargs["filters"] = condition
-
+        # Don't use filters parameter due to string_view incompatibility with is_in kernel
+        # Read the full dataframe and apply filters in pandas instead
         df = pd.read_parquet(**kargs)
+
+        if condition is not None:
+            # Apply filters in pandas to avoid PyArrow filter pushdown issues
+            for col_name, op, val in condition:
+                if op == "in":
+                    df = df[df[col_name].isin(val)]
+                elif op == "==":
+                    df = df[df[col_name] == val]
+                elif op == "!=":
+                    df = df[df[col_name] != val]
+                elif op == ">":
+                    df = df[df[col_name] > val]
+                elif op == "<":
+                    df = df[df[col_name] < val]
+                elif op == ">=":
+                    df = df[df[col_name] >= val]
+                elif op == "<=":
+                    df = df[df[col_name] <= val]
 
         return df
 
