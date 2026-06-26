@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import sys
 import tarfile
@@ -23,7 +25,7 @@ try:
 except ModuleNotFoundError as e:
     raise ModuleNotFoundError(
     "Missing required dependency 'polars'. Please reinstall m2m-postaviz with pip so runtime dependencies are installed. "
-    "If your CPU does not support standard wheels, try: pip install 'm2m-postaviz[lts-cpu]'."
+    "If your CPU does not support standard wheels, try: pip install polars-lts-cpu."
     ) from e
 
 if TYPE_CHECKING:
