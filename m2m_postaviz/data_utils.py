@@ -11,13 +11,12 @@ from typing import Optional
 
 import numpy as np
 import pandas as pd
-from padmet.classes import PadmetRef
-from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
 from scipy import stats
 from scipy.spatial.distance import pdist
 from scipy.spatial.distance import squareform
 from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
+from typing import TYPE_CHECKING
 
 try:
     import polars as pl
@@ -26,6 +25,9 @@ except ModuleNotFoundError as e:
     "Missing required dependency 'polars'. Please reinstall m2m-postaviz with pip so runtime dependencies are installed. "
     "If your CPU does not support standard wheels, try: pip install 'm2m-postaviz[lts-cpu]'."
     ) from e
+
+if TYPE_CHECKING:
+    from padmet.classes import PadmetRef
 
 def file_exist(filename: str, directory_path: Path) -> bool:
     for file in directory_path.iterdir():
@@ -215,6 +217,8 @@ def is_indexed_by_id(df: pd.DataFrame):
 
 
 def sbml_to_classic(compounds_list):
+    from padmet.utils.sbmlPlugin import convert_from_coded_id as cfci
+
     uncoded = []
     for coded in compounds_list:
         id, id_type, compart = cfci(coded)
@@ -996,6 +1000,8 @@ def padmet_to_tree(save_path: Path, metacyc_file_path: Path):
         return
 
     print("Building compounds category tree...")
+
+    from padmet.classes import PadmetRef
 
     padmet = PadmetRef(str(metacyc_file_path))
 
