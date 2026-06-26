@@ -2,7 +2,7 @@
 Installation
 ============
 
-M2M-PostAViz is tested with Python version 3.12 and 3.13.
+M2M-PostAViz is tested with Python version 3.12, 3.13 and 3.14.
 
 At the command line::
 
@@ -28,12 +28,23 @@ M2M-PostAViz dependencies (installed automatically with pip):
 - scikit-bio
 - shiny
 - shinywidgets
+- faicons
+- matplotlib
+- polars
 - pyarrow
 - seaborn
+- statsmodels
 
 To install dependencies manually::
 
     pip install -r requirements.txt
+
+Troubleshooting
+===============
+
+If installation succeeds but running ``m2m_postaviz`` fails because ``polars`` is unavailable or incompatible on your machine, install the long-term-support CPU wheel manually::
+
+    pip install polars-lts-cpu
 
 If you use the application for research, do not forget to cite the works associated to those dependencies.
 

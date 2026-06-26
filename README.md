@@ -23,6 +23,12 @@ pip install -r requirements.txt
 pip install .
 ```
 
+If installation succeeds but running `m2m_postaviz` fails because `polars` is unavailable or incompatible on your machine, install the long-term-support CPU wheel manually:
+
+```sh
+pip install polars-lts-cpu
+```
+
 ## Quickstart
 
 To test the application with example data:

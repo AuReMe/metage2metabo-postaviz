@@ -5,30 +5,27 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "m2m-postaviz"
 dynamic = ["version"]
-authors = [{name = "Pleiade team", email = "leonard.brindel@inria.fr"}]
+authors = [{name = "Léonard Brindel and Clémence Frioux", email = "clemence.frioux@inria.fr"}]
 readme = "README.md"
 description = "Post-analysis and visualization of metage2metabo's results"
 license = {text = "LGPL-3.0-or-later"}
 requires-python = ">= 3.8"
 dependencies = [
-  'pandas',
-  'scipy',
-  'statsmodels',
-  'padmet',
-  'plotly',
-  'matplotlib',
-  'shiny',
-  'shinywidgets',
-  'faicons',
-  'scikit-bio',
-  'polars>=1.12.0',
-  'pyarrow==22.0.0',
-  'python-libsbml>=5.20.5,<5.21.0',
-  'seaborn',
+    'pandas',
+    'scipy',
+    'statsmodels',
+    'padmet',
+    'plotly',
+    'matplotlib',
+    'shiny',
+    'shinywidgets',
+    'faicons',
+    'scikit-bio',
+    'polars>=1.12.0',
+    'pyarrow==22.0.0',
+    'python-libsbml>=5.20.5,<5.21.0',
+    'seaborn',
 ]
-
-[project.optional-dependencies]
-lts-cpu = ["polars-lts-cpu"]
 
 [project.scripts]
 m2m_postaviz = "m2m_postaviz.cli:main"
