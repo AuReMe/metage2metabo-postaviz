@@ -31,7 +31,7 @@ stages:
 coverage:
   stage: test
   script:
-    - tox run -e clean,py39,py312,report
+    - tox run -e clean,py312,report
   coverage: '/(?i)total.*? (100(?:\.0+)?\%|[1-9]?\d(?:\.\d+)?\%)$/'
   artifacts:
     paths:
