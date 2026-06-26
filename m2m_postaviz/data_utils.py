@@ -20,20 +20,12 @@ from skbio.stats.ordination import pcoa
 from statsmodels.stats.multitest import multipletests
 
 try:
-  import polars as pl
-
-except Exception as e:
-  print(e)
-  print("CALLING subprocess to uninstall polars and polars-lts-cpu. Then reinstall polars-lts-cpu.")
-
-  import subprocess
-  import sys
-
-  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars"])  # noqa: S603
-  subprocess.check_call([sys.executable, "-m", "pip", "uninstall", "-y", "polars-lts-cpu"])  # noqa: S603
-  subprocess.check_call([sys.executable, "-m", "pip", "install", "polars-lts-cpu"])  # noqa: S603
-
-  import polars as pl
+    import polars as pl
+except ModuleNotFoundError as e:
+    raise ModuleNotFoundError(
+    "Missing required dependency 'polars'. Please reinstall m2m-postaviz with pip so runtime dependencies are installed. "
+    "If your CPU does not support standard wheels, try: pip install 'm2m-postaviz[lts-cpu]'."
+    ) from e
 
 def file_exist(filename: str, directory_path: Path) -> bool:
     for file in directory_path.iterdir():
