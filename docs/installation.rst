@@ -42,9 +42,34 @@ To install dependencies manually::
 Troubleshooting
 ===============
 
+Polars compatibility (``polars``)
+---------------------------------
+
 If installation succeeds but running ``m2m_postaviz`` fails because ``polars`` is unavailable or incompatible on your machine, install the long-term-support CPU wheel manually::
 
     pip install polars-lts-cpu
+
+macOS ARM binary mismatch (``biom-format`` / ``scikit-bio``)
+----------------------------------------------------------------
+
+On Apple Silicon (arm64), you may occasionally hit an error like:
+
+- ``ImportError: ... biom/_filter...so ... incompatible architecture (have 'x86_64', need 'arm64')``
+
+This means a transitive binary extension (from ``biom-format``, required by ``scikit-bio``) was installed for the wrong architecture.
+
+In most cases, reinstalling ``biom-format`` with arm64 build flags is enough::
+
+    pip uninstall -y biom-format
+    ARCHFLAGS="-arch arm64" pip install --no-binary=biom-format biom-format==2.1.17
+
+Then verify with::
+
+    m2m_postaviz --test
+
+
+Citation
+========
 
 If you use the application for research, do not forget to cite the works associated to those dependencies.
 
