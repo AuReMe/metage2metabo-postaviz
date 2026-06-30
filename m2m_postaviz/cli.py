@@ -54,7 +54,11 @@ parser.add_argument("-d", "--dir", help="Directory containing the data")
 parser.add_argument("-m", "--metadata", help="Tsv file containing metadata")
 parser.add_argument("-t", "--taxonomy", help="Tsv file containing taxonomy data")
 parser.add_argument("-a", "--abundance", help="Abundance data file as tsv.")
-parser.add_argument("-o", "--output", help="Output path for saved plot of dataframe. Must be provided.")
+parser.add_argument(
+    "-o",
+    "--output",
+    help="Output directory where precomputed PostAViz data are saved for reuse with --load, and where user-exported plots/data are written. Must be provided.",
+)
 parser.add_argument("-l", "--load", help="Run postaviz from save directory")
 parser.add_argument("-c", "--metacyc", help="Run postaviz with the metacyc database as padmet file. This is usefull when the metabolite ID from the scopes use metacyc ID. Enable the research by category of metabolites.")
 

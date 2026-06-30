@@ -22,9 +22,10 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
                    -a abundance/file/path \
                    -t taxonomy/file/path \
                    -o save/path \
-                   --no-metacyc  # (Optional)
+                   -c metacyc/padmet/file.padmet  # (Optional)
 
-  If one of the required arguments (``-d``, ``-m``, ``-o``) is missing and the command is run in an interactive terminal, ``m2m_postaviz`` prompts for the missing paths.
+      In preprocessing mode, ``-d``, ``-m``, and ``-o`` are required.
+      If one of these required arguments is missing and the command is run in an interactive terminal, ``m2m_postaviz`` prompts for the missing paths.
   In this interactive mode:
 
   - You can choose to switch directly to precomputed mode (``-l``) and bypass raw inputs.
@@ -39,8 +40,11 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
 
       m2m_postaviz -l save/directory/path
 
+  The directory passed to ``-l`` is the same directory previously given to ``-o``.
+
 .. note::
-   The preprocessed dataset is stored in a directory in the form of dataframes and files in Parquet format for efficient storage and access.
+  The directory given to ``-o`` stores preprocessed dataframes/files (used by ``-l`` for fast restart)
+  and is also the default location for user-triggered plot/data exports from the app.
 
 For more details on input data and directory structure, see below.
 
