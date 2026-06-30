@@ -47,7 +47,7 @@ Overall, `M2M-PostAViz` was designed to address three complementary needs: (i) e
 
 Metabolic modelling is widely used to determine the roles of microorganisms in microbial communities [@Cerk.2024]: what molecules they can produce, which interactions are likely to happen depending on the environmental conditions... Many models rely on integer linear programming optimisations [@García-Jimenez.2021] and some alternatives use Boolean abstractions [@Frioux.2018] [@Belcour.2020] or probabilistic approaches [@Bernstein.2019] to provide predictions on community behaviours. Key questions are scalability to large communities, and also integration of these predictions when analysing many samples or community compositions, which is more and more frequent as large metagenomic cohorts get published [@Asnicar.2025].
 
-In practice, each microorganism is abstracted by a collection of biochemical reactions it may perform according to its genomic information, thus forming a network connecting transformed molecules [@Cerk.2024]. A community of microorganisms is therefore represented as a collection of such networks, referred to as genome-scale metabolic networks. A metabolic model will provide predictions on the possible behaviour of microorganisms and communities in defined simulation conditions. Boolean abstractions, as used by M2M, ensure the scalability of predictions; although the model is qualitative and does not quantify interactions, such methods are considered a reasonable proxy for more quantitative models [@Kruse.2008].
+In practice, each microorganism is abstracted by a collection of biochemical reactions it may perform according to its genomic information, thus forming a network connecting transformed molecules [@Cerk.2024]. A community of microorganisms is therefore represented as a collection of such networks, referred to as genome-scale metabolic networks. A metabolic model will provide predictions on the possible behaviour of microorganisms and communities in defined simulation conditions. Boolean abstractions, as used by M2M, ensure the scalability of predictions; although the model is qualitative and does not quantify interactions, such methods are considered a reasonable proxy for more quantitative models [@Kruse.2008] (Figure \autoref{fig:postaviz}A).
 
 # Software design
 
@@ -63,7 +63,7 @@ Data manipulation and storage rely primarily on pandas [@reback2020pandas] [@mck
 
 ## Application content
 
-The application opens as a multi-tab browser page. The first tab provides an overview of the dataset and enables initial analyses that can be customised using metadata variables. Two additional tabs provide analyses centred on microbial roles and metabolites, respectively (see below), and a final tab summarises the metadata and allows users to customise variable types to fine-tune analyses and plots. Statistical analyses are performed using scipy [@2020SciPy-NMeth] and statsmodels [@seabold2010statsmodels]. Visualisations are generated with plotly [@plotly], matplotlib [@Hunter:2007], and seaborn [@Waskom2021], and the web interface is implemented using shiny for Python [@shiny].
+The application opens as a multi-tab browser page. The first tab provides an overview of the dataset and enables initial analyses that can be customised using metadata variables. Two additional tabs provide analyses centred on microbial roles and metabolites, respectively (see below), and a final tab summarises the metadata and allows users to customise variable types to fine-tune analyses and plots. Statistical analyses are performed using scipy [@2020SciPy-NMeth] and statsmodels [@seabold2010statsmodels]. Visualisations are generated with plotly [@plotly], matplotlib [@Hunter:2007], and seaborn [@Waskom2021], and the web interface is implemented using shiny for Python [@shiny] (Figure \autoref{fig:postaviz}B).
 
 ### Exploration of microorganism roles
 
@@ -72,6 +72,11 @@ The second tab of the application focuses on the role of microorganisms in the p
 ### Exploration of metabolite production across samples
 
 The third tab of the application is dedicated to the analysis of metabolites, which can also be grouped into families if a suitable ontology is provided [@Caspi2019] [@Aite2018]. Focusing on metabolites enables a targeted analysis in order to compare samples or groups of samples on specific metabolic functions.
+
+![tags](postaviz_figure.pdf)
+<center>**<u>Figure1</u>:** *hIllustration of context and functionalities of Metage2Metabo-PostAViz. **A.** Metagenomic context.  **B.**</center>
+
+![**Figure 1:** _Illustration of the context and functionalities of Metage2Metabo-PostAViz._ **A.** Metagenomic context. Samples consist of microbial communities, each composed of several interacting microbial populations. These populations are represented as metabolic networks used to predict community behaviour and interactions within dedicated modelling frameworks. **B.** Functionalities of M2M-PostAViz. Inputs include Metage2Metabo outputs for each sample, metadata, relative abundances, and taxonomic information associated with the samples. The application enables comparison of the metabolic potential of samples and exploration of their associations with metadata through a graphical user interface.\label{fig:postaviz}](postaviz_figure.pdf)
 
 # Research impact statement
 
