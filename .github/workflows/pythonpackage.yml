@@ -20,6 +20,8 @@ on:
       - 'CHANGELOG.md'
       - 'CONTRIBUTING.md'
       - '.readthedocs.yml'
+  schedule:
+    - cron: '0 5 * * 1'
 
 jobs:
   build_3_12:
