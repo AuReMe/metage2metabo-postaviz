@@ -25,6 +25,7 @@ dependencies = [
     'pyarrow==22.0.0',
     'python-libsbml>=5.20.5,<5.21.0',
     'seaborn',
+    'prompt_toolkit>=3.0.0',
 ]
 
 [project.scripts]

@@ -11,5 +11,6 @@ pyarrow==22.0.0
 python-libsbml>=5.20.5,<5.21.0
 seaborn>=0.13.2
 polars>=1.12.0
+prompt_toolkit>=3.0.0
 sphinx_rtd_theme>=3.0.2
 faicons>=0.2.2

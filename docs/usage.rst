@@ -24,6 +24,15 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
                    -o save/path \
                    --no-metacyc  # (Optional)
 
+  If one of the required arguments (``-d``, ``-m``, ``-o``) is missing and the command is run in an interactive terminal, ``m2m_postaviz`` prompts for the missing paths.
+  In this interactive mode:
+
+  - You can choose to switch directly to precomputed mode (``-l``) and bypass raw inputs.
+  - Optional inputs (taxonomy, abundance, metacyc) are proposed and can be skipped by pressing ``Enter``.
+  - Path auto-completion is enabled when supported by your terminal environment.
+  - You can exit at any prompt by typing ``quit``, ``exit``, or ``q`` (case-insensitive), or by pressing ``Ctrl+C``.
+    Either action will exit the program without errors.
+
 - **By providing the preprocessed data (fast mode)** (for fast restarts):
 
   .. code-block:: bash
