@@ -89,7 +89,16 @@ A dataset with test data is available in this repository in ``postaviz_test_data
 Once on the homepage you're free to explore the test data.
 
 .. note::
-   Metacyc database information related to the ontology of metabolites and pathways is not included in test option.
+    The ``--test`` option does not load MetaCyc ontology data; therefore,
+    metabolite-family exploration is unavailable in this mode. The bundled
+    file ``metacyc28_5.padmet`` is a derived fixture used solely by the
+    automated test suite. It was generated from MetaCyc release 28.5 using
+    the PADMet library and subsequently filtered by the authors to remove
+    reaction and pathway records, retaining only the compound annotations,
+    cross-references, and classification relationships required by the
+    tests. It is not intended as a general-purpose MetaCyc distribution or
+    as input for user analyses. Users requiring MetaCyc data should obtain
+    them directly from MetaCyc and comply with the applicable licence.
 
 .. warning::
    We assume that you arrive at this step having installed the tool first (see above), for instance in a Python virtual environment, or conda (mamba) environment.
