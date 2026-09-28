@@ -42,6 +42,22 @@ Based on the input listed in :doc:`input_data`, ``m2m_postaviz`` can be run in t
 
   The directory passed to ``-l`` is the same directory previously given to ``-o``.
 
+Graphical interface startup
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The graphical interface is launched after the input data have been validated
+and preprocessed, or after an existing preprocessed dataset has been loaded
+with ``--load``. It therefore does not start without data and does not provide
+browser-based import of raw inputs.
+
+Raw M2M inputs may contain large, nested directory structures and are often
+processed on remote or high-performance computing infrastructure, where
+browser-based upload or desktop file-selection dialogues are not appropriate.
+Users can instead run ``m2m_postaviz`` in an interactive terminal to be
+prompted for the required and optional input paths. The ``--load`` option
+opens a previously processed dataset, while ``--test`` launches the graphical
+interface with the bundled example data.
+
 .. note::
   The directory given to ``-o`` stores preprocessed dataframes/files (used by ``-l`` for fast restart)
   and is also the default location for user-triggered plot/data exports from the app.

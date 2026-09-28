@@ -3,6 +3,9 @@ Application details
 
 The application starts in a web browser and enables users to analyse metabolic potential predictions in the light of sample metadata, genome taxonomy, and possibly taking genome abundance into account to weight producibility of metabolites. Several tabs dedicated to different analyses can be browsed.
 
+Input selection and preprocessing take place before the graphical interface
+is launched; see :doc:`usage` for the available startup modes.
+
 Users can modify the visualisations and the statistical analyses by selecting and filtering data and metadata.
 
 Tabs overview
