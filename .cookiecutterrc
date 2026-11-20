@@ -34,7 +34,7 @@ default_context:
     github_actions: "no"
     github_actions_osx: "no"
     github_actions_windows: "no"
-    license: "GNU Lesser General Public License v3 (LGPLv3)"
+    license: "GNU Affero General Public License v3 (AGPLv3)"
     package_name: "m2m_postaviz"
     pre_commit: "no"
     project_name: "m2m-postaviz"

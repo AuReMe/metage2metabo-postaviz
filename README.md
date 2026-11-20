@@ -41,7 +41,7 @@ For full documentation, usage, and advanced options, see the [online documentati
 
 ## License
 
-GNU Lesser General Public License v3 (LGPLv3)
+GNU Affero General Public License v3 (AGPLv3)
 
 ## Authors
 

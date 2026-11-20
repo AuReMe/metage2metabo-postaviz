@@ -20,7 +20,7 @@ M2M-PostAViz integrates and analyses all these outputs, especially in a context 
 License
 -------
 
-GNU Lesser General Public License v3 (LGPLv3)
+GNU Affero General Public License v3 (AGPLv3)
 
 Authors
 -------
